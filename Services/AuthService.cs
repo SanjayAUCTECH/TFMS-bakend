@@ -190,8 +190,8 @@ public class AuthService : IAuthService
     private string GenerateToken(int id, string username, string role, bool isAdmin,
         string userCode, out DateTime expiresAt)
     {
-        var expiryHours = int.TryParse(_config["Jwt:ExpiryHours"], out var h) ? h : 8;
-        expiresAt = DateTime.UtcNow.AddHours(expiryHours);
+        var expiryHours = int.TryParse(_config["Jwt:ExpiryHours"], out var h) ? h : 876000;
+        expiresAt = DateTime.UtcNow.AddHours(expiryHours); // ~100 years — effectively never expires
 
         var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
