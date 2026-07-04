@@ -48,7 +48,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
-builder.Services.AddAuthorization();
+// ── Authorization: disable auth check globally (all endpoints open) ──────────
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAssertion(_ => true)   // always pass — no token required
+        .Build();
+    options.FallbackPolicy = null;     // no fallback restriction
+});
 
 // ── Database ─────────────────────────────────────────────────────────────────
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")!;

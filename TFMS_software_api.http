@@ -1,6 +1,31 @@
 @TFMS_software_api_HostAddress = http://localhost:5100
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsIklzQWRtaW4iOiJUcnVlIiwiVXNlcklkIjoiVVNSLTAwMDAwMSIsImV4cCI6NDkzNjc2MjY1NCwiaXNzIjoiVEZNU19BUEkiLCJhdWQiOiJURk1TX0NsaWVudCJ9.Lrykus-ELSUOrawcFF40GcOhDgPNk-uYNv5GKA37s1M
 
-GET {{TFMS_software_api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Login
+POST {{TFMS_software_api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@1234"
+}
+
+###
+
+### Get Profile (token required)
+GET {{TFMS_software_api_HostAddress}}/api/auth/profile
+Authorization: Bearer {{token}}
+
+###
+
+### Get Dashboard Stats
+GET {{TFMS_software_api_HostAddress}}/api/dashboard/stats
+Authorization: Bearer {{token}}
+
+###
+
+### Get All Camps
+GET {{TFMS_software_api_HostAddress}}/api/camps
+Authorization: Bearer {{token}}
 
 ###
