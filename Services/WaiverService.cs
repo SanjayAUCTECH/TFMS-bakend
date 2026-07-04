@@ -32,11 +32,11 @@ public class WaiverService : IWaiverService
 
     public async Task<ApiResponse<WaiverResponse>> CreateAsync(CreateWaiverRequest request)
     {
-        if (!await _tenantRepo.ExistsAsync(request.TenantId))
+        if (!await _tenantRepo.ExistsAsync(request.TenantId ?? 0))
             return ApiResponse<WaiverResponse>.Fail("Tenant not found.");
 
         var payments    = await _paymentRepo.GetByContractIdAsync(request.ContractId);
-        var installment = payments.FirstOrDefault(p => p.InstallmentNo == request.InstallmentNo);
+        var installment = payments.FirstOrDefault(p => p.InstallmentNo == (request.InstallmentNo ?? 0));
         if (installment == null)
             return ApiResponse<WaiverResponse>.Fail("Installment not found.");
         if (installment.Status == "Paid")
@@ -46,9 +46,9 @@ public class WaiverService : IWaiverService
 
         var id = await _repo.CreateAsync(new Waiver
         {
-            TenantId       = request.TenantId,
+            TenantId       = request.TenantId ?? 0,
             ContractId     = request.ContractId,
-            InstallmentNo  = request.InstallmentNo,
+            InstallmentNo  = request.InstallmentNo ?? 0,
             OriginalAmount = installment.Amount,
             WaiverAmount   = request.WaiverAmount,
             BalanceAmount  = installment.Amount - request.WaiverAmount,

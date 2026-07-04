@@ -29,7 +29,7 @@ public class RoleService : IRoleService
 
     public async Task<ApiResponse<RoleResponse>> CreateAsync(CreateRoleRequest request)
     {
-        var id = await _repo.CreateAsync(new Role { RoleName = request.RoleName.Trim(), Status = request.Status });
+        var id = await _repo.CreateAsync(new Role { RoleName = request.RoleName?.Trim() ?? "", Status = request.Status });
         return ApiResponse<RoleResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Role created.");
     }
 

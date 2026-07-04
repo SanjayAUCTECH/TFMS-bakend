@@ -90,9 +90,9 @@ public class AuthService : IAuthService
         var user = await _userRepo.GetByIdAsync(userId);
         if (user == null) return ApiResponse<ProfileResponse>.Fail("User not found.");
 
-        user.Name    = request.Name.Trim();
-        user.Contact = request.Contact.Trim();
-        user.Email   = request.Email.Trim();
+        user.Name    = request.Name?.Trim() ?? "";
+        user.Contact = request.Contact?.Trim() ?? "";
+        user.Email   = request.Email?.Trim() ?? "";
 
         await _userRepo.UpdateAsync(user);
         var updated = await _userRepo.GetByIdAsync(userId);

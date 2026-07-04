@@ -6,19 +6,19 @@ namespace TFMS_software_api.DTOs;
 
 public class CreatePartnerRequest
 {
-    [Required, MaxLength(200)] public string Name    { get; set; } = string.Empty;
-    [MaxLength(100)]           public string Contact { get; set; } = string.Empty;
-    [MaxLength(20)]            public string Mobile  { get; set; } = string.Empty;
-    [MaxLength(150), EmailAddress] public string Email { get; set; } = string.Empty;
+    [MaxLength(200)] public string  Name    { get; set; } = string.Empty;
+    [MaxLength(100)] public string  Contact { get; set; } = string.Empty;
+    [MaxLength(20)]  public string  Mobile  { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Email   { get; set; }
     public string Status { get; set; } = "Active";
 }
 
 public class UpdatePartnerRequest
 {
-    [Required, MaxLength(200)] public string Name    { get; set; } = string.Empty;
-    [MaxLength(100)]           public string Contact { get; set; } = string.Empty;
-    [MaxLength(20)]            public string Mobile  { get; set; } = string.Empty;
-    [MaxLength(150), EmailAddress] public string Email { get; set; } = string.Empty;
+    [MaxLength(200)] public string  Name    { get; set; } = string.Empty;
+    [MaxLength(100)] public string  Contact { get; set; } = string.Empty;
+    [MaxLength(20)]  public string  Mobile  { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Email   { get; set; }
     public string Status { get; set; } = "Active";
 }
 

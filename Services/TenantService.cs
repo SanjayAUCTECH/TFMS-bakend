@@ -45,18 +45,18 @@ public class TenantService : ITenantService
 
     private static Tenant FromRequest(CreateTenantRequest r, int id = 0) => new()
     {
-        Id = id, Type = r.Type, Name = r.Name.Trim(), Passport = r.Passport.Trim(),
-        Nationality = r.Nationality.Trim(), EmiratesId = r.EmiratesId.Trim(),
-        Contact = r.Contact.Trim(), Whatsapp = r.Whatsapp.Trim(), Email = r.Email.Trim(),
-        Address = r.Address.Trim(), Status = r.Status,
-        Company = r.Company.Trim(), TradeLicense = r.TradeLicense.Trim(),
-        LicensingAuthority = r.LicensingAuthority.Trim(),
-        NumberOfCoOccupants = r.NumberOfCoOccupants.Trim(),
-        PlotNo = r.PlotNo.Trim(), MakaniNo = r.MakaniNo.Trim(),
-        PropertyArea = r.PropertyArea.Trim(), PremisesNo = r.PremisesNo.Trim(),
-        LessorName = r.LessorName.Trim(), LessorEid = r.LessorEid.Trim(),
-        LessorLicense = r.LessorLicense.Trim(), LessorLicAuthority = r.LessorLicAuthority.Trim(),
-        LessorEmail = r.LessorEmail.Trim(), LessorPhone = r.LessorPhone.Trim(),
+        Id = id, Type = r.Type, Name = r.Name?.Trim() ?? "", Passport = r.Passport?.Trim() ?? "",
+        Nationality = r.Nationality?.Trim() ?? "", EmiratesId = r.EmiratesId?.Trim() ?? "",
+        Contact = r.Contact?.Trim() ?? "", Whatsapp = r.Whatsapp?.Trim() ?? "", Email = r.Email?.Trim() ?? "",
+        Address = r.Address?.Trim() ?? "", Status = r.Status,
+        Company = r.Company?.Trim() ?? "", TradeLicense = r.TradeLicense?.Trim() ?? "",
+        LicensingAuthority = r.LicensingAuthority?.Trim() ?? "",
+        NumberOfCoOccupants = r.NumberOfCoOccupants?.Trim() ?? "",
+        PlotNo = r.PlotNo?.Trim() ?? "", MakaniNo = r.MakaniNo?.Trim() ?? "",
+        PropertyArea = r.PropertyArea?.Trim() ?? "", PremisesNo = r.PremisesNo?.Trim() ?? "",
+        LessorName = r.LessorName?.Trim() ?? "", LessorEid = r.LessorEid?.Trim() ?? "",
+        LessorLicense = r.LessorLicense?.Trim() ?? "", LessorLicAuthority = r.LessorLicAuthority?.Trim() ?? "",
+        LessorEmail = r.LessorEmail?.Trim() ?? "", LessorPhone = r.LessorPhone?.Trim() ?? "",
     };
 
     private static TenantResponse ToResponse(Tenant t) => new()

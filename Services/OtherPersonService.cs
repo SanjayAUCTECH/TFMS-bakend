@@ -28,10 +28,16 @@ public class OtherPersonService : IOtherPersonService
     {
         var op = new OtherPerson
         {
-            Designation = request.Designation, Name = request.Name.Trim(), Mobile = request.Mobile.Trim(),
-            Email = request.Email.Trim(), Address = request.Address.Trim(), City = request.City.Trim(),
-            State = request.State.Trim(), Pincode = request.Pincode.Trim(), Remarks = request.Remarks.Trim(),
-            Status = request.Status,
+            Designation = request.Designation.Trim(),
+            Name        = request.Name.Trim(),
+            Mobile      = request.Mobile.Trim(),
+            Email       = request.Email?.Trim() ?? "",
+            Address     = request.Address.Trim(),
+            City        = request.City.Trim(),
+            State       = request.State.Trim(),
+            Pincode     = request.Pincode.Trim(),
+            Remarks     = request.Remarks.Trim(),
+            Status      = request.Status,
         };
         var id = await _repo.CreateAsync(op);
         return ApiResponse<OtherPersonResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Other Person created.");
@@ -42,10 +48,17 @@ public class OtherPersonService : IOtherPersonService
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<OtherPersonResponse>.Fail("Not found.");
         await _repo.UpdateAsync(new OtherPerson
         {
-            Id = id, Designation = request.Designation, Name = request.Name.Trim(), Mobile = request.Mobile.Trim(),
-            Email = request.Email.Trim(), Address = request.Address.Trim(), City = request.City.Trim(),
-            State = request.State.Trim(), Pincode = request.Pincode.Trim(), Remarks = request.Remarks.Trim(),
-            Status = request.Status,
+            Id          = id,
+            Designation = request.Designation.Trim(),
+            Name        = request.Name.Trim(),
+            Mobile      = request.Mobile.Trim(),
+            Email       = request.Email?.Trim() ?? "",
+            Address     = request.Address.Trim(),
+            City        = request.City.Trim(),
+            State       = request.State.Trim(),
+            Pincode     = request.Pincode.Trim(),
+            Remarks     = request.Remarks.Trim(),
+            Status      = request.Status,
         });
         return ApiResponse<OtherPersonResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Updated.");
     }

@@ -28,20 +28,20 @@ public class StaffService : IStaffService
 
     public async Task<ApiResponse<StaffResponse>> CreateAsync(CreateStaffRequest request)
     {
-        if (await _repo.UsernameExistsAsync(request.Username.Trim()))
+        if (await _repo.UsernameExistsAsync(request.Username?.Trim() ?? ""))
             return ApiResponse<StaffResponse>.Fail("Username already exists.");
 
         var staff = new Staff
         {
-            Name        = request.Name.Trim(),
-            Contact     = request.Contact.Trim(),
-            Email       = request.Email.Trim(),
-            Address     = request.Address.Trim(),
-            Username    = request.Username.Trim().ToLower(),
+            Name        = request.Name?.Trim() ?? "",
+            Contact     = request.Contact?.Trim() ?? "",
+            Email       = request.Email?.Trim() ?? "",
+            Address     = request.Address?.Trim() ?? "",
+            Username    = request.Username?.Trim().ToLower() ?? "",
             Password    = request.Password,
             LoginAccess = request.LoginAccess,
             Status      = request.Status,
-            Remarks     = request.Remarks.Trim(),
+            Remarks     = request.Remarks?.Trim() ?? "",
         };
 
         var id = await _repo.CreateAsync(staff);
@@ -54,17 +54,17 @@ public class StaffService : IStaffService
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return ApiResponse<StaffResponse>.Fail("Staff member not found.");
 
-        if (await _repo.UsernameExistsAsync(request.Username.Trim(), id))
+        if (await _repo.UsernameExistsAsync(request.Username?.Trim() ?? "", id))
             return ApiResponse<StaffResponse>.Fail("Username already taken by another staff member.");
 
-        existing.Name        = request.Name.Trim();
-        existing.Contact     = request.Contact.Trim();
-        existing.Email       = request.Email.Trim();
-        existing.Address     = request.Address.Trim();
-        existing.Username    = request.Username.Trim().ToLower();
+        existing.Name        = request.Name?.Trim() ?? "";
+        existing.Contact     = request.Contact?.Trim() ?? "";
+        existing.Email       = request.Email?.Trim() ?? "";
+        existing.Address     = request.Address?.Trim() ?? "";
+        existing.Username    = request.Username?.Trim().ToLower() ?? "";
         existing.LoginAccess = request.LoginAccess;
         existing.Status      = request.Status;
-        existing.Remarks     = request.Remarks.Trim();
+        existing.Remarks     = request.Remarks?.Trim() ?? "";
 
         // Only update password if provided
         if (!string.IsNullOrWhiteSpace(request.Password))

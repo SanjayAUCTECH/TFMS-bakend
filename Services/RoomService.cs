@@ -31,7 +31,7 @@ public class RoomService : IRoomService
     {
         var id = await _repo.CreateAsync(new Room
         {
-            RoomNo = request.RoomNo.Trim(), CampId = request.CampId, FloorId = request.FloorId,
+            RoomNo = request.RoomNo.Trim(), CampId = request.CampId ?? 0, FloorId = request.FloorId ?? 0,
             MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails.Trim()
         });
         return ApiResponse<RoomResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Room created.");
@@ -42,7 +42,7 @@ public class RoomService : IRoomService
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<RoomResponse>.Fail("Not found.");
         await _repo.UpdateAsync(new Room
         {
-            Id = id, RoomNo = request.RoomNo.Trim(), CampId = request.CampId, FloorId = request.FloorId,
+            Id = id, RoomNo = request.RoomNo.Trim(), CampId = request.CampId ?? 0, FloorId = request.FloorId ?? 0,
             MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails.Trim()
         });
         return ApiResponse<RoomResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Room updated.");

@@ -7,11 +7,11 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateIncomeRequest
 {
-    [Required] public DateTime Date         { get; set; }
-    [Required, MaxLength(50)]  public string Mode       { get; set; } = string.Empty;
-    [Required, MaxLength(200)] public string Head       { get; set; } = string.Empty;
-    [Range(1, int.MaxValue)]   public int    FundPoolId { get; set; }
-    [Range(0.01, double.MaxValue)] public decimal Amount { get; set; }
+    public DateTime Date         { get; set; }
+    [MaxLength(50)]  public string Mode       { get; set; } = string.Empty;
+    [MaxLength(200)] public string Head       { get; set; } = string.Empty;
+    public int?    FundPoolId { get; set; }
+    public decimal Amount     { get; set; }
     [MaxLength(500)] public string Purpose   { get; set; } = string.Empty;
     [MaxLength(50)]  public string Source    { get; set; } = string.Empty;
     [MaxLength(50)]  public string SourceRef { get; set; } = string.Empty;
@@ -19,11 +19,11 @@ public class CreateIncomeRequest
 
 public class UpdateIncomeRequest
 {
-    [Required] public DateTime Date         { get; set; }
-    [Required, MaxLength(50)]  public string Mode       { get; set; } = string.Empty;
-    [Required, MaxLength(200)] public string Head       { get; set; } = string.Empty;
-    [Range(1, int.MaxValue)]   public int    FundPoolId { get; set; }
-    [Range(0.01, double.MaxValue)] public decimal Amount { get; set; }
+    public DateTime Date         { get; set; }
+    [MaxLength(50)]  public string Mode       { get; set; } = string.Empty;
+    [MaxLength(200)] public string Head       { get; set; } = string.Empty;
+    public int?    FundPoolId { get; set; }
+    public decimal Amount     { get; set; }
     [MaxLength(500)] public string Purpose   { get; set; } = string.Empty;
     [MaxLength(50)]  public string Source    { get; set; } = string.Empty;
     [MaxLength(50)]  public string SourceRef { get; set; } = string.Empty;

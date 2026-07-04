@@ -47,17 +47,17 @@ public class ProfileResponse
 
 public class UpdateProfileRequest
 {
-    [Required, MaxLength(200)] public string Name    { get; set; } = string.Empty;
-    [MaxLength(20)]            public string Contact { get; set; } = string.Empty;
-    [MaxLength(150), EmailAddress] public string Email { get; set; } = string.Empty;
+    [MaxLength(200)] public string  Name    { get; set; } = string.Empty;
+    [MaxLength(20)]  public string  Contact { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Email   { get; set; }
 }
 
 // ── Password ──────────────────────────────────────────────────────────────────
 public class ChangePasswordRequest
 {
-    [Required] public string CurrentPassword { get; set; } = string.Empty;
-    [Required, MinLength(4)] public string NewPassword { get; set; } = string.Empty;
-    [Required, MinLength(4)] public string ConfirmPassword { get; set; } = string.Empty;
+    public string CurrentPassword  { get; set; } = string.Empty;
+    public string NewPassword      { get; set; } = string.Empty;
+    public string ConfirmPassword  { get; set; } = string.Empty;
 }
 
 // ── Refresh Token ─────────────────────────────────────────────────────────────

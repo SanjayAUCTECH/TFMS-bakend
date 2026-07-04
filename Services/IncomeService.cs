@@ -33,20 +33,20 @@ public class IncomeService : IIncomeService
 
     public async Task<ApiResponse<IncomeResponse>> CreateAsync(CreateIncomeRequest request)
     {
-        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId);
+        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId ?? 0);
         if (fp == null) return ApiResponse<IncomeResponse>.Fail("Fund Pool not found.");
 
         var income = new Income
         {
             Date         = request.Date,
-            Mode         = request.Mode.Trim(),
-            Head         = request.Head.Trim(),
+            Mode         = request.Mode?.Trim() ?? "",
+            Head         = request.Head?.Trim() ?? "",
             FundPool     = fp.Code,
             FundPoolName = fp.Name,
             Amount       = request.Amount,
-            Purpose      = request.Purpose.Trim(),
-            Source       = request.Source.Trim(),
-            SourceRef    = request.SourceRef.Trim(),
+            Purpose      = request.Purpose?.Trim() ?? "",
+            Source       = request.Source?.Trim() ?? "",
+            SourceRef    = request.SourceRef?.Trim() ?? "",
         };
 
         var id = await _repo.CreateAsync(income);
@@ -59,21 +59,21 @@ public class IncomeService : IIncomeService
         if (!await _repo.ExistsAsync(id))
             return ApiResponse<IncomeResponse>.Fail("Income record not found.");
 
-        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId);
+        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId ?? 0);
         if (fp == null) return ApiResponse<IncomeResponse>.Fail("Fund Pool not found.");
 
         await _repo.UpdateAsync(new Income
         {
             Id           = id,
             Date         = request.Date,
-            Mode         = request.Mode.Trim(),
-            Head         = request.Head.Trim(),
+            Mode         = request.Mode?.Trim() ?? "",
+            Head         = request.Head?.Trim() ?? "",
             FundPool     = fp.Code,
             FundPoolName = fp.Name,
             Amount       = request.Amount,
-            Purpose      = request.Purpose.Trim(),
-            Source       = request.Source.Trim(),
-            SourceRef    = request.SourceRef.Trim(),
+            Purpose      = request.Purpose?.Trim() ?? "",
+            Source       = request.Source?.Trim() ?? "",
+            SourceRef    = request.SourceRef?.Trim() ?? "",
         });
 
         var updated = await _repo.GetByIdAsync(id);

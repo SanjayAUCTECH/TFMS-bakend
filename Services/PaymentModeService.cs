@@ -24,7 +24,7 @@ public class PaymentModeService : IPaymentModeService
 
     public async Task<ApiResponse<PaymentModeResponse>> CreateAsync(CreatePaymentModeRequest request)
     {
-        var id = await _repo.CreateAsync(new PaymentMode { Name = request.Name.Trim(), Status = request.Status });
+        var id = await _repo.CreateAsync(new PaymentMode { Name = request.Name?.Trim() ?? "", Status = request.Status });
         var pm = await _repo.GetByIdAsync(id);
         return ApiResponse<PaymentModeResponse>.Ok(new PaymentModeResponse { Id = pm!.Id, Name = pm.Name, Status = pm.Status }, "Payment Mode created.");
     }

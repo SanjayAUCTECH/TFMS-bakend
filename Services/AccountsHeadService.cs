@@ -31,7 +31,7 @@ public class AccountsHeadService : IAccountsHeadService
     public async Task<ApiResponse<AccountsHeadResponse>> CreateAsync(CreateAccountsHeadRequest request)
     {
         if (!ValidTypes.Contains(request.Type)) return ApiResponse<AccountsHeadResponse>.Fail("Invalid account type.");
-        var id = await _repo.CreateAsync(new AccountsHead { Name = request.Name.Trim(), Type = request.Type, Status = request.Status });
+        var id = await _repo.CreateAsync(new AccountsHead { Name = request.Name?.Trim() ?? "", Type = request.Type, Status = request.Status });
         return ApiResponse<AccountsHeadResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Accounts Head created.");
     }
 

@@ -1,0 +1,97 @@
+-- Fix all Delete Stored Procedures
+-- Remove SET NOCOUNT ON so ExecuteNonQueryAsync returns correct row count
+USE TFMS_softwareDB;
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeletePartner @Id INT AS
+BEGIN DELETE FROM Partners WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteOwner @Id INT AS
+BEGIN DELETE FROM Owners WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteFloor @Id INT AS
+BEGIN DELETE FROM Floors WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteRoomStatus @Id INT AS
+BEGIN DELETE FROM RoomStatuses WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeletePaymentMode @Id INT AS
+BEGIN DELETE FROM PaymentModes WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteFundPool @Id INT AS
+BEGIN DELETE FROM FundPools WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteAccountsHead @Id INT AS
+BEGIN DELETE FROM AccountsHeads WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteDesignation @Id INT AS
+BEGIN DELETE FROM Designations WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteOtherPerson @Id INT AS
+BEGIN DELETE FROM OtherPersons WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteRole @Id INT AS
+BEGIN DELETE FROM Roles WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteCamp @Id INT AS
+BEGIN
+    DELETE FROM CampPartners WHERE CampId=@Id;
+    DELETE FROM CampOwners   WHERE CampId=@Id;
+    DELETE FROM Camps        WHERE Id=@Id;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteRoom @Id INT AS
+BEGIN
+    DELETE FROM ContractRooms WHERE RoomId=@Id;
+    DELETE FROM Rooms         WHERE Id=@Id;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteTenant @Id INT AS
+BEGIN DELETE FROM Tenants WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteContract @Id INT AS
+BEGIN
+    DELETE FROM ContractRooms WHERE ContractId=(SELECT ContractId FROM Contracts WHERE Id=@Id);
+    DELETE FROM Payments      WHERE ContractId=(SELECT ContractId FROM Contracts WHERE Id=@Id);
+    DELETE FROM Contracts     WHERE Id=@Id;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteWaiver @Id INT AS
+BEGIN DELETE FROM Waivers WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteIncome @Id INT AS
+BEGIN DELETE FROM Incomes WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteExpense @Id INT AS
+BEGIN DELETE FROM Expenses WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteUser @Id INT AS
+BEGIN DELETE FROM AppUsers WHERE Id=@Id; END
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteStaff @Id INT AS
+BEGIN
+    DELETE FROM AppUsers WHERE Source='Staff Master' AND SourceId=@Id;
+    DELETE FROM Staff    WHERE Id=@Id;
+END
+GO
+
+PRINT 'All Delete SPs fixed successfully!';
+GO

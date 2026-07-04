@@ -33,8 +33,8 @@ public class CampService : ICampService
         {
             Name   = request.Name.Trim(),
             Status = request.Status,
-            Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
-            Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId,   ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
+            Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
+            Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
         };
         var id = await _repo.CreateAsync(camp);
         return ApiResponse<CampResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Camp created.");
@@ -46,8 +46,8 @@ public class CampService : ICampService
         var camp = new Camp
         {
             Id = id, Name = request.Name.Trim(), Status = request.Status,
-            Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
-            Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId,   ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
+            Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
+            Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
         };
         await _repo.UpdateAsync(camp);
         return ApiResponse<CampResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Camp updated.");

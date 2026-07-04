@@ -4,22 +4,22 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateRoomRequest
 {
-    [Required, MaxLength(20)] public string  RoomNo       { get; set; } = string.Empty;
-    [Range(1, int.MaxValue)]  public int     CampId       { get; set; }
-    [Range(1, int.MaxValue)]  public int     FloorId      { get; set; }
-    [Range(0, double.MaxValue)] public decimal MonthlyPrice { get; set; }
-    public string Status       { get; set; } = "Vacant";
-    public string OtherDetails { get; set; } = string.Empty;
+    [MaxLength(20)] public string  RoomNo       { get; set; } = string.Empty;
+    public int?    CampId       { get; set; }
+    public int?    FloorId      { get; set; }
+    public decimal MonthlyPrice { get; set; }
+    public string  Status       { get; set; } = "Vacant";
+    public string  OtherDetails { get; set; } = string.Empty;
 }
 
 public class UpdateRoomRequest
 {
-    [Required, MaxLength(20)] public string  RoomNo       { get; set; } = string.Empty;
-    [Range(1, int.MaxValue)]  public int     CampId       { get; set; }
-    [Range(1, int.MaxValue)]  public int     FloorId      { get; set; }
-    [Range(0, double.MaxValue)] public decimal MonthlyPrice { get; set; }
-    public string Status       { get; set; } = "Vacant";
-    public string OtherDetails { get; set; } = string.Empty;
+    [MaxLength(20)] public string  RoomNo       { get; set; } = string.Empty;
+    public int?    CampId       { get; set; }
+    public int?    FloorId      { get; set; }
+    public decimal MonthlyPrice { get; set; }
+    public string  Status       { get; set; } = "Vacant";
+    public string  OtherDetails { get; set; } = string.Empty;
 }
 
 public class RoomListRequest : Common.PagedRequest

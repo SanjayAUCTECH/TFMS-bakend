@@ -29,19 +29,19 @@ public class UserService : IUserService
 
     public async Task<ApiResponse<UserResponse>> CreateAsync(CreateUserRequest request)
     {
-        if (await _repo.UsernameExistsAsync(request.Username.Trim()))
+        if (await _repo.UsernameExistsAsync(request.Username?.Trim() ?? ""))
             return ApiResponse<UserResponse>.Fail("Username already exists.");
 
         var user = new AppUser
         {
-            Name         = request.Name.Trim(),
-            Username     = request.Username.Trim().ToLower(),
+            Name         = request.Name?.Trim() ?? "",
+            Username     = request.Username?.Trim().ToLower() ?? "",
             Password     = request.Password,   // stored as plain text
-            Role         = request.Role.Trim(),
-            Source       = request.Source.Trim(),
+            Role         = request.Role?.Trim() ?? "",
+            Source       = request.Source?.Trim() ?? "",
             SourceId     = request.SourceId,
-            Contact      = request.Contact.Trim(),
-            Email        = request.Email.Trim(),
+            Contact      = request.Contact?.Trim() ?? "",
+            Email        = request.Email?.Trim() ?? "",
             IsAdmin      = request.IsAdmin,
             LoginAccess  = request.LoginAccess,
             Status       = request.Status,
@@ -58,12 +58,12 @@ public class UserService : IUserService
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return ApiResponse<UserResponse>.Fail("User not found.");
 
-        existing.Name        = request.Name.Trim();
-        existing.Role        = request.Role.Trim();
-        existing.Source      = request.Source.Trim();
+        existing.Name        = request.Name?.Trim() ?? "";
+        existing.Role        = request.Role?.Trim() ?? "";
+        existing.Source      = request.Source?.Trim() ?? "";
         existing.SourceId    = request.SourceId;
-        existing.Contact     = request.Contact.Trim();
-        existing.Email       = request.Email.Trim();
+        existing.Contact     = request.Contact?.Trim() ?? "";
+        existing.Email       = request.Email?.Trim() ?? "";
         existing.IsAdmin     = request.IsAdmin;
         existing.LoginAccess = request.LoginAccess;
         existing.Status      = request.Status;

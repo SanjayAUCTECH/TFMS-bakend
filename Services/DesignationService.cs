@@ -29,7 +29,7 @@ public class DesignationService : IDesignationService
 
     public async Task<ApiResponse<DesignationResponse>> CreateAsync(CreateDesignationRequest request)
     {
-        var id = await _repo.CreateAsync(new Designation { Name = request.Name.Trim(), Status = request.Status });
+        var id = await _repo.CreateAsync(new Designation { Name = request.Name?.Trim() ?? "", Status = request.Status });
         return ApiResponse<DesignationResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Designation created.");
     }
 

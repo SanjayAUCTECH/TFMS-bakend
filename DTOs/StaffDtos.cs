@@ -5,30 +5,30 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateStaffRequest
 {
-    [Required, MaxLength(200)] public string Name        { get; set; } = string.Empty;
-    [MaxLength(100)]           public string Designation { get; set; } = string.Empty;
-    [Required, MaxLength(20)]  public string Contact     { get; set; } = string.Empty;
-    [MaxLength(150), EmailAddress] public string Email   { get; set; } = string.Empty;
-    [MaxLength(300)] public string Address               { get; set; } = string.Empty;
-    [Required, MaxLength(50)]  public string Username    { get; set; } = string.Empty;
-    [Required, MinLength(4)]   public string Password    { get; set; } = string.Empty;
-    public string LoginAccess { get; set; } = "enabled";
-    public string Status      { get; set; } = "Active";
-    [MaxLength(300)] public string Remarks { get; set; } = string.Empty;
+    [MaxLength(200)] public string  Name        { get; set; } = string.Empty;
+    [MaxLength(100)] public string  Designation { get; set; } = string.Empty;
+    [MaxLength(20)]  public string  Contact     { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Email       { get; set; }
+    [MaxLength(300)] public string  Address     { get; set; } = string.Empty;
+    [MaxLength(50)]  public string  Username    { get; set; } = string.Empty;
+    public string  Password    { get; set; } = string.Empty;
+    public string  LoginAccess { get; set; } = "enabled";
+    public string  Status      { get; set; } = "Active";
+    [MaxLength(300)] public string  Remarks     { get; set; } = string.Empty;
 }
 
 public class UpdateStaffRequest
 {
-    [Required, MaxLength(200)] public string Name        { get; set; } = string.Empty;
-    [MaxLength(100)]           public string Designation { get; set; } = string.Empty;
-    [Required, MaxLength(20)]  public string Contact     { get; set; } = string.Empty;
-    [MaxLength(150), EmailAddress] public string Email   { get; set; } = string.Empty;
-    [MaxLength(300)] public string Address               { get; set; } = string.Empty;
-    [Required, MaxLength(50)]  public string Username    { get; set; } = string.Empty;
-    [MaxLength(100)] public string? Password             { get; set; }
-    public string LoginAccess { get; set; } = "enabled";
-    public string Status      { get; set; } = "Active";
-    [MaxLength(300)] public string Remarks { get; set; } = string.Empty;
+    [MaxLength(200)] public string  Name        { get; set; } = string.Empty;
+    [MaxLength(100)] public string  Designation { get; set; } = string.Empty;
+    [MaxLength(20)]  public string  Contact     { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Email       { get; set; }
+    [MaxLength(300)] public string  Address     { get; set; } = string.Empty;
+    [MaxLength(50)]  public string  Username    { get; set; } = string.Empty;
+    [MaxLength(100)] public string? Password    { get; set; }
+    public string  LoginAccess { get; set; } = "enabled";
+    public string  Status      { get; set; } = "Active";
+    [MaxLength(300)] public string  Remarks     { get; set; } = string.Empty;
 }
 
 public class StaffListRequest : PagedRequest { }

@@ -34,7 +34,7 @@ public class ExpenseService : IExpenseService
 
     public async Task<ApiResponse<ExpenseResponse>> CreateAsync(CreateExpenseRequest request)
     {
-        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId);
+        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId ?? 0);
         if (fp == null) return ApiResponse<ExpenseResponse>.Fail("Fund Pool not found.");
 
         string campName = string.Empty;
@@ -48,17 +48,17 @@ public class ExpenseService : IExpenseService
         var expense = new Expense
         {
             Date          = request.Date,
-            Mode          = request.Mode.Trim(),
-            Head          = request.Head.Trim(),
+            Mode          = request.Mode?.Trim() ?? "",
+            Head          = request.Head?.Trim() ?? "",
             FundPool      = fp.Code,
             FundPoolName  = fp.Name,
             Amount        = request.Amount,
-            Nature        = request.Nature.Trim(),
+            Nature        = request.Nature?.Trim() ?? "",
             CampId        = request.CampId,
             CampName      = campName,
-            RecipientRole = request.RecipientRole.Trim(),
-            RecipientName = request.RecipientName.Trim(),
-            Purpose       = request.Purpose.Trim(),
+            RecipientRole = request.RecipientRole?.Trim() ?? "",
+            RecipientName = request.RecipientName?.Trim() ?? "",
+            Purpose       = request.Purpose?.Trim() ?? "",
         };
 
         var id = await _repo.CreateAsync(expense);
@@ -71,7 +71,7 @@ public class ExpenseService : IExpenseService
         if (!await _repo.ExistsAsync(id))
             return ApiResponse<ExpenseResponse>.Fail("Expense record not found.");
 
-        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId);
+        var fp = await _fundRepo.GetByIdAsync(request.FundPoolId ?? 0);
         if (fp == null) return ApiResponse<ExpenseResponse>.Fail("Fund Pool not found.");
 
         string campName = string.Empty;
@@ -86,17 +86,17 @@ public class ExpenseService : IExpenseService
         {
             Id            = id,
             Date          = request.Date,
-            Mode          = request.Mode.Trim(),
-            Head          = request.Head.Trim(),
+            Mode          = request.Mode?.Trim() ?? "",
+            Head          = request.Head?.Trim() ?? "",
             FundPool      = fp.Code,
             FundPoolName  = fp.Name,
             Amount        = request.Amount,
-            Nature        = request.Nature.Trim(),
+            Nature        = request.Nature?.Trim() ?? "",
             CampId        = request.CampId,
             CampName      = campName,
-            RecipientRole = request.RecipientRole.Trim(),
-            RecipientName = request.RecipientName.Trim(),
-            Purpose       = request.Purpose.Trim(),
+            RecipientRole = request.RecipientRole?.Trim() ?? "",
+            RecipientName = request.RecipientName?.Trim() ?? "",
+            Purpose       = request.Purpose?.Trim() ?? "",
         });
 
         var updated = await _repo.GetByIdAsync(id);

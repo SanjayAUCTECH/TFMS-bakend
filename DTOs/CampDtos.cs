@@ -4,21 +4,21 @@ namespace TFMS_software_api.DTOs;
 
 public class CampPartnerRequest
 {
-    [Range(1, int.MaxValue)] public int    PartnerId  { get; set; }
+    public int?    PartnerId  { get; set; }
     public string  ShareType  { get; set; } = "percentage";
-    [Range(0, double.MaxValue)] public decimal ShareValue { get; set; }
+    public decimal ShareValue { get; set; }
 }
 
 public class CampOwnerRequest
 {
-    [Range(1, int.MaxValue)] public int    OwnerId    { get; set; }
+    public int?    OwnerId    { get; set; }
     public string  ShareType  { get; set; } = "percentage";
-    [Range(0, double.MaxValue)] public decimal ShareValue { get; set; }
+    public decimal ShareValue { get; set; }
 }
 
 public class CreateCampRequest
 {
-    [Required, MaxLength(200)] public string Name   { get; set; } = string.Empty;
+    [MaxLength(200)] public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
     public List<CampPartnerRequest> Partners { get; set; } = new();
     public List<CampOwnerRequest>   Owners   { get; set; } = new();
@@ -26,7 +26,7 @@ public class CreateCampRequest
 
 public class UpdateCampRequest
 {
-    [Required, MaxLength(200)] public string Name   { get; set; } = string.Empty;
+    [MaxLength(200)] public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
     public List<CampPartnerRequest> Partners { get; set; } = new();
     public List<CampOwnerRequest>   Owners   { get; set; } = new();

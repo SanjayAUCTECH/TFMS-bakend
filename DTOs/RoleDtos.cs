@@ -4,13 +4,13 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateRoleRequest
 {
-    [Required, MaxLength(100)] public string RoleName { get; set; } = string.Empty;
+    [MaxLength(100)] public string RoleName { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 
 public class UpdateRoleRequest
 {
-    [Required, MaxLength(100)] public string RoleName { get; set; } = string.Empty;
+    [MaxLength(100)] public string RoleName { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 

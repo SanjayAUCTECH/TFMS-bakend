@@ -7,13 +7,13 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateExpenseRequest
 {
-    [Required] public DateTime Date          { get; set; }
-    [Required, MaxLength(50)]  public string Mode          { get; set; } = string.Empty;
-    [Required, MaxLength(200)] public string Head          { get; set; } = string.Empty;
-    [Range(1, int.MaxValue)]   public int    FundPoolId    { get; set; }
-    [Range(0.01, double.MaxValue)] public decimal Amount   { get; set; }
+    public DateTime Date          { get; set; }
+    [MaxLength(50)]  public string Mode          { get; set; } = string.Empty;
+    [MaxLength(200)] public string Head          { get; set; } = string.Empty;
+    public int?    FundPoolId    { get; set; }
+    public decimal Amount        { get; set; }
     [MaxLength(30)]  public string Nature        { get; set; } = "HO";
-    public int?      CampId        { get; set; }
+    public int?    CampId        { get; set; }
     [MaxLength(30)]  public string RecipientRole { get; set; } = string.Empty;
     [MaxLength(200)] public string RecipientName { get; set; } = string.Empty;
     [MaxLength(500)] public string Purpose       { get; set; } = string.Empty;
@@ -21,13 +21,13 @@ public class CreateExpenseRequest
 
 public class UpdateExpenseRequest
 {
-    [Required] public DateTime Date          { get; set; }
-    [Required, MaxLength(50)]  public string Mode          { get; set; } = string.Empty;
-    [Required, MaxLength(200)] public string Head          { get; set; } = string.Empty;
-    [Range(1, int.MaxValue)]   public int    FundPoolId    { get; set; }
-    [Range(0.01, double.MaxValue)] public decimal Amount   { get; set; }
+    public DateTime Date          { get; set; }
+    [MaxLength(50)]  public string Mode          { get; set; } = string.Empty;
+    [MaxLength(200)] public string Head          { get; set; } = string.Empty;
+    public int?    FundPoolId    { get; set; }
+    public decimal Amount        { get; set; }
     [MaxLength(30)]  public string Nature        { get; set; } = "HO";
-    public int?      CampId        { get; set; }
+    public int?    CampId        { get; set; }
     [MaxLength(30)]  public string RecipientRole { get; set; } = string.Empty;
     [MaxLength(200)] public string RecipientName { get; set; } = string.Empty;
     [MaxLength(500)] public string Purpose       { get; set; } = string.Empty;

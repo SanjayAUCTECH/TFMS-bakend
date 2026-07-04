@@ -4,13 +4,13 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateDesignationRequest
 {
-    [Required, MaxLength(100)] public string Name   { get; set; } = string.Empty;
+    [MaxLength(100)] public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 
 public class UpdateDesignationRequest
 {
-    [Required, MaxLength(100)] public string Name   { get; set; } = string.Empty;
+    [MaxLength(100)] public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 

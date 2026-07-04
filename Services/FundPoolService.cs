@@ -29,7 +29,7 @@ public class FundPoolService : IFundPoolService
 
     public async Task<ApiResponse<FundPoolResponse>> CreateAsync(CreateFundPoolRequest request)
     {
-        var id = await _repo.CreateAsync(new FundPool { Name = request.Name.Trim(), Balance = request.Balance, Status = request.Status });
+        var id = await _repo.CreateAsync(new FundPool { Name = request.Name?.Trim() ?? "", Balance = request.Balance, Status = request.Status });
         return ApiResponse<FundPoolResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Fund Pool created.");
     }
 

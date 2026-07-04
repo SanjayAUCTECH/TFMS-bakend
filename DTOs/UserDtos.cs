@@ -7,43 +7,43 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateUserRequest
 {
-    [Required, MaxLength(200)] public string Name        { get; set; } = string.Empty;
-    [Required, MaxLength(50)]  public string Username    { get; set; } = string.Empty;
-    [Required, MinLength(6)]   public string Password    { get; set; } = string.Empty;
-    [Required, MaxLength(50)]  public string Role        { get; set; } = string.Empty;
-    [MaxLength(50)]            public string Source      { get; set; } = string.Empty;
-    public int?                              SourceId    { get; set; }
-    [MaxLength(20)]            public string Contact     { get; set; } = string.Empty;
-    [MaxLength(150), EmailAddress] public string Email   { get; set; } = string.Empty;
-    public bool                              IsAdmin     { get; set; } = false;
-    public string                            MenuAccess  { get; set; } = "{}";
-    public string                            LoginAccess { get; set; } = "enabled";
-    public string                            Status      { get; set; } = "Active";
+    [MaxLength(200)] public string  Name        { get; set; } = string.Empty;
+    [MaxLength(50)]  public string  Username    { get; set; } = string.Empty;
+    public string  Password    { get; set; } = string.Empty;
+    [MaxLength(50)]  public string  Role        { get; set; } = string.Empty;
+    [MaxLength(50)]  public string  Source      { get; set; } = string.Empty;
+    public int?    SourceId    { get; set; }
+    [MaxLength(20)]  public string  Contact     { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Email       { get; set; }
+    public bool    IsAdmin     { get; set; } = false;
+    public string  MenuAccess  { get; set; } = "{}";
+    public string  LoginAccess { get; set; } = "enabled";
+    public string  Status      { get; set; } = "Active";
 }
 
 public class UpdateUserRequest
 {
-    [Required, MaxLength(200)] public string Name        { get; set; } = string.Empty;
-    [Required, MaxLength(50)]  public string Role        { get; set; } = string.Empty;
-    [MaxLength(50)]            public string Source      { get; set; } = string.Empty;
-    public int?                              SourceId    { get; set; }
-    [MaxLength(20)]            public string Contact     { get; set; } = string.Empty;
-    [MaxLength(150), EmailAddress] public string Email   { get; set; } = string.Empty;
-    public bool                              IsAdmin     { get; set; } = false;
-    public string                            MenuAccess  { get; set; } = "{}";
-    public string                            LoginAccess { get; set; } = "enabled";
-    public string                            Status      { get; set; } = "Active";
+    [MaxLength(200)] public string  Name        { get; set; } = string.Empty;
+    [MaxLength(50)]  public string  Role        { get; set; } = string.Empty;
+    [MaxLength(50)]  public string  Source      { get; set; } = string.Empty;
+    public int?    SourceId    { get; set; }
+    [MaxLength(20)]  public string  Contact     { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Email       { get; set; }
+    public bool    IsAdmin     { get; set; } = false;
+    public string  MenuAccess  { get; set; } = "{}";
+    public string  LoginAccess { get; set; } = "enabled";
+    public string  Status      { get; set; } = "Active";
 }
 
 public class ResetPasswordRequest
 {
-    [Required, MinLength(4)] public string NewPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
 }
 
 // ── Login Access ──────────────────────────────────────────────────────────────
 public class UpdateLoginAccessRequest
 {
-    [Required] public string LoginAccess { get; set; } = "enabled";  // enabled | disabled
+    public string LoginAccess { get; set; } = "enabled";  // enabled | disabled
 }
 
 public class UserListRequest : PagedRequest

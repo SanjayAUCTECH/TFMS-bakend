@@ -29,14 +29,14 @@ public class FloorService : IFloorService
 
     public async Task<ApiResponse<FloorResponse>> CreateAsync(CreateFloorRequest request)
     {
-        var id = await _repo.CreateAsync(new Floor { Name = request.Name.Trim(), Number = request.Number, Status = request.Status });
+        var id = await _repo.CreateAsync(new Floor { Name = request.Name.Trim(), Number = request.Number ?? 0, Status = request.Status });
         return ApiResponse<FloorResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Floor created.");
     }
 
     public async Task<ApiResponse<FloorResponse>> UpdateAsync(int id, UpdateFloorRequest request)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<FloorResponse>.Fail("Floor not found.");
-        await _repo.UpdateAsync(new Floor { Id = id, Name = request.Name.Trim(), Number = request.Number, Status = request.Status });
+        await _repo.UpdateAsync(new Floor { Id = id, Name = request.Name.Trim(), Number = request.Number ?? 0, Status = request.Status });
         return ApiResponse<FloorResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Floor updated.");
     }
 
