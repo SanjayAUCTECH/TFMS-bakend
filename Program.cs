@@ -157,7 +157,15 @@ window.addEventListener('load', function () {
 
 app.UseCors("AllowAll");
 // NOTE: No UseHttpsRedirection — API runs on plain HTTP
+app.UseStaticFiles();   // serve wwwroot/login.html
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// ── Root "/" → Login page for Swagger ────────────────────────────────────────
+app.MapGet("/", async ctx => {
+    ctx.Response.ContentType = "text/html";
+    await ctx.Response.SendFileAsync(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "login.html"));
+});
+
 app.Run();

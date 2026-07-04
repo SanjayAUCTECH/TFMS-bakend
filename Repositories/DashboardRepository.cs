@@ -48,7 +48,7 @@ public class DashboardRepository : IDashboardRepository
             UserId       = r.GetString(r.GetOrdinal("UserId")),
             Name         = r.GetString(r.GetOrdinal("Name")),
             Username     = r.GetString(r.GetOrdinal("Username")),
-            PasswordHash = r.GetString(r.GetOrdinal("PasswordHash")),
+            Password     = r.GetString(r.GetOrdinal("PasswordHash")),
             Role         = r.IsDBNull(r.GetOrdinal("Role"))   ? "" : r.GetString(r.GetOrdinal("Role")),
             IsAdmin      = r.GetBoolean(r.GetOrdinal("IsAdmin")),
             MenuAccess   = r.IsDBNull(r.GetOrdinal("MenuAccess")) ? "{}" : r.GetString(r.GetOrdinal("MenuAccess")),

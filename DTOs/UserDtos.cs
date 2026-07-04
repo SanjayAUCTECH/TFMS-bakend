@@ -40,6 +40,12 @@ public class ResetPasswordRequest
     [Required, MinLength(4)] public string NewPassword { get; set; } = string.Empty;
 }
 
+// ── Login Access ──────────────────────────────────────────────────────────────
+public class UpdateLoginAccessRequest
+{
+    [Required] public string LoginAccess { get; set; } = "enabled";  // enabled | disabled
+}
+
 public class UserListRequest : PagedRequest
 {
     public string? Role   { get; set; }
@@ -54,6 +60,7 @@ public class UserResponse
     public string   UserId      { get; set; } = string.Empty;
     public string   Name        { get; set; } = string.Empty;
     public string   Username    { get; set; } = string.Empty;
+    public string   Password    { get; set; } = string.Empty;
     public string   Role        { get; set; } = string.Empty;
     public string   Source      { get; set; } = string.Empty;
     public int?     SourceId    { get; set; }

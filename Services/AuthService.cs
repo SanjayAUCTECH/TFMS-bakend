@@ -28,7 +28,7 @@ public class AuthService : IAuthService
         if (user == null)
             return ApiResponse<LoginResponse>.Fail("Invalid username or password.");
 
-        if (user.PasswordHash != request.Password)
+        if (user.Password != request.Password)
             return ApiResponse<LoginResponse>.Fail("Invalid username or password.");
 
         if (user.Status != "Active")
@@ -125,7 +125,7 @@ public class AuthService : IAuthService
         var user = await _userRepo.GetByIdAsync(userId);
         if (user == null) return ApiResponse<bool>.Fail("User not found.");
 
-        if (user.PasswordHash != request.CurrentPassword)
+        if (user.Password != request.CurrentPassword)
             return ApiResponse<bool>.Fail("Current password is incorrect.");
 
         if (request.NewPassword == request.CurrentPassword)

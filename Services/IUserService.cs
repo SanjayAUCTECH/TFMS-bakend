@@ -12,5 +12,6 @@ public interface IUserService
     Task<ApiResponse<bool>>                      ChangePasswordAsync(int id, ChangePasswordRequest request);
     Task<ApiResponse<bool>>                      ResetPasswordAsync(int id, ResetPasswordRequest request);
     Task<ApiResponse<bool>>                      UpdateMenuAccessAsync(int id, UpdateMenuAccessRequest request);
+    Task<ApiResponse<bool>>                      UpdateLoginAccessAsync(int id, UpdateLoginAccessRequest request);
     Task<ApiResponse<bool>>                      DeleteAsync(int id);
 }

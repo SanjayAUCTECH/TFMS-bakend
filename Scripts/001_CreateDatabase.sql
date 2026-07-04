@@ -368,7 +368,6 @@ CREATE TABLE AppUsers (
 );
 
 -- ── SEED: Admin user (password: Admin@123) ───────────────────
--- BCrypt hash of Admin@123
 INSERT INTO AppUsers (UserId, Name, Username, PasswordHash, Role, IsAdmin, Status, LoginAccess, MenuAccess)
 VALUES (
   'USR-000001',

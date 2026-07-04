@@ -65,6 +65,15 @@ public class UsersController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
+    /// <summary>PATCH api/users/5/login-access — Enable or disable login</summary>
+    [HttpPatch("{id:int}/login-access")]
+    public async Task<IActionResult> UpdateLoginAccess(int id, [FromBody] UpdateLoginAccessRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var r = await _service.UpdateLoginAccessAsync(id, request);
+        return r.Success ? Ok(r) : NotFound(r);
+    }
+
     /// <summary>PATCH api/users/5/menu-access</summary>
     [HttpPatch("{id:int}/menu-access")]
     public async Task<IActionResult> UpdateMenuAccess(int id, [FromBody] UpdateMenuAccessRequest request)

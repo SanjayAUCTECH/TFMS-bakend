@@ -82,7 +82,6 @@ G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\TFMS_software_api.pdb
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\Azure.Core.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\Azure.Identity.dll
-G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\BCrypt.Net-Next.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\Microsoft.Data.SqlClient.dll
@@ -146,3 +145,4 @@ G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\TFMS_software_api.pdb
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\TFMS_software_api.genruntimeconfig.cache
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\ref\TFMS_software_api.dll
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\TFMS_software_api.staticwebassets.runtime.json

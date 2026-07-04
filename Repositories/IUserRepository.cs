@@ -10,8 +10,9 @@ public interface IUserRepository
     Task<AppUser?> GetByUsernameAsync(string username);
     Task<int>      CreateAsync(AppUser user);
     Task<bool>     UpdateAsync(AppUser user);
-    Task<bool>     UpdatePasswordAsync(int id, string passwordHash);
+    Task<bool>     UpdatePasswordAsync(int id, string password);
     Task<bool>     UpdateMenuAccessAsync(int id, string menuAccess);
+    Task<bool>     UpdateLoginAccessAsync(int id, string loginAccess);
     Task<bool>     DeleteAsync(int id);
     Task<bool>     ExistsAsync(int id);
     Task<bool>     UsernameExistsAsync(string username, int? excludeId = null);

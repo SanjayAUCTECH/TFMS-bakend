@@ -59,7 +59,7 @@ public class UserRepository : IUserRepository
         await using var cmd = new SqlCommand("sp_CreateUser", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Name",         user.Name);
         cmd.Parameters.AddWithValue("@Username",     user.Username);
-        cmd.Parameters.AddWithValue("@PasswordHash", user.PasswordHash);
+        cmd.Parameters.AddWithValue("@PasswordHash", user.Password);
         cmd.Parameters.AddWithValue("@Role",         user.Role);
         cmd.Parameters.AddWithValue("@Source",       user.Source);
         cmd.Parameters.AddWithValue("@SourceId",     (object?)user.SourceId ?? DBNull.Value);
@@ -94,14 +94,14 @@ public class UserRepository : IUserRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> UpdatePasswordAsync(int id, string passwordHash)
+    public async Task<bool> UpdatePasswordAsync(int id, string password)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand(
             "UPDATE AppUsers SET PasswordHash=@PasswordHash,UpdatedAt=GETUTCDATE() WHERE Id=@Id", conn);
         cmd.Parameters.AddWithValue("@Id",           id);
-        cmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
+        cmd.Parameters.AddWithValue("@PasswordHash", password);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -113,6 +113,17 @@ public class UserRepository : IUserRepository
             "UPDATE AppUsers SET MenuAccess=@MenuAccess,UpdatedAt=GETUTCDATE() WHERE Id=@Id", conn);
         cmd.Parameters.AddWithValue("@Id",         id);
         cmd.Parameters.AddWithValue("@MenuAccess", menuAccess);
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<bool> UpdateLoginAccessAsync(int id, string loginAccess)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            "UPDATE AppUsers SET LoginAccess=@LoginAccess,UpdatedAt=GETUTCDATE() WHERE Id=@Id", conn);
+        cmd.Parameters.AddWithValue("@Id",          id);
+        cmd.Parameters.AddWithValue("@LoginAccess", loginAccess);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -153,7 +164,7 @@ public class UserRepository : IUserRepository
         UserId       = r.GetString(r.GetOrdinal("UserId")),
         Name         = r.GetString(r.GetOrdinal("Name")),
         Username     = r.GetString(r.GetOrdinal("Username")),
-        PasswordHash = r.GetString(r.GetOrdinal("PasswordHash")),
+        Password     = r.GetString(r.GetOrdinal("PasswordHash")),
         Role         = r.IsDBNull(r.GetOrdinal("Role"))        ? "" : r.GetString(r.GetOrdinal("Role")),
         Source       = r.IsDBNull(r.GetOrdinal("Source"))      ? "" : r.GetString(r.GetOrdinal("Source")),
         SourceId     = r.IsDBNull(r.GetOrdinal("SourceId"))    ? null : r.GetInt32(r.GetOrdinal("SourceId")),

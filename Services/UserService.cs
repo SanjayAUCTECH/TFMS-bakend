@@ -36,7 +36,7 @@ public class UserService : IUserService
         {
             Name         = request.Name.Trim(),
             Username     = request.Username.Trim().ToLower(),
-            PasswordHash = request.Password,   // stored as plain text (matching existing auth approach)
+            Password     = request.Password,   // stored as plain text
             Role         = request.Role.Trim(),
             Source       = request.Source.Trim(),
             SourceId     = request.SourceId,
@@ -78,7 +78,7 @@ public class UserService : IUserService
     {
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return ApiResponse<bool>.Fail("User not found.");
-        if (user.PasswordHash != request.CurrentPassword)
+        if (user.Password != request.CurrentPassword)
             return ApiResponse<bool>.Fail("Current password is incorrect.");
 
         await _repo.UpdatePasswordAsync(id, request.NewPassword);
@@ -99,6 +99,14 @@ public class UserService : IUserService
         return ApiResponse<bool>.Ok(true, "Menu access updated.");
     }
 
+    public async Task<ApiResponse<bool>> UpdateLoginAccessAsync(int id, UpdateLoginAccessRequest request)
+    {
+        if (!await _repo.ExistsAsync(id)) return ApiResponse<bool>.Fail("User not found.");
+        var access = request.LoginAccess == "enabled" ? "enabled" : "disabled";
+        await _repo.UpdateLoginAccessAsync(id, access);
+        return ApiResponse<bool>.Ok(true, $"Login access {access} successfully.");
+    }
+
     public async Task<ApiResponse<bool>> DeleteAsync(int id)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<bool>.Fail("User not found.");
@@ -113,6 +121,7 @@ public class UserService : IUserService
         UserId      = u.UserId,
         Name        = u.Name,
         Username    = u.Username,
+        Password    = u.Password,
         Role        = u.Role,
         Source      = u.Source,
         SourceId    = u.SourceId,
