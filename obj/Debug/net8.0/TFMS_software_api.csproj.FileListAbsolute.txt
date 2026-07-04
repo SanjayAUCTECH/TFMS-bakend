@@ -146,3 +146,4 @@ G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\TFMS_software_api.genruntimeconfig.cache
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\ref\TFMS_software_api.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\TFMS_software_api.staticwebassets.runtime.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\appsettings.Production.json

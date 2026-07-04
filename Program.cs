@@ -32,6 +32,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
+// AllowAnyOrigin: works for both local dev and production server
 builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
