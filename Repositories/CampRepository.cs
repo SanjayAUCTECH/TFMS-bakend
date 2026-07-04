@@ -31,6 +31,38 @@ public class CampRepository : ICampRepository
             var cId = r.GetInt32(r.GetOrdinal("Id"));
             if (!dict.ContainsKey(cId))
                 dict[cId] = MapCamp(r);
+
+            // Partners
+            if (!r.IsDBNull(r.GetOrdinal("CampPartnerId")))
+            {
+                var cp = new CampPartner
+                {
+                    Id          = r.GetInt32(r.GetOrdinal("CampPartnerId")),
+                    CampId      = cId,
+                    PartnerId   = r.GetInt32(r.GetOrdinal("PartnerId")),
+                    PartnerName = r.IsDBNull(r.GetOrdinal("PartnerName")) ? "" : r.GetString(r.GetOrdinal("PartnerName")),
+                    ShareType   = r.GetString(r.GetOrdinal("PartnerShareType")),
+                    ShareValue  = r.GetDecimal(r.GetOrdinal("PartnerShareValue")),
+                };
+                if (!dict[cId].Partners.Any(p => p.Id == cp.Id))
+                    dict[cId].Partners.Add(cp);
+            }
+
+            // Owners
+            if (!r.IsDBNull(r.GetOrdinal("CampOwnerId")))
+            {
+                var co = new CampOwner
+                {
+                    Id        = r.GetInt32(r.GetOrdinal("CampOwnerId")),
+                    CampId    = cId,
+                    OwnerId   = r.GetInt32(r.GetOrdinal("OwnerId")),
+                    OwnerName = r.IsDBNull(r.GetOrdinal("OwnerName")) ? "" : r.GetString(r.GetOrdinal("OwnerName")),
+                    ShareType = r.GetString(r.GetOrdinal("OwnerShareType")),
+                    ShareValue = r.GetDecimal(r.GetOrdinal("OwnerShareValue")),
+                };
+                if (!dict[cId].Owners.Any(o => o.Id == co.Id))
+                    dict[cId].Owners.Add(co);
+            }
         }
         await r.CloseAsync();
         return (dict.Values, (int)(total.Value == DBNull.Value ? 0 : total.Value));
