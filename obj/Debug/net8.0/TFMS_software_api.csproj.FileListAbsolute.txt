@@ -147,3 +147,10 @@ G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\ref\TFMS_software_api.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\TFMS_software_api.staticwebassets.runtime.json
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\appsettings.Production.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\web.config
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\appsettings.Development.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\appsettings.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\appsettings.Production.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\TFMS_software_api.deps.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\TFMS_software_api.runtimeconfig.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\TFMS_software_api.staticwebassets.endpoints.json
