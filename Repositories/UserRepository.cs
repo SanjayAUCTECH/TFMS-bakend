@@ -145,6 +145,28 @@ public class UserRepository : IUserRepository
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }
 
+    public async Task<UserStatsResponse> GetStatsAsync()
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(@"
+            SELECT
+                COUNT(*)                                          AS TotalUsers,
+                SUM(CASE WHEN Status='Active'   THEN 1 ELSE 0 END) AS ActiveUsers,
+                SUM(CASE WHEN Status!='Active'  THEN 1 ELSE 0 END) AS InactiveUsers,
+                COUNT(DISTINCT NULLIF(LTRIM(RTRIM(Role)),''))     AS RolesAssigned
+            FROM AppUsers", conn);
+        await using var r = await cmd.ExecuteReaderAsync();
+        if (!await r.ReadAsync()) return new UserStatsResponse();
+        return new UserStatsResponse
+        {
+            TotalUsers    = r.IsDBNull(0) ? 0 : r.GetInt32(0),
+            ActiveUsers   = r.IsDBNull(1) ? 0 : r.GetInt32(1),
+            InactiveUsers = r.IsDBNull(2) ? 0 : r.GetInt32(2),
+            RolesAssigned = r.IsDBNull(3) ? 0 : r.GetInt32(3),
+        };
+    }
+
     public async Task<bool> UsernameExistsAsync(string username, int? excludeId = null)
     {
         await using var conn = _factory.CreateConnection();

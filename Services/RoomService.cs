@@ -13,9 +13,10 @@ public class RoomService : IRoomService
     public async Task<ApiResponse<IEnumerable<RoomResponse>>> GetAllAsync(RoomListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<RoomResponse>>.Ok(
             data.Select(ToResponse), "Rooms retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize), cards);
     }
 
     public async Task<ApiResponse<IEnumerable<RoomResponse>>> GetVacantByCampAsync(int campId)

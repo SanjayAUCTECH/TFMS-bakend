@@ -13,9 +13,10 @@ public class TenantService : ITenantService
     public async Task<ApiResponse<IEnumerable<TenantResponse>>> GetAllAsync(TenantListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<TenantResponse>>.Ok(
             data.Select(ToResponse), "Tenants retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize), cards);
     }
 
     public async Task<ApiResponse<TenantResponse>> GetByIdAsync(int id)

@@ -97,6 +97,27 @@ public class StaffRepository : IStaffRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
+    public async Task<object> GetStatsAsync()
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(@"
+            SELECT
+                COUNT(*)                                                          AS total,
+                SUM(CASE WHEN Status='Active'        THEN 1 ELSE 0 END)          AS active,
+                SUM(CASE WHEN Status='Inactive'      THEN 1 ELSE 0 END)          AS inactive,
+                SUM(CASE WHEN LoginAccess='enabled'  THEN 1 ELSE 0 END)          AS withAccess
+            FROM Staff", conn);
+        await using var r = await cmd.ExecuteReaderAsync();
+        if (!await r.ReadAsync()) return new { total=0, active=0, inactive=0, withAccess=0 };
+        return new {
+            total      = r.IsDBNull(0) ? 0 : r.GetInt32(0),
+            active     = r.IsDBNull(1) ? 0 : r.GetInt32(1),
+            inactive   = r.IsDBNull(2) ? 0 : r.GetInt32(2),
+            withAccess = r.IsDBNull(3) ? 0 : r.GetInt32(3),
+        };
+    }
+
     public async Task<bool> ExistsAsync(int id)
     {
         await using var conn = _factory.CreateConnection();

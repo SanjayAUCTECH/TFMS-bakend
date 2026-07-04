@@ -11,4 +11,5 @@ public interface ICampRepository
     Task<int>    CreateAsync(Camp camp);
     Task<bool>   UpdateAsync(Camp camp);
     Task<bool>   DeleteAsync(int id);
+    Task<object> GetStatsAsync();
 }

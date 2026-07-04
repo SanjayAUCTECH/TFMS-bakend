@@ -13,9 +13,10 @@ public class PartnerService : IPartnerService
     public async Task<ApiResponse<IEnumerable<PartnerResponse>>> GetAllAsync(PartnerListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<PartnerResponse>>.Ok(
             data.Select(ToResponse), "Partners retrieved successfully",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize), cards);
     }
 
     public async Task<ApiResponse<PartnerResponse>> GetByIdAsync(int id)

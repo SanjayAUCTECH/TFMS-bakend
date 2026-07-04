@@ -7,9 +7,10 @@ public class ApiResponse<T>
     public string  Message    { get; set; } = string.Empty;
     public T?      Data       { get; set; }
     public object? Pagination { get; set; }
+    public object? Cards      { get; set; }
 
-    public static ApiResponse<T> Ok(T data, string message = "Success", object? pagination = null)
-        => new() { Success = true,  Message = message, Data = data, Pagination = pagination };
+    public static ApiResponse<T> Ok(T data, string message = "Success", object? pagination = null, object? cards = null)
+        => new() { Success = true,  Message = message, Data = data, Pagination = pagination, Cards = cards };
 
     public static ApiResponse<T> Fail(string message)
         => new() { Success = false, Message = message };

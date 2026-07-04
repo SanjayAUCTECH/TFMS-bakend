@@ -12,4 +12,5 @@ public interface IRoomRepository
     Task<bool>   UpdateAsync(Room room);
     Task<bool>   DeleteAsync(int id);
     Task<bool>   SetOccupiedAsync(int roomId, bool occupied);
+    Task<object> GetStatsAsync();
 }

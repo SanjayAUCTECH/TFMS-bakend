@@ -11,4 +11,5 @@ public interface IRoleRepository
     Task<int>    CreateAsync(Role role);
     Task<bool>   UpdateAsync(Role role);
     Task<bool>   DeleteAsync(int id);
+    Task<object> GetStatsAsync();
 }

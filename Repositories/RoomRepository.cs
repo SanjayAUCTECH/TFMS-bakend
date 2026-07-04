@@ -96,6 +96,27 @@ public class RoomRepository : IRoomRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
+    public async Task<object> GetStatsAsync()
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(@"
+            SELECT
+                COUNT(*)                                                     AS totalRooms,
+                SUM(CASE WHEN Status='Occupied'    THEN 1 ELSE 0 END)        AS occupied,
+                SUM(CASE WHEN Status='Vacant'      THEN 1 ELSE 0 END)        AS vacant,
+                SUM(CASE WHEN Status='Reserved'    THEN 1 ELSE 0 END)        AS reserved,
+                SUM(CASE WHEN Status='Maintenance' THEN 1 ELSE 0 END)        AS maintenance
+            FROM Rooms", conn);
+        await using var r = await cmd.ExecuteReaderAsync();
+        if (!await r.ReadAsync()) return new { totalRooms=0, occupied=0, vacant=0, reserved=0, maintenance=0 };
+        var total = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+        var occ   = r.IsDBNull(1) ? 0 : r.GetInt32(1);
+        var vac   = r.IsDBNull(2) ? 0 : r.GetInt32(2);
+        var occRate = total > 0 ? (int)Math.Round((double)occ / total * 100) : 0;
+        return new { totalRooms = total, occupied = occ, vacant = vac, occupancyRate = occRate + "%" };
+    }
+
     public async Task<bool> SetOccupiedAsync(int roomId, bool occupied)
     {
         await using var conn = _factory.CreateConnection();

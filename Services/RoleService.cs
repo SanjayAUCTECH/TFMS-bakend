@@ -13,9 +13,10 @@ public class RoleService : IRoleService
     public async Task<ApiResponse<IEnumerable<RoleResponse>>> GetAllAsync(RoleListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<RoleResponse>>.Ok(
             data.Select(ToResponse), "Roles retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize), cards);
     }
 
     public async Task<ApiResponse<IEnumerable<RoleResponse>>> GetAllActiveAsync()

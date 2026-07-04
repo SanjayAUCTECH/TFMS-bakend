@@ -11,5 +11,6 @@ public interface IPartnerRepository
     Task<int>                                            CreateAsync(Partner partner);
     Task<bool>                                           UpdateAsync(Partner partner);
     Task<bool>                                           DeleteAsync(int id);
-    Task<bool>                                           ExistsAsync(int id);
+    Task<bool>   ExistsAsync(int id);
+    Task<object> GetStatsAsync();
 }

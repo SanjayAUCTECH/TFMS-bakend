@@ -13,9 +13,10 @@ public class CampService : ICampService
     public async Task<ApiResponse<IEnumerable<CampResponse>>> GetAllAsync(CampListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<CampResponse>>.Ok(
             data.Select(ToResponse), "Camps retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize), cards);
     }
 
     public async Task<ApiResponse<IEnumerable<CampResponse>>> GetAllActiveAsync()

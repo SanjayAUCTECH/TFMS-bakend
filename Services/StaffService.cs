@@ -13,9 +13,10 @@ public class StaffService : IStaffService
     public async Task<ApiResponse<IEnumerable<StaffResponse>>> GetAllAsync(StaffListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<StaffResponse>>.Ok(
             data.Select(ToResponse), "Staff retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize), cards);
     }
 
     public async Task<ApiResponse<StaffResponse>> GetByIdAsync(int id)

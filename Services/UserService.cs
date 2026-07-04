@@ -14,9 +14,18 @@ public class UserService : IUserService
     public async Task<ApiResponse<IEnumerable<UserResponse>>> GetAllAsync(UserListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var stats         = await _repo.GetStatsAsync();
+        var cards = new
+        {
+            totalUsers    = stats.TotalUsers,
+            activeUsers   = stats.ActiveUsers,
+            inactiveUsers = stats.InactiveUsers,
+            rolesAssigned = stats.RolesAssigned,
+        };
         return ApiResponse<IEnumerable<UserResponse>>.Ok(
             data.Select(ToResponse), "Users retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize),
+            cards);
     }
 
     public async Task<ApiResponse<UserResponse>> GetByIdAsync(int id)

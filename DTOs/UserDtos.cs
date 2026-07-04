@@ -40,6 +40,15 @@ public class ResetPasswordRequest
     public string NewPassword { get; set; } = string.Empty;
 }
 
+// ── User Stats (for cards) ────────────────────────────────────────────────────
+public class UserStatsResponse
+{
+    public int TotalUsers     { get; set; }
+    public int ActiveUsers    { get; set; }
+    public int InactiveUsers  { get; set; }
+    public int RolesAssigned  { get; set; }
+}
+
 // ── Login Access ──────────────────────────────────────────────────────────────
 public class UpdateLoginAccessRequest
 {

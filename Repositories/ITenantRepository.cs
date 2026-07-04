@@ -11,4 +11,5 @@ public interface ITenantRepository
     Task<bool> UpdateAsync(Tenant tenant);
     Task<bool> DeleteAsync(int id);
     Task<bool> ExistsAsync(int id);
+    Task<object> GetStatsAsync();
 }
