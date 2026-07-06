@@ -57,12 +57,17 @@ public class ContractRepository : IContractRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateContract", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@TenantId",   contract.TenantId);
-        cmd.Parameters.AddWithValue("@CampId",     contract.CampId);
-        cmd.Parameters.AddWithValue("@StartDate",  contract.StartDate);
-        cmd.Parameters.AddWithValue("@Months",     contract.Months);
+        cmd.Parameters.AddWithValue("@TenantId",        contract.TenantId);
+        cmd.Parameters.AddWithValue("@CampId",          contract.CampId);
+        cmd.Parameters.AddWithValue("@StartDate",       contract.StartDate);
+        cmd.Parameters.AddWithValue("@Months",          contract.Months);
         var roomIdsJson = System.Text.Json.JsonSerializer.Serialize(contract.RoomIds);
-        cmd.Parameters.AddWithValue("@RoomIdsJson", roomIdsJson);
+        cmd.Parameters.AddWithValue("@RoomIdsJson",     roomIdsJson);
+        cmd.Parameters.AddWithValue("@SecurityDeposit", contract.SecurityDeposit);
+        cmd.Parameters.AddWithValue("@InstallmentType", contract.InstallmentType);
+        cmd.Parameters.AddWithValue("@IssuedBy",        contract.IssuedBy);
+        cmd.Parameters.AddWithValue("@Notes",           contract.Notes);
+        cmd.Parameters.AddWithValue("@LessorAmount",    contract.LessorAmount);
         var newContractId = new SqlParameter("@NewContractId", SqlDbType.NVarChar, 20) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newContractId);
         await cmd.ExecuteNonQueryAsync();
@@ -102,19 +107,24 @@ public class ContractRepository : IContractRepository
 
     private static Contract MapContract(SqlDataReader r) => new()
     {
-        Id            = r.GetInt32(r.GetOrdinal("Id")),
-        ContractId    = r.GetString(r.GetOrdinal("ContractId")),
-        TenantId      = r.GetInt32(r.GetOrdinal("TenantId")),
-        TenantName    = r.IsDBNull(r.GetOrdinal("TenantName"))  ? "" : r.GetString(r.GetOrdinal("TenantName")),
-        CampId        = r.GetInt32(r.GetOrdinal("CampId")),
-        CampName      = r.IsDBNull(r.GetOrdinal("CampName"))    ? "" : r.GetString(r.GetOrdinal("CampName")),
-        StartDate     = r.GetDateTime(r.GetOrdinal("StartDate")),
-        Months        = r.GetInt32(r.GetOrdinal("Months")),
-        EndDate       = r.GetDateTime(r.GetOrdinal("EndDate")),
-        MonthlyTotal  = r.GetDecimal(r.GetOrdinal("MonthlyTotal")),
-        ContractTotal = r.GetDecimal(r.GetOrdinal("ContractTotal")),
-        Status        = r.GetString(r.GetOrdinal("Status")),
-        CreatedAt     = r.GetDateTime(r.GetOrdinal("CreatedAt")),
-        UpdatedAt     = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
+        Id              = r.GetInt32(r.GetOrdinal("Id")),
+        ContractId      = r.GetString(r.GetOrdinal("ContractId")),
+        TenantId        = r.GetInt32(r.GetOrdinal("TenantId")),
+        TenantName      = r.IsDBNull(r.GetOrdinal("TenantName"))    ? "" : r.GetString(r.GetOrdinal("TenantName")),
+        CampId          = r.GetInt32(r.GetOrdinal("CampId")),
+        CampName        = r.IsDBNull(r.GetOrdinal("CampName"))      ? "" : r.GetString(r.GetOrdinal("CampName")),
+        StartDate       = r.GetDateTime(r.GetOrdinal("StartDate")),
+        Months          = r.GetInt32(r.GetOrdinal("Months")),
+        EndDate         = r.GetDateTime(r.GetOrdinal("EndDate")),
+        MonthlyTotal    = r.GetDecimal(r.GetOrdinal("MonthlyTotal")),
+        ContractTotal   = r.GetDecimal(r.GetOrdinal("ContractTotal")),
+        SecurityDeposit = r.IsDBNull(r.GetOrdinal("SecurityDeposit")) ? 0 : r.GetDecimal(r.GetOrdinal("SecurityDeposit")),
+        InstallmentType = r.IsDBNull(r.GetOrdinal("InstallmentType")) ? "monthly" : r.GetString(r.GetOrdinal("InstallmentType")),
+        IssuedBy        = r.IsDBNull(r.GetOrdinal("IssuedBy"))        ? "" : r.GetString(r.GetOrdinal("IssuedBy")),
+        Notes           = r.IsDBNull(r.GetOrdinal("Notes"))           ? "" : r.GetString(r.GetOrdinal("Notes")),
+        LessorAmount    = r.IsDBNull(r.GetOrdinal("LessorAmount"))    ? 0 : r.GetDecimal(r.GetOrdinal("LessorAmount")),
+        Status          = r.GetString(r.GetOrdinal("Status")),
+        CreatedAt       = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+        UpdatedAt       = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
 }

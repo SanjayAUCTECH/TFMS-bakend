@@ -13,6 +13,7 @@ public class CreateContractRequest
     public string             InstallmentType      { get; set; } = "monthly";
     public string             IssuedBy             { get; set; } = string.Empty;
     public string             Notes                { get; set; } = string.Empty;
+    public decimal            LessorAmount         { get; set; } = 0;
 }
 
 public class UpdateContractStatusRequest
@@ -57,6 +58,7 @@ public class ContractResponse
     public string   InstallmentType { get; set; } = string.Empty;
     public string   IssuedBy        { get; set; } = string.Empty;
     public string   Notes           { get; set; } = string.Empty;
+    public decimal  LessorAmount    { get; set; }
     public string   Status          { get; set; } = string.Empty;
     public List<int>                   RoomIds  { get; set; } = new();
     public List<ContractPaymentResponse> Payments { get; set; } = new();

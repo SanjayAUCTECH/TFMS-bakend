@@ -49,8 +49,16 @@ public class ContractService : IContractService
 
         var contractId = await _repo.CreateAsync(new Contract
         {
-            TenantId = request.TenantId, CampId = request.CampId,
-            StartDate = request.StartDate, Months = request.Months, RoomIds = request.RoomIds,
+            TenantId        = request.TenantId,
+            CampId          = request.CampId,
+            StartDate       = request.StartDate,
+            Months          = request.Months,
+            RoomIds         = request.RoomIds,
+            SecurityDeposit = request.SecurityDeposit,
+            InstallmentType = request.InstallmentType,
+            IssuedBy        = request.IssuedBy,
+            Notes           = request.Notes,
+            LessorAmount    = request.LessorAmount,
         });
         var created = await _repo.GetByContractIdAsync(contractId);
         return ApiResponse<ContractResponse>.Ok(ToResponse(created!), "Contract created successfully.");
@@ -78,6 +86,8 @@ public class ContractService : IContractService
         Id = c.Id, ContractId = c.ContractId, TenantId = c.TenantId, TenantName = c.TenantName,
         CampId = c.CampId, CampName = c.CampName, StartDate = c.StartDate, Months = c.Months,
         EndDate = c.EndDate, MonthlyTotal = c.MonthlyTotal, ContractTotal = c.ContractTotal,
+        SecurityDeposit = c.SecurityDeposit, InstallmentType = c.InstallmentType,
+        IssuedBy = c.IssuedBy, Notes = c.Notes, LessorAmount = c.LessorAmount,
         Status = c.Status, RoomIds = c.RoomIds, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
         Payments = c.Payments.Select(p => new ContractPaymentResponse
         {
