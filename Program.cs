@@ -117,13 +117,76 @@ var app = builder.Build();
 
 // ── Global Exception Handler ─────────────────────────────────────────────────
 app.UseExceptionHandler(errApp => errApp.Run(async ctx => {
-    ctx.Response.StatusCode  = (int)HttpStatusCode.InternalServerError;
     ctx.Response.ContentType = "application/json";
     var err = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-    var msg = app.Environment.IsDevelopment() ? err?.Error?.ToString() : "An internal error occurred.";
+    var ex  = err?.Error;
+
+    string message;
+    int statusCode;
+
+    // SQL Foreign Key / Reference constraint violation
+    if (ex is Microsoft.Data.SqlClient.SqlException sqlEx)
+    {
+        switch (sqlEx.Number)
+        {
+            case 547:  // FK constraint violation — record used in another table
+                statusCode = (int)HttpStatusCode.Conflict;
+                message = GetFriendlyFkMessage(sqlEx.Message);
+                break;
+            case 2601: // Unique index duplicate
+            case 2627: // Unique constraint duplicate
+                statusCode = (int)HttpStatusCode.Conflict;
+                message = "This record already exists. Please use a unique value.";
+                break;
+            default:
+                statusCode = (int)HttpStatusCode.InternalServerError;
+                message = app.Environment.IsDevelopment()
+                    ? $"Database error ({sqlEx.Number}): {sqlEx.Message}"
+                    : "A database error occurred. Please try again.";
+                break;
+        }
+    }
+    else
+    {
+        statusCode = (int)HttpStatusCode.InternalServerError;
+        message = app.Environment.IsDevelopment()
+            ? ex?.ToString() ?? "Unknown error"
+            : "An internal error occurred.";
+    }
+
+    ctx.Response.StatusCode = statusCode;
     await ctx.Response.WriteAsync(JsonSerializer.Serialize(
-        ApiResponse<object>.Fail(msg ?? "Unknown error")));
+        ApiResponse<object>.Fail(message)));
 }));
+
+// ── Friendly FK message helper ────────────────────────────────────────────────
+static string GetFriendlyFkMessage(string sqlMsg)
+{
+    // Parse table name from SQL error message for a specific message
+    var lower = sqlMsg.ToLower();
+    if      (lower.Contains("camps"))            return "Cannot delete: this record is being used in Camps. Please remove the reference first.";
+    else if (lower.Contains("camppartners"))      return "Cannot delete: this Partner is assigned to one or more Camps. Remove camp assignment first.";
+    else if (lower.Contains("campowners"))        return "Cannot delete: this Owner is assigned to one or more Camps. Remove camp assignment first.";
+    else if (lower.Contains("rooms"))             return "Cannot delete: this record is being used in Rooms. Please delete or reassign those Rooms first.";
+    else if (lower.Contains("contracts"))         return "Cannot delete: this record is being used in Contracts. Please close or delete those Contracts first.";
+    else if (lower.Contains("payments"))          return "Cannot delete: this record has associated Payments. Delete the Payments first.";
+    else if (lower.Contains("waivers"))           return "Cannot delete: this record has associated Waivers. Delete the Waivers first.";
+    else if (lower.Contains("tenants"))           return "Cannot delete: this record is being used in Tenants. Please reassign or delete those Tenants first.";
+    else if (lower.Contains("ownercontracts"))    return "Cannot delete: this Owner has active Owner Contracts. Delete the contracts first.";
+    else if (lower.Contains("ownerinstallments")) return "Cannot delete: this record has Owner Installments linked to it.";
+    else if (lower.Contains("incomes"))           return "Cannot delete: this record is referenced in Incomes. Remove those entries first.";
+    else if (lower.Contains("expenses"))          return "Cannot delete: this record is referenced in Expenses. Remove those entries first.";
+    else if (lower.Contains("floors"))            return "Cannot delete: this Floor is being used in Rooms. Please reassign or delete those Rooms first.";
+    else if (lower.Contains("staff"))             return "Cannot delete: this record is associated with Staff entries.";
+    else if (lower.Contains("appusers"))          return "Cannot delete: this record is linked to a User account. Delete the User first.";
+    else if (lower.Contains("designation"))       return "Cannot delete: this Designation is assigned to Staff members. Reassign them first.";
+    else if (lower.Contains("fundpool"))          return "Cannot delete: this Fund Pool is referenced in Incomes or Expenses. Remove those entries first.";
+    else if (lower.Contains("paymentmode"))       return "Cannot delete: this Payment Mode is used in existing transactions. Remove those first.";
+    else if (lower.Contains("accountshead"))      return "Cannot delete: this Accounts Head is used in Incomes or Expenses. Remove those entries first.";
+    else if (lower.Contains("roles"))             return "Cannot delete: this Role is assigned to Users. Reassign those Users first.";
+    else
+        return "Cannot delete: this record is being used in another part of the system. Please remove all references before deleting.";
+}
 
 // ── Swagger (all environments) ───────────────────────────────────────────────
 app.UseSwagger();
