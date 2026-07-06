@@ -199,12 +199,25 @@ app.UseSwaggerUI(c =>
     c.HeadContent = @"
 <script>
 window.addEventListener('load', function () {
+  // Add API Docs button to Swagger topbar
+  setTimeout(function() {
+    var topbar = document.querySelector('.topbar-wrapper');
+    if (topbar && !document.getElementById('api-docs-btn')) {
+      var btn = document.createElement('a');
+      btn.id = 'api-docs-btn';
+      btn.href = '/api-docs.html';
+      btn.target = '_blank';
+      btn.style = 'margin-left:16px;padding:6px 18px;background:#c89d4a;color:#1a1a2e;border-radius:6px;font-weight:700;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;';
+      btn.innerHTML = '📋 API Docs';
+      topbar.appendChild(btn);
+    }
+  }, 800);
   // Auto-login with default admin credentials and set Bearer token
   setTimeout(function () {
     fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'Admin@123' })
+      body: JSON.stringify({ username: 'admin', password: 'Admin@1234' })
     })
     .then(r => r.json())
     .then(function(res) {
