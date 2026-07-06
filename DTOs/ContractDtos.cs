@@ -21,6 +21,22 @@ public class UpdateContractStatusRequest
     [Required] public string Status { get; set; } = string.Empty;   // Active | Expired | Terminated
 }
 
+public class UpdateContractScheduleRequest
+{
+    [Required] public string ContractId { get; set; } = string.Empty;
+    [Required] public List<ScheduleItemRequest> Schedule { get; set; } = new();
+}
+
+public class ScheduleItemRequest
+{
+    public int     No         { get; set; }
+    public decimal Amount     { get; set; }
+    public string  DueDate    { get; set; } = string.Empty;
+    public string  Mode       { get; set; } = string.Empty;
+    public string  Cheque     { get; set; } = string.Empty;
+    public string  Clearance  { get; set; } = string.Empty;
+}
+
 public class ContractListRequest : Common.PagedRequest
 {
     public int?    TenantId { get; set; }

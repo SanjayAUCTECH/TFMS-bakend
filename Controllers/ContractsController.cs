@@ -53,6 +53,15 @@ public class ContractsController : ControllerBase
         return r.Success ? Ok(r) : BadRequest(r);
     }
 
+    /// <summary>PATCH api/contracts/schedule — Save payment schedule (mode/date/amount per installment)</summary>
+    [HttpPatch("schedule")]
+    public async Task<IActionResult> UpdateSchedule([FromBody] UpdateContractScheduleRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var r = await _service.UpdateScheduleAsync(request);
+        return r.Success ? Ok(r) : BadRequest(r);
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

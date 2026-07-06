@@ -81,6 +81,24 @@ public class ContractService : IContractService
         return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
+    public async Task<ApiResponse<bool>> UpdateScheduleAsync(UpdateContractScheduleRequest request)
+    {
+        var contract = await _repo.GetByContractIdAsync(request.ContractId);
+        if (contract == null) return ApiResponse<bool>.Fail("Contract not found.");
+        var scheduleJson = System.Text.Json.JsonSerializer.Serialize(
+            request.Schedule.Select(s => new
+            {
+                no        = s.No,
+                amount    = s.Amount,
+                dueDate   = s.DueDate,
+                mode      = s.Mode,
+                cheque    = s.Cheque,
+                clearance = s.Clearance,
+            }));
+        await _repo.UpdateScheduleAsync(request.ContractId, scheduleJson);
+        return ApiResponse<bool>.Ok(true, $"Schedule updated for {request.ContractId}.");
+    }
+
     private static ContractResponse ToResponse(Contract c) => new()
     {
         Id = c.Id, ContractId = c.ContractId, TenantId = c.TenantId, TenantName = c.TenantName,

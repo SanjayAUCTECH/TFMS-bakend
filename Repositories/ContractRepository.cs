@@ -93,6 +93,17 @@ public class ContractRepository : IContractRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
+    public async Task<bool> UpdateScheduleAsync(string contractId, string scheduleJson)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_UpdatePaymentSchedule", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@ContractId",   contractId);
+        cmd.Parameters.AddWithValue("@ScheduleJson", scheduleJson);
+        await cmd.ExecuteNonQueryAsync();
+        return true;
+    }
+
     private static async Task<Contract?> ReadContractWithPayments(SqlCommand cmd)
     {
         Contract? contract = null;
