@@ -117,6 +117,29 @@ public class RoomRepository : IRoomRepository
         return new { totalRooms = total, occupied = occ, vacant = vac, occupancyRate = occRate + "%" };
     }
 
+    public async Task<BulkCreateRoomResponse> BulkCreateAsync(BulkCreateRoomRequest request)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_BulkCreateRooms", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@CampId",       request.CampId);
+        cmd.Parameters.AddWithValue("@FloorId",      request.FloorId);
+        cmd.Parameters.AddWithValue("@RoomsJson",    System.Text.Json.JsonSerializer.Serialize(request.RoomNos));
+        cmd.Parameters.AddWithValue("@Status",       request.Status);
+        cmd.Parameters.AddWithValue("@Price",        request.MonthlyPrice);
+        cmd.Parameters.AddWithValue("@OtherDetails", request.OtherDetails);
+        await using var r = await cmd.ExecuteReaderAsync();
+        int created = 0;
+        if (await r.ReadAsync()) created = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+        return new BulkCreateRoomResponse
+        {
+            Created = created,
+            Skipped = request.RoomNos.Count - created,
+            Total   = request.RoomNos.Count,
+            RoomNos = request.RoomNos,
+        };
+    }
+
     public async Task<bool> SetOccupiedAsync(int roomId, bool occupied)
     {
         await using var conn = _factory.CreateConnection();

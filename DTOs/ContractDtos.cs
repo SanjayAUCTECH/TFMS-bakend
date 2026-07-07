@@ -27,6 +27,17 @@ public class UpdateContractScheduleRequest
     [Required] public List<ScheduleItemRequest> Schedule { get; set; } = new();
 }
 
+public class UpdateContractRequest
+{
+    [Required] public string   ContractId    { get; set; } = string.Empty;
+    [Required] public int      TenantId      { get; set; }
+    [Required] public DateTime StartDate     { get; set; }
+    [Range(1,120)] public int  Months        { get; set; } = 12;
+    public List<int>           RoomIds       { get; set; } = new();
+    public decimal             LessorAmount  { get; set; } = 0;
+    public string              Notes         { get; set; } = string.Empty;
+}
+
 public class ScheduleItemRequest
 {
     public int     No         { get; set; }

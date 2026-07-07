@@ -12,6 +12,24 @@ public class CreateRoomRequest
     public string  OtherDetails { get; set; } = string.Empty;
 }
 
+public class BulkCreateRoomRequest
+{
+    [Required] public int          CampId       { get; set; }
+    [Required] public int          FloorId      { get; set; }
+    [Required] public List<string> RoomNos      { get; set; } = new();
+    public decimal MonthlyPrice  { get; set; } = 0;
+    public string  Status        { get; set; } = "Vacant";
+    public string  OtherDetails  { get; set; } = string.Empty;
+}
+
+public class BulkCreateRoomResponse
+{
+    public int          Created  { get; set; }
+    public int          Skipped  { get; set; }
+    public int          Total    { get; set; }
+    public List<string> RoomNos  { get; set; } = new();
+}
+
 public class UpdateRoomRequest
 {
     [MaxLength(20)] public string  RoomNo       { get; set; } = string.Empty;

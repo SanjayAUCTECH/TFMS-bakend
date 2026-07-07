@@ -44,7 +44,14 @@ public class ContractsController : ControllerBase
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
-    /// <summary>PATCH api/contracts/CNT-000001/status — Update contract status.</summary>
+    /// <summary>PUT api/contracts — Update contract details + rooms</summary>
+    [HttpPut]
+    public async Task<IActionResult> UpdateContract([FromBody] UpdateContractRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var r = await _service.UpdateContractAsync(request);
+        return r.Success ? Ok(r) : BadRequest(r);
+    }
     [HttpPatch("{contractId}/status")]
     public async Task<IActionResult> UpdateStatus(string contractId, [FromBody] UpdateContractStatusRequest request)
     {

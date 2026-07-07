@@ -81,7 +81,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <a href="#rooms">Room Master</a>
   <a href="#tenants">Tenant Master</a>
   <div class="group">Contracts</div>
-  <a href="#contracts">New / Update Contract</a>
+  <a href="#contracts">New Contract</a>
+  <a href="#contracts">Update Contract</a>
+  <a href="#contracts">View Contract</a>
+  <a href="#contracts">Contract List</a>
   <div class="group">Payments</div>
   <a href="#payments">Payments</a>
   <a href="#waivers">Waivers</a>
@@ -359,13 +362,111 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
 
 <!-- CONTRACTS -->
 <div class="section" id="contracts">
-<div class="section-title">📝 Contracts (New Contract / Update Contract)</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500</span><span class="ep-desc">All contracts</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Contracts → Contract List</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts/by-contractid/{contractId}</span><span class="ep-desc">Get by contract code</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">View Contract / Update Contract → Load</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Create contract (Step 1 — Save & Next)</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Save & Next button</span><div class="sub-label">Request Body</div><div class="code-block">{"tenantId":1,"campId":1,"startDate":"2026-07-01T00:00:00","months":12,"roomIds":[1,2],"lessorAmount":5000,"installmentType":"monthly","issuedBy":"","notes":""}</div><div class="sub-label">DB Tables updated</div><p style="font-size:12px;color:#667;margin-top:6px">Contracts + ContractRooms + Payments (auto installments) + Rooms (Occupied)</p><div class="sub-label">Response</div><div class="code-block">{"data":{"contractId":"CNT-000001","contractTotal":36000,"payments":[{"installmentNo":1,"amount":3000,"dueDate":"2026-07-01"},...]}}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/schedule</span><span class="ep-desc">Save payment schedule (Step 2)</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Schedule Tab → Save Schedule</span><div class="sub-label">Request Body</div><div class="code-block">{"contractId":"CNT-000001","schedule":[{"no":1,"amount":3000,"dueDate":"2026-07-01","mode":"Cheque","cheque":"CHQ001","clearance":"2026-07-05"},{"no":2,"amount":3000,"dueDate":"2026-08-01","mode":"Cash","cheque":"","clearance":""}]}</div><div class="sub-label">DB Action</div><p style="font-size:12px;color:#667;margin-top:6px">⚠ DELETE all existing payments for this contractId, then INSERT new schedule.</p></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/{contractId}/status</span><span class="ep-desc">Update contract status</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Status change</span><div class="sub-label">Request Body</div><div class="code-block">{"status":"Terminated"}</div><div class="sub-label">Valid values</div><p style="font-size:12px;color:#667;margin-top:6px">Active | Expired | Terminated</p></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/contracts/{id}</span><span class="ep-desc">Delete contract</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Cannot delete Active contracts.</p></div></div>
+<div class="section-title">📝 Contracts</div>
+
+<!-- NEW CONTRACT -->
+<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin-bottom:10px;font-size:12px;font-weight:700;color:#1e40af">🆕 NEW CONTRACT — Page 1: Save &amp; Next</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/tenants?PageSize=500</span><span class="ep-desc">Tenant dropdown</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Tenant dropdown</span><div class="sub-label">Called on</div><p style="font-size:12px;color:#667;margin-top:6px">Page load</p></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/camps?PageSize=500</span><span class="ep-desc">Camp + rooms grid</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Camps dropdown</span></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms?PageSize=2000</span><span class="ep-desc">All rooms for room selection grid</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Rooms grid</span></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms/vacant/{campId}</span><span class="ep-desc">Vacant rooms for a specific camp</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Rooms button per camp</span></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Create contract — Save &amp; Next button</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">New Contract → Save &amp; Next</span>
+<div class="sub-label">Request Body</div>
+<div class="code-block">{"tenantId":1,"campId":1,"startDate":"2026-07-01T00:00:00","months":12,"roomIds":[1,2,3],"lessorAmount":5000,"installmentType":"monthly","issuedBy":"","notes":""}</div>
+<div class="sub-label">DB Tables updated automatically</div>
+<p style="font-size:12px;color:#667;margin-top:6px">✅ Contracts + ContractRooms + ContractInstallments (auto monthly) + Rooms → Occupied</p>
+<div class="sub-label">Response includes</div>
+<div class="code-block">{"data":{"contractId":"CNT-000001","contractTotal":36000,"months":12,"roomIds":[1,2,3],"payments":[{"installmentNo":1,"amount":3000,"dueDate":"2026-07-01"},{"installmentNo":2,"amount":3000,"dueDate":"2026-08-01"},...]}}</div>
+</div></div>
+
+<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#1e40af">🆕 NEW CONTRACT — Page 2: Save Schedule</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/schedule</span><span class="ep-desc">Save payment schedule</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">New Contract → Schedule Tab → Save Schedule button</span>
+<div class="sub-label">How it works</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ DELETE all existing installments for this contractId, then INSERT fresh schedule</p>
+<div class="sub-label">Request Body</div>
+<div class="code-block">{"contractId":"CNT-000001","schedule":[{"no":1,"amount":3000,"dueDate":"2026-07-01","mode":"Cheque","cheque":"CHQ-001","clearance":"2026-07-05"},{"no":2,"amount":3000,"dueDate":"2026-08-01","mode":"Cash","cheque":"","clearance":""}]}</div>
+<div class="sub-label">Fields</div>
+<table class="params-table"><tr><th>Field</th><th>Type</th><th>Description</th></tr>
+<tr><td>contractId</td><td>string</td><td>e.g. CNT-000001</td></tr>
+<tr><td>schedule[].no</td><td>int</td><td>Installment number</td></tr>
+<tr><td>schedule[].amount</td><td>decimal</td><td>Amount AED</td></tr>
+<tr><td>schedule[].dueDate</td><td>date</td><td>yyyy-MM-dd</td></tr>
+<tr><td>schedule[].mode</td><td>string</td><td>Cheque / Cash / Bank Transfer</td></tr>
+<tr><td>schedule[].cheque</td><td>string</td><td>Cheque number (optional)</td></tr>
+<tr><td>schedule[].clearance</td><td>string</td><td>Clearance date (optional)</td></tr>
+</table>
+</div></div>
+
+<div style="background:#fef3c7;border-left:4px solid #92400e;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#92400e">✏️ UPDATE CONTRACT</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts/by-contractid/{contractId}</span><span class="ep-desc">Load contract details</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Enter Contract ID → Load button</span>
+<div class="sub-label">Response includes</div>
+<div class="code-block">{"contractId":"CNT-000001","tenantId":1,"tenantName":"Ravi Kumar","campId":1,"startDate":"2026-07-01","endDate":"2027-06-30","months":12,"contractTotal":36000,"lessorAmount":5000,"roomIds":[1,2],"payments":[...]}</div>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments/contract/{contractId}</span><span class="ep-desc">Load existing payment schedule</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Payment Schedule tab (loads existing installments)</span>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Update contract details + rooms</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Update Contract button</span>
+<div class="sub-label">Request Body</div>
+<div class="code-block">{"contractId":"CNT-000001","tenantId":1,"startDate":"2026-07-01T00:00:00","months":12,"roomIds":[1,2,3],"lessorAmount":5000,"notes":""}</div>
+<div class="sub-label">DB Action</div>
+<p style="font-size:12px;color:#667;margin-top:6px">Updates Contracts table + free old rooms (Vacant) + link new rooms (Occupied)</p>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/schedule</span><span class="ep-desc">Update payment schedule</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Payment Schedule → Update Payment Schedule button</span>
+<div class="sub-label">Same as New Contract schedule</div>
+<div class="code-block">{"contractId":"CNT-000001","schedule":[{"no":1,"amount":3000,"dueDate":"2026-07-01","mode":"Cheque","cheque":"CHQ-001","clearance":""},...]}</div>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/{contractId}/status</span><span class="ep-desc">Update status</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Status dropdown</span>
+<div class="sub-label">Request Body</div><div class="code-block">{"status":"Terminated"}</div>
+<div class="sub-label">Valid values</div><p style="font-size:12px;color:#667;margin-top:6px">Active | Expired | Terminated</p>
+</div></div>
+
+<div style="background:#f0fdf4;border-left:4px solid #166534;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#166534">👁 VIEW CONTRACT — List + 2 Page + 3 Page + Summary</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500</span><span class="ep-desc">Contract list (page load)</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">View Contract → table list</span>
+<div class="sub-label">Called with</div><p style="font-size:12px;color:#667;margin-top:6px">Also loads: GET /api/payments?PageSize=2000</p>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts/by-contractid/{contractId}</span><span class="ep-desc">Load contract for 2-Page / 3-Page / Summary</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">View Contract → 2 Page button / 3 Page button / Summary button</span>
+<div class="sub-label">Also calls</div><p style="font-size:12px;color:#667;margin-top:6px">GET /api/payments/contract/{contractId} — to get installment data for PDF</p>
+<div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">All three buttons (2-Page, 3-Page, Summary) use the same APIs — only PDF layout differs</p>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/contracts/{id}</span><span class="ep-desc">Delete contract</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Contract List → Delete</span>
+<div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Cannot delete Active contracts.</p>
+</div></div>
+
+<div style="background:#fef3c7;border-left:4px solid #92400e;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#92400e">📋 CONTRACT LIST</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500&Status=Active</span><span class="ep-desc">Filtered contracts</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Contract List → filter by status</span>
+<div class="sub-label">Query Params</div>
+<table class="params-table"><tr><th>Param</th><th>Description</th></tr>
+<tr><td>Status</td><td>Active | Expired | Terminated</td></tr>
+<tr><td>TenantId</td><td>Filter by tenant</td></tr>
+<tr><td>CampId</td><td>Filter by camp</td></tr>
+<tr><td>SearchText</td><td>Search by Contract ID</td></tr>
+<tr><td>PageNumber / PageSize</td><td>Pagination</td></tr>
+</table>
+</div></div>
 </div>
 
 <!-- PAYMENTS -->

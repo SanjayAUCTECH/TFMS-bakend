@@ -52,7 +52,7 @@ public class PaymentRepository : IPaymentRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT * FROM Payments WHERE ContractId=@ContractId ORDER BY InstallmentNo", conn);
+        await using var cmd = new SqlCommand("SELECT * FROM ContractInstallments WHERE ContractId=@ContractId ORDER BY InstallmentNo", conn);
         cmd.Parameters.AddWithValue("@ContractId", contractId);
         var list = new List<Payment>();
         await using var r = await cmd.ExecuteReaderAsync();

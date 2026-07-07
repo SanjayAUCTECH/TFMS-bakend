@@ -31,7 +31,26 @@ public class ContractRepository : IContractRepository
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(MapContract(r));
         await r.CloseAsync();
-        return (list, (int)(total.Value == DBNull.Value ? 0 : total.Value));
+        int totalCount = (int)(total.Value == DBNull.Value ? 0 : total.Value);
+
+        // Load RoomIds for each contract
+        if (list.Count > 0) {
+            var contractIds = string.Join(",", list.Select(c => $"'{c.ContractId}'"));
+            await using var cmd2 = new SqlCommand(
+                $"SELECT ContractId, RoomId FROM ContractRooms WHERE ContractId IN ({contractIds})", conn);
+            await using var r2 = await cmd2.ExecuteReaderAsync();
+            var roomMap = new Dictionary<string, List<int>>();
+            while (await r2.ReadAsync()) {
+                var cid = r2.GetString(0);
+                var rid = r2.GetInt32(1);
+                if (!roomMap.ContainsKey(cid)) roomMap[cid] = new();
+                roomMap[cid].Add(rid);
+            }
+            foreach (var c in list)
+                c.RoomIds = roomMap.TryGetValue(c.ContractId, out var ids) ? ids : new();
+        }
+
+        return (list, totalCount);
     }
 
     public async Task<Contract?> GetByIdAsync(int id)
@@ -93,6 +112,22 @@ public class ContractRepository : IContractRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
+    public async Task<bool> UpdateContractAsync(UpdateContractRequest request)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_UpdateContract", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@ContractId",   request.ContractId);
+        cmd.Parameters.AddWithValue("@TenantId",     request.TenantId);
+        cmd.Parameters.AddWithValue("@StartDate",    request.StartDate);
+        cmd.Parameters.AddWithValue("@Months",       request.Months);
+        cmd.Parameters.AddWithValue("@RoomIdsJson",  System.Text.Json.JsonSerializer.Serialize(request.RoomIds));
+        cmd.Parameters.AddWithValue("@LessorAmount", request.LessorAmount);
+        cmd.Parameters.AddWithValue("@Notes",        request.Notes ?? "");
+        await cmd.ExecuteNonQueryAsync();
+        return true;
+    }
+
     public async Task<bool> UpdateScheduleAsync(string contractId, string scheduleJson)
     {
         await using var conn = _factory.CreateConnection();
@@ -107,11 +142,47 @@ public class ContractRepository : IContractRepository
     private static async Task<Contract?> ReadContractWithPayments(SqlCommand cmd)
     {
         Contract? contract = null;
+        var roomIds  = new HashSet<int>();
+        var payments = new List<Payment>();
+
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync())
         {
+            // Map contract once
             if (contract == null) contract = MapContract(r);
-            // second result set would be payments — handled if SP returns 2 sets
+
+            // RoomId column
+            try {
+                var roomIdOrd = r.GetOrdinal("RoomId");
+                if (!r.IsDBNull(roomIdOrd))
+                    roomIds.Add(r.GetInt32(roomIdOrd));
+            } catch { /* column may not exist */ }
+
+            // Payment columns
+            try {
+                var payIdOrd = r.GetOrdinal("PayId");
+                if (!r.IsDBNull(payIdOrd)) {
+                    var payId = r.GetInt32(payIdOrd);
+                    if (!payments.Any(p => p.Id == payId)) {
+                        payments.Add(new Payment {
+                            Id            = payId,
+                            ContractId    = r.GetString(r.GetOrdinal("ContractId")),
+                            InstallmentNo = r.GetInt32(r.GetOrdinal("InstallmentNo")),
+                            Amount        = r.GetDecimal(r.GetOrdinal("PayAmount")),
+                            DueDate       = r.GetDateTime(r.GetOrdinal("DueDate")),
+                            PaidAmount    = r.GetDecimal(r.GetOrdinal("PaidAmount")),
+                            PaidDate      = r.IsDBNull(r.GetOrdinal("PaidDate")) ? null : r.GetDateTime(r.GetOrdinal("PaidDate")),
+                            Status        = r.GetString(r.GetOrdinal("PayStatus")),
+                            PaymentMode   = r.IsDBNull(r.GetOrdinal("PaymentMode")) ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
+                        });
+                    }
+                }
+            } catch { /* column may not exist */ }
+        }
+
+        if (contract != null) {
+            contract.RoomIds  = roomIds.ToList();
+            contract.Payments = payments;
         }
         return contract;
     }

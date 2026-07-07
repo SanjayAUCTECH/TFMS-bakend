@@ -81,6 +81,17 @@ public class ContractService : IContractService
         return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
+    public async Task<ApiResponse<ContractResponse>> UpdateContractAsync(UpdateContractRequest request)
+    {
+        var existing = await _repo.GetByContractIdAsync(request.ContractId);
+        if (existing == null) return ApiResponse<ContractResponse>.Fail("Contract not found.");
+        if (request.RoomIds == null || request.RoomIds.Count == 0)
+            return ApiResponse<ContractResponse>.Fail("At least one room must be selected.");
+        await _repo.UpdateContractAsync(request);
+        var updated = await _repo.GetByContractIdAsync(request.ContractId);
+        return ApiResponse<ContractResponse>.Ok(ToResponse(updated!), "Contract updated successfully.");
+    }
+
     public async Task<ApiResponse<bool>> UpdateScheduleAsync(UpdateContractScheduleRequest request)
     {
         var contract = await _repo.GetByContractIdAsync(request.ContractId);
