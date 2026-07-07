@@ -106,6 +106,31 @@ public class ExpenseRepository : IExpenseRepository
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }
 
+    public async Task<object> GetStatsAsync()
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(@"
+            SELECT
+                COUNT(*)                                                                    AS totalEntries,
+                ISNULL(SUM(Amount),0)                                                       AS totalAmount,
+                ISNULL(SUM(CASE WHEN RecipientRole='Owner'   THEN Amount ELSE 0 END),0)     AS ownerPayments,
+                ISNULL(SUM(CASE WHEN RecipientRole='Partner' THEN Amount ELSE 0 END),0)     AS partnerPayments,
+                ISNULL(SUM(CASE WHEN Nature='Camp'           THEN Amount ELSE 0 END),0)     AS campExpenses,
+                ISNULL(SUM(CASE WHEN Nature='HO'            THEN Amount ELSE 0 END),0)      AS hoExpenses
+            FROM Expenses", conn);
+        await using var r = await cmd.ExecuteReaderAsync();
+        if (!await r.ReadAsync()) return new { totalEntries=0, totalAmount=0m, ownerPayments=0m, partnerPayments=0m, campExpenses=0m, hoExpenses=0m };
+        return new {
+            totalEntries    = r.IsDBNull(0) ? 0  : r.GetInt32(0),
+            totalAmount     = r.IsDBNull(1) ? 0m : r.GetDecimal(1),
+            ownerPayments   = r.IsDBNull(2) ? 0m : r.GetDecimal(2),
+            partnerPayments = r.IsDBNull(3) ? 0m : r.GetDecimal(3),
+            campExpenses    = r.IsDBNull(4) ? 0m : r.GetDecimal(4),
+            hoExpenses      = r.IsDBNull(5) ? 0m : r.GetDecimal(5),
+        };
+    }
+
     private static Expense MapExpense(SqlDataReader r) => new()
     {
         Id            = r.GetInt32(r.GetOrdinal("Id")),

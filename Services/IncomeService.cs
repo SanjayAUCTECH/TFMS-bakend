@@ -18,9 +18,11 @@ public class IncomeService : IIncomeService
     public async Task<ApiResponse<IEnumerable<IncomeResponse>>> GetAllAsync(IncomeListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<IncomeResponse>>.Ok(
             data.Select(ToResponse), "Incomes retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize),
+            cards);
     }
 
     public async Task<ApiResponse<IncomeResponse>> GetByIdAsync(int id)

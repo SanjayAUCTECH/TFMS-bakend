@@ -100,6 +100,27 @@ public class IncomeRepository : IIncomeRepository
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }
 
+    public async Task<object> GetStatsAsync()
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(@"
+            SELECT
+                COUNT(*)                                                                AS totalEntries,
+                ISNULL(SUM(Amount),0)                                                  AS totalAmount,
+                ISNULL(SUM(CASE WHEN Source='Room Payment' THEN Amount ELSE 0 END),0)  AS roomRentIncome,
+                ISNULL(SUM(CASE WHEN CAST(Date AS DATE) >= DATEADD(MONTH,-1,GETDATE()) THEN Amount ELSE 0 END),0) AS lastMonthAmount
+            FROM Incomes", conn);
+        await using var r = await cmd.ExecuteReaderAsync();
+        if (!await r.ReadAsync()) return new { totalEntries=0, totalAmount=0m, roomRentIncome=0m, lastMonthAmount=0m };
+        return new {
+            totalEntries    = r.IsDBNull(0) ? 0 : r.GetInt32(0),
+            totalAmount     = r.IsDBNull(1) ? 0m : r.GetDecimal(1),
+            roomRentIncome  = r.IsDBNull(2) ? 0m : r.GetDecimal(2),
+            lastMonthAmount = r.IsDBNull(3) ? 0m : r.GetDecimal(3),
+        };
+    }
+
     private static Income MapIncome(SqlDataReader r) => new()
     {
         Id           = r.GetInt32(r.GetOrdinal("Id")),

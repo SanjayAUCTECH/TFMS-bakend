@@ -9,4 +9,6 @@ public interface IPaymentRepository
     Task<Payment?> GetByIdAsync(int id);
     Task<IEnumerable<Payment>> GetByContractIdAsync(string contractId);
     Task<bool>     RecordPaymentAsync(Payment payment);
+    Task<PaymentSummaryResponse?>              GetSummaryAsync(string contractId);
+    Task<IEnumerable<PaymentHistoryResponse>>  GetHistoryAsync(string contractId);
 }

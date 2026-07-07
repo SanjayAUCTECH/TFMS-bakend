@@ -11,4 +11,5 @@ public interface IIncomeRepository
     Task<bool>    UpdateAsync(Income income);
     Task<bool>    DeleteAsync(int id);
     Task<bool>    ExistsAsync(int id);
+    Task<object>  GetStatsAsync();
 }

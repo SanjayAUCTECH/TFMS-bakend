@@ -35,25 +35,28 @@ public class PaymentService : IPaymentService
 
     public async Task<ApiResponse<bool>> RecordPaymentAsync(RecordPaymentRequest request)
     {
-        var pm = await _modeRepo.GetByIdAsync(request.PaymentModeId);
-        if (pm == null) return ApiResponse<bool>.Fail("Payment mode not found.");
+        string pmName = request.PaymentMode;
+        if (request.PaymentModeId.HasValue)
+        {
+            var pm = await _modeRepo.GetByIdAsync(request.PaymentModeId.Value);
+            if (pm != null) pmName = pm.Name;
+        }
 
-        string fundPoolName = string.Empty;
+        string fundPoolName = request.FundPoolName;
         if (request.FundPoolId.HasValue)
         {
             var fp = await _fundRepo.GetByIdAsync(request.FundPoolId.Value);
-            if (fp == null) return ApiResponse<bool>.Fail("Fund Pool not found.");
-            fundPoolName = fp.Name;
+            if (fp != null) fundPoolName = fp.Name;
         }
 
         var result = await _repo.RecordPaymentAsync(new Payment
         {
             ContractId      = request.ContractId,
             InstallmentNo   = request.InstallmentNo,
-            PaidAmount      = request.Amount,
+            PaidAmount      = request.PaidAmount,
             PaidDate        = request.PaidDate,
             PaymentModeId   = request.PaymentModeId,
-            PaymentMode     = pm.Name,
+            PaymentMode     = pmName,
             ChequeNumber    = request.ChequeNumber,
             ClearanceDate   = request.ClearanceDate,
             Description     = request.Description,

@@ -19,9 +19,11 @@ public class ExpenseService : IExpenseService
     public async Task<ApiResponse<IEnumerable<ExpenseResponse>>> GetAllAsync(ExpenseListRequest request)
     {
         var (data, total) = await _repo.GetAllAsync(request);
+        var cards = await _repo.GetStatsAsync();
         return ApiResponse<IEnumerable<ExpenseResponse>>.Ok(
             data.Select(ToResponse), "Expenses retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize));
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize),
+            cards);
     }
 
     public async Task<ApiResponse<ExpenseResponse>> GetByIdAsync(int id)
