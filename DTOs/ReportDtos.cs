@@ -285,7 +285,44 @@ public class WaiverReportResponse
     public int                      TotalRecords    { get; set; }
 }
 
-// ── Transaction Report — Response wrapper ─────────────────────────────────
+// ── Monthly Due Report — Response wrapper ──────────────────────────────────
+public class DueReportSummary
+{
+    public decimal TotalDueAmount { get; set; }
+    public int     TotalCount     { get; set; }
+    public int     OverdueCount   { get; set; }
+    public decimal AvgDueAmount   { get; set; }
+}
+
+public class DueMonthlyData  { public string Month { get; set; } = ""; public decimal Amount { get; set; } }
+public class DueStatusData   { public string Status{ get; set; } = ""; public int Count  { get; set; } }
+
+public class DueReportRow
+{
+    public int     Id             { get; set; }
+    public string  ContractId     { get; set; } = string.Empty;
+    public string  TenantName     { get; set; } = string.Empty;
+    public int     TenantId       { get; set; }
+    public string  CampName       { get; set; } = string.Empty;
+    public string  RoomNo         { get; set; } = string.Empty;
+    public int     InstallmentNo  { get; set; }
+    public decimal Amount         { get; set; }
+    public decimal PaidAmount     { get; set; }
+    public decimal BalanceAmount  { get; set; }
+    public DateTime DueDate       { get; set; }
+    public string  Status         { get; set; } = string.Empty;
+    public string  DueStatus      { get; set; } = string.Empty;  // Overdue | Pending
+    public string  PaymentMode    { get; set; } = string.Empty;
+}
+
+public class DueReportResponse
+{
+    public DueReportSummary        Summary     { get; set; } = new();
+    public List<DueMonthlyData>    MonthlyData { get; set; } = new();  // Bar chart
+    public List<DueStatusData>     StatusData  { get; set; } = new();  // Pie chart
+    public List<DueReportRow>      Rows        { get; set; } = new();
+    public int                     TotalRecords{ get; set; }
+}
 public class TransactionReportSummary
 {
     public int     TotalCount   { get; set; }

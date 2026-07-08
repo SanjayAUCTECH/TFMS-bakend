@@ -75,6 +75,7 @@ public class UpdateMenuAccessRequest
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
 public class DashboardStatsResponse
 {
+    // ── KPI Cards ──────────────────────────────────────────────────────────
     public int     TotalCamps               { get; set; }
     public int     TotalRooms               { get; set; }
     public int     OccupiedRooms            { get; set; }
@@ -87,4 +88,37 @@ public class DashboardStatsResponse
     public decimal TotalCollectedThisMonth  { get; set; }
     public decimal OutstandingBalance       { get; set; }
     public int     OverduePayments          { get; set; }
+
+    // ── Chart Data ────────────────────────────────────────────────────────
+    // occupancyChart — Bar: Occupied vs Vacant per camp
+    public List<DashCampOccupancy>    CampOccupancy     { get; set; } = new();
+    // collectionChart — Line: monthly collection amounts Jan-Dec
+    public List<DashMonthlyCollection> MonthlyCollections { get; set; } = new();
+    // revenueChart — Bar: monthly revenue potential per camp
+    public List<DashCampRevenue>      CampRevenue       { get; set; } = new();
+    // dashPaymentPieChart — Doughnut: total paid vs total pending
+    public decimal TotalPaidAmount    { get; set; }
+    public decimal TotalPendingAmount { get; set; }
+    // dashContractChart — Pie: active vs completed contracts
+    public int     CompletedContracts { get; set; }
+}
+
+public class DashCampOccupancy
+{
+    public string CampName    { get; set; } = string.Empty;
+    public int    Occupied    { get; set; }
+    public int    Vacant      { get; set; }
+    public int    TotalRooms  { get; set; }
+}
+
+public class DashMonthlyCollection
+{
+    public string  Month      { get; set; } = string.Empty;  // "Jan", "Feb" ...
+    public decimal Collected  { get; set; }
+}
+
+public class DashCampRevenue
+{
+    public string  CampName      { get; set; } = string.Empty;
+    public decimal MonthlyRevenue { get; set; }  // sum of monthlyPrice for occupied rooms
 }

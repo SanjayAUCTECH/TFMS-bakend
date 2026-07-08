@@ -5,5 +5,5 @@ namespace TFMS_software_api.Services;
 
 public interface IDashboardService
 {
-    Task<ApiResponse<DashboardStatsResponse>> GetStatsAsync();
+    Task<ApiResponse<DashboardStatsResponse>> GetStatsAsync(int? campId = null, int? tenantId = null, string? month = null);
 }

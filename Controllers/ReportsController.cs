@@ -52,6 +52,11 @@ public class ReportsController : ControllerBase
     public async Task<IActionResult> Transactions([FromQuery] ReportRequest request)
         => Ok(await _service.GetTransactionStatementAsync(request));
 
+    /// <summary>GET api/reports/due?TenantId=1&CampId=2&Month=2026-07</summary>
+    [HttpGet("due")]
+    public async Task<IActionResult> Due([FromQuery] ReportRequest request)
+        => Ok(await _service.GetDueReportAsync(request));
+
     /// <summary>GET api/reports/room-history/{roomId}</summary>
     [HttpGet("room-history/{roomId:int}")]
     public async Task<IActionResult> RoomHistory(int roomId)

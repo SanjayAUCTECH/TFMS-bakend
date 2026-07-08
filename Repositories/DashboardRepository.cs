@@ -10,28 +10,158 @@ public class DashboardRepository : IDashboardRepository
     private readonly IDbConnectionFactory _factory;
     public DashboardRepository(IDbConnectionFactory factory) => _factory = factory;
 
-    public async Task<DashboardStatsResponse> GetStatsAsync()
+    public async Task<DashboardStatsResponse> GetStatsAsync(int? campId = null, int? tenantId = null, string? month = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("sp_GetDashboardStats", conn) { CommandType = CommandType.StoredProcedure };
-        await using var r = await cmd.ExecuteReaderAsync();
-        if (!await r.ReadAsync()) return new DashboardStatsResponse();
-        return new DashboardStatsResponse
+
+        var stats = new DashboardStatsResponse();
+
+        // Parse month filter
+        int? filterYear = null, filterMonth = null;
+        if (!string.IsNullOrEmpty(month) && month.Length == 7)
         {
-            TotalCamps               = r.IsDBNull(r.GetOrdinal("TotalCamps"))               ? 0 : r.GetInt32(r.GetOrdinal("TotalCamps")),
-            TotalRooms               = r.IsDBNull(r.GetOrdinal("TotalRooms"))               ? 0 : r.GetInt32(r.GetOrdinal("TotalRooms")),
-            OccupiedRooms            = r.IsDBNull(r.GetOrdinal("OccupiedRooms"))            ? 0 : r.GetInt32(r.GetOrdinal("OccupiedRooms")),
-            VacantRooms              = r.IsDBNull(r.GetOrdinal("VacantRooms"))              ? 0 : r.GetInt32(r.GetOrdinal("VacantRooms")),
-            TotalTenants             = r.IsDBNull(r.GetOrdinal("TotalTenants"))             ? 0 : r.GetInt32(r.GetOrdinal("TotalTenants")),
-            ActiveTenants            = r.IsDBNull(r.GetOrdinal("ActiveTenants"))            ? 0 : r.GetInt32(r.GetOrdinal("ActiveTenants")),
-            TotalPartners            = r.IsDBNull(r.GetOrdinal("TotalPartners"))            ? 0 : r.GetInt32(r.GetOrdinal("TotalPartners")),
-            ActiveContracts          = r.IsDBNull(r.GetOrdinal("ActiveContracts"))          ? 0 : r.GetInt32(r.GetOrdinal("ActiveContracts")),
-            TotalDueThisMonth        = r.IsDBNull(r.GetOrdinal("TotalDueThisMonth"))        ? 0 : r.GetDecimal(r.GetOrdinal("TotalDueThisMonth")),
-            TotalCollectedThisMonth  = r.IsDBNull(r.GetOrdinal("TotalCollectedThisMonth"))  ? 0 : r.GetDecimal(r.GetOrdinal("TotalCollectedThisMonth")),
-            OutstandingBalance       = r.IsDBNull(r.GetOrdinal("OutstandingBalance"))       ? 0 : r.GetDecimal(r.GetOrdinal("OutstandingBalance")),
-            OverduePayments          = r.IsDBNull(r.GetOrdinal("OverduePayments"))          ? 0 : r.GetInt32(r.GetOrdinal("OverduePayments")),
-        };
+            var parts = month.Split('-');
+            if (parts.Length == 2 && int.TryParse(parts[0], out var y) && int.TryParse(parts[1], out var m))
+            { filterYear = y; filterMonth = m; }
+        }
+
+        // ── 1. KPI stats from SP (unfiltered for totals) ─────────────────
+        await using (var cmd = new SqlCommand("sp_GetDashboardStats", conn) { CommandType = CommandType.StoredProcedure })
+        await using (var r = await cmd.ExecuteReaderAsync())
+        {
+            if (await r.ReadAsync())
+            {
+                stats.TotalCamps              = r.IsDBNull(r.GetOrdinal("TotalCamps"))              ? 0 : r.GetInt32(r.GetOrdinal("TotalCamps"));
+                stats.TotalRooms              = r.IsDBNull(r.GetOrdinal("TotalRooms"))              ? 0 : r.GetInt32(r.GetOrdinal("TotalRooms"));
+                stats.OccupiedRooms           = r.IsDBNull(r.GetOrdinal("OccupiedRooms"))           ? 0 : r.GetInt32(r.GetOrdinal("OccupiedRooms"));
+                stats.VacantRooms             = r.IsDBNull(r.GetOrdinal("VacantRooms"))             ? 0 : r.GetInt32(r.GetOrdinal("VacantRooms"));
+                stats.TotalTenants            = r.IsDBNull(r.GetOrdinal("TotalTenants"))            ? 0 : r.GetInt32(r.GetOrdinal("TotalTenants"));
+                stats.ActiveTenants           = r.IsDBNull(r.GetOrdinal("ActiveTenants"))           ? 0 : r.GetInt32(r.GetOrdinal("ActiveTenants"));
+                stats.TotalPartners           = r.IsDBNull(r.GetOrdinal("TotalPartners"))           ? 0 : r.GetInt32(r.GetOrdinal("TotalPartners"));
+                stats.ActiveContracts         = r.IsDBNull(r.GetOrdinal("ActiveContracts"))         ? 0 : r.GetInt32(r.GetOrdinal("ActiveContracts"));
+                stats.TotalDueThisMonth       = r.IsDBNull(r.GetOrdinal("TotalDueThisMonth"))       ? 0 : r.GetDecimal(r.GetOrdinal("TotalDueThisMonth"));
+                stats.TotalCollectedThisMonth = r.IsDBNull(r.GetOrdinal("TotalCollectedThisMonth")) ? 0 : r.GetDecimal(r.GetOrdinal("TotalCollectedThisMonth"));
+                stats.OutstandingBalance      = r.IsDBNull(r.GetOrdinal("OutstandingBalance"))      ? 0 : r.GetDecimal(r.GetOrdinal("OutstandingBalance"));
+                stats.OverduePayments         = r.IsDBNull(r.GetOrdinal("OverduePayments"))         ? 0 : r.GetInt32(r.GetOrdinal("OverduePayments"));
+            }
+        }
+
+        // ── 2. Camp Occupancy Chart (filtered by campId) ─────────────────
+        var campWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.Id=@CampId" : "WHERE c.Status='Active'";
+        await using (var cmd2 = new SqlCommand($@"
+            SELECT c.Name CampName,
+                COUNT(r.Id) TotalRooms,
+                SUM(CASE WHEN r.Status='Occupied' THEN 1 ELSE 0 END) Occupied,
+                SUM(CASE WHEN r.Status='Vacant'   THEN 1 ELSE 0 END) Vacant
+            FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id
+            {campWhere}
+            GROUP BY c.Id, c.Name ORDER BY c.Name", conn))
+        {
+            if (campId.HasValue) cmd2.Parameters.AddWithValue("@CampId", campId.Value);
+            await using var r2 = await cmd2.ExecuteReaderAsync();
+            while (await r2.ReadAsync())
+                stats.CampOccupancy.Add(new DashCampOccupancy {
+                    CampName   = r2.GetString(0),
+                    TotalRooms = r2.IsDBNull(1) ? 0 : r2.GetInt32(1),
+                    Occupied   = r2.IsDBNull(2) ? 0 : r2.GetInt32(2),
+                    Vacant     = r2.IsDBNull(3) ? 0 : r2.GetInt32(3),
+                });
+        }
+
+        // ── 3. Monthly Collections Chart (filtered by campId, tenantId, month/year) ──
+        var collYear  = filterYear  ?? DateTime.UtcNow.Year;
+        var collWhere = new List<string> { "ci.Status='Paid'", "YEAR(ci.PaidDate)=@Year" };
+        if (campId.HasValue)   collWhere.Add("ct.CampId=@CampId");
+        if (tenantId.HasValue) collWhere.Add("ct.TenantId=@TenantId");
+        var collSql = $@"
+            SELECT MONTH(ci.PaidDate) MonthNum, SUM(ci.PaidAmount) Collected
+            FROM ContractInstallments ci
+            JOIN Contracts ct ON ct.ContractId=ci.ContractId
+            WHERE {string.Join(" AND ", collWhere)}
+            GROUP BY MONTH(ci.PaidDate) ORDER BY MONTH(ci.PaidDate)";
+        await using (var cmd3 = new SqlCommand(collSql, conn))
+        {
+            cmd3.Parameters.AddWithValue("@Year", collYear);
+            if (campId.HasValue)   cmd3.Parameters.AddWithValue("@CampId",   campId.Value);
+            if (tenantId.HasValue) cmd3.Parameters.AddWithValue("@TenantId", tenantId.Value);
+            var monthMap = new Dictionary<int, decimal>();
+            await using (var r3 = await cmd3.ExecuteReaderAsync())
+                while (await r3.ReadAsync())
+                    monthMap[r3.GetInt32(0)] = r3.IsDBNull(1) ? 0 : r3.GetDecimal(1);
+            var monthNames = new[] {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+            for (int i = 1; i <= 12; i++)
+                stats.MonthlyCollections.Add(new DashMonthlyCollection {
+                    Month     = monthNames[i - 1],
+                    Collected = monthMap.TryGetValue(i, out var v) ? v : 0,
+                });
+        }
+
+        // ── 4. Revenue by Camp Chart (filtered by campId) ─────────────────
+        var revWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.Id=@CampId" : "WHERE c.Status='Active'";
+        await using (var cmd4 = new SqlCommand($@"
+            SELECT c.Name CampName, ISNULL(SUM(r.MonthlyPrice),0) MonthlyRevenue
+            FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id AND r.Status='Occupied'
+            {revWhere}
+            GROUP BY c.Id, c.Name ORDER BY c.Name", conn))
+        {
+            if (campId.HasValue) cmd4.Parameters.AddWithValue("@CampId", campId.Value);
+            await using var r4 = await cmd4.ExecuteReaderAsync();
+            while (await r4.ReadAsync())
+                stats.CampRevenue.Add(new DashCampRevenue {
+                    CampName       = r4.GetString(0),
+                    MonthlyRevenue = r4.IsDBNull(1) ? 0 : r4.GetDecimal(1),
+                });
+        }
+
+        // ── 5. Payment Doughnut (filtered by campId, tenantId, month) ────
+        var payWhere = new List<string>();
+        if (campId.HasValue)   payWhere.Add("ct2.CampId=@CampId");
+        if (tenantId.HasValue) payWhere.Add("ct2.TenantId=@TenantId");
+        if (filterMonth.HasValue) payWhere.Add("MONTH(ci2.PaidDate)=@Month AND YEAR(ci2.PaidDate)=@Year2");
+        var payJoin = (campId.HasValue || tenantId.HasValue) ? "JOIN Contracts ct2 ON ct2.ContractId=ci2.ContractId" : "";
+        var payFilter = payWhere.Count > 0 ? "WHERE " + string.Join(" AND ", payWhere) : "";
+        await using (var cmd5 = new SqlCommand($@"
+            SELECT
+                ISNULL(SUM(CASE WHEN ci2.Status='Paid'    THEN ci2.PaidAmount ELSE 0 END),0) TotalPaid,
+                ISNULL(SUM(CASE WHEN ci2.Status='Pending' THEN ci2.Amount     ELSE 0 END),0) TotalPending
+            FROM ContractInstallments ci2
+            {payJoin}
+            {payFilter}", conn))
+        {
+            if (campId.HasValue)   cmd5.Parameters.AddWithValue("@CampId",   campId.Value);
+            if (tenantId.HasValue) cmd5.Parameters.AddWithValue("@TenantId", tenantId.Value);
+            if (filterMonth.HasValue) { cmd5.Parameters.AddWithValue("@Month", filterMonth.Value); cmd5.Parameters.AddWithValue("@Year2", filterYear!.Value); }
+            await using var r5 = await cmd5.ExecuteReaderAsync();
+            if (await r5.ReadAsync())
+            {
+                stats.TotalPaidAmount    = r5.IsDBNull(0) ? 0 : r5.GetDecimal(0);
+                stats.TotalPendingAmount = r5.IsDBNull(1) ? 0 : r5.GetDecimal(1);
+            }
+        }
+
+        // ── 6. Contract Status Pie (filtered by campId, tenantId) ─────────
+        var ctWhere = new List<string>();
+        if (campId.HasValue)   ctWhere.Add("CampId=@CampId");
+        if (tenantId.HasValue) ctWhere.Add("TenantId=@TenantId");
+        var ctFilter = ctWhere.Count > 0 ? "WHERE " + string.Join(" AND ", ctWhere) : "";
+        await using (var cmd6 = new SqlCommand($@"
+            SELECT
+                SUM(CASE WHEN Status='Active'    THEN 1 ELSE 0 END) Active,
+                SUM(CASE WHEN Status='Completed' THEN 1 ELSE 0 END) Completed
+            FROM Contracts {ctFilter}", conn))
+        {
+            if (campId.HasValue)   cmd6.Parameters.AddWithValue("@CampId",   campId.Value);
+            if (tenantId.HasValue) cmd6.Parameters.AddWithValue("@TenantId", tenantId.Value);
+            await using var r6 = await cmd6.ExecuteReaderAsync();
+            if (await r6.ReadAsync())
+            {
+                stats.ActiveContracts    = r6.IsDBNull(0) ? 0 : r6.GetInt32(0);
+                stats.CompletedContracts = r6.IsDBNull(1) ? 0 : r6.GetInt32(1);
+            }
+        }
+
+        return stats;
     }
 
     public async Task<AppUser?> GetUserByUsernameAsync(string username)

@@ -318,6 +318,105 @@ public class ReportRepository : IReportRepository
         return summary;
     }
 
+    // ── Monthly Due Report ────────────────────────────────────────────────────
+    public async Task<DueReportResponse> GetDueReportAsync(ReportRequest r)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        // Build WHERE conditions
+        var where = new List<string> { "ci.Status IN ('Pending','Partial')" };
+        if (r.TenantId.HasValue) where.Add("ct.TenantId=@TenantId");
+        if (r.CampId.HasValue)   where.Add("ct.CampId=@CampId");
+        if (!string.IsNullOrEmpty(r.Month))
+        {
+            var parts = r.Month.Split('-');
+            if (parts.Length == 2)
+            {
+                where.Add("FORMAT(ci.DueDate,'yyyy-MM')=@Month");
+            }
+        }
+        var whereClause = "WHERE " + string.Join(" AND ", where);
+
+        var sql = $@"
+            SELECT
+                ci.Id, ci.ContractId, ci.InstallmentNo,
+                ci.Amount, ci.PaidAmount,
+                ci.Amount - ci.PaidAmount  BalanceAmount,
+                ci.DueDate, ci.Status,
+                ISNULL(ci.PaymentMode,'')  PaymentMode,
+                ISNULL(t.Name,'')          TenantName,
+                ct.TenantId,
+                ISNULL(ca.Name,'')         CampName,
+                ISNULL(rm.RoomNo,'')       RoomNo,
+                CASE WHEN ci.DueDate < GETDATE() THEN 'Overdue' ELSE 'Pending' END DueStatus
+            FROM ContractInstallments ci
+            JOIN Contracts ct ON ct.ContractId=ci.ContractId
+            LEFT JOIN Tenants t  ON t.Id=ct.TenantId
+            LEFT JOIN Camps ca   ON ca.Id=ct.CampId
+            LEFT JOIN ContractRooms cr ON cr.ContractId=ci.ContractId
+            LEFT JOIN Rooms rm   ON rm.Id=cr.RoomId
+            {whereClause}
+            ORDER BY ci.DueDate";
+
+        var allRows = new List<DueReportRow>();
+        await using (var cmd = new SqlCommand(sql, conn))
+        {
+            if (r.TenantId.HasValue) cmd.Parameters.AddWithValue("@TenantId", r.TenantId.Value);
+            if (r.CampId.HasValue)   cmd.Parameters.AddWithValue("@CampId",   r.CampId.Value);
+            if (!string.IsNullOrEmpty(r.Month)) cmd.Parameters.AddWithValue("@Month", r.Month);
+            cmd.CommandTimeout = 60;
+            await using var rd = await cmd.ExecuteReaderAsync();
+            while (await rd.ReadAsync())
+                allRows.Add(new DueReportRow {
+                    Id            = rd.GetInt32(rd.GetOrdinal("Id")),
+                    ContractId    = rd.IsDBNull(rd.GetOrdinal("ContractId"))   ? "" : rd.GetString(rd.GetOrdinal("ContractId")),
+                    TenantName    = rd.IsDBNull(rd.GetOrdinal("TenantName"))   ? "" : rd.GetString(rd.GetOrdinal("TenantName")),
+                    TenantId      = rd.IsDBNull(rd.GetOrdinal("TenantId"))     ? 0  : rd.GetInt32(rd.GetOrdinal("TenantId")),
+                    CampName      = rd.IsDBNull(rd.GetOrdinal("CampName"))     ? "" : rd.GetString(rd.GetOrdinal("CampName")),
+                    RoomNo        = rd.IsDBNull(rd.GetOrdinal("RoomNo"))       ? "" : rd.GetString(rd.GetOrdinal("RoomNo")),
+                    InstallmentNo = rd.GetInt32(rd.GetOrdinal("InstallmentNo")),
+                    Amount        = rd.GetDecimal(rd.GetOrdinal("Amount")),
+                    PaidAmount    = rd.GetDecimal(rd.GetOrdinal("PaidAmount")),
+                    BalanceAmount = rd.GetDecimal(rd.GetOrdinal("BalanceAmount")),
+                    DueDate       = rd.GetDateTime(rd.GetOrdinal("DueDate")),
+                    Status        = rd.GetString(rd.GetOrdinal("Status")),
+                    DueStatus     = rd.IsDBNull(rd.GetOrdinal("DueStatus"))    ? "" : rd.GetString(rd.GetOrdinal("DueStatus")),
+                    PaymentMode   = rd.IsDBNull(rd.GetOrdinal("PaymentMode"))  ? "" : rd.GetString(rd.GetOrdinal("PaymentMode")),
+                });
+        }
+
+        // Summary
+        int total        = allRows.Count;
+        decimal totalDue = allRows.Sum(x => x.BalanceAmount);
+        int overdueCount = allRows.Count(x => x.DueStatus == "Overdue");
+        decimal avg      = total > 0 ? Math.Round(totalDue / total, 2) : 0;
+
+        // Bar chart — monthly due distribution
+        var monthNames = new[] {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+        var monthly = monthNames.Select((m, i) => new DueMonthlyData {
+            Month  = m,
+            Amount = allRows.Where(x => x.DueDate.Month == i+1).Sum(x => x.BalanceAmount)
+        }).ToList();
+
+        // Pie chart — Current Due vs Overdue
+        var statusData = new List<DueStatusData> {
+            new() { Status = "Current Due", Count = total - overdueCount },
+            new() { Status = "Overdue",     Count = overdueCount },
+        };
+
+        int pg = r.ResolvedPage;
+        int ps = r.ResolvedPageSize == int.MaxValue ? allRows.Count : r.ResolvedPageSize;
+
+        return new DueReportResponse {
+            Summary     = new DueReportSummary { TotalDueAmount=totalDue, TotalCount=total, OverdueCount=overdueCount, AvgDueAmount=avg },
+            MonthlyData = monthly,
+            StatusData  = statusData,
+            Rows        = allRows.Skip((pg-1)*ps).Take(ps).ToList(),
+            TotalRecords= total,
+        };
+    }
+
     // ── Room History ──────────────────────────────────────────────────────────
     public async Task<IEnumerable<RoomHistoryRow>> GetRoomHistoryAsync(int roomId)
     {

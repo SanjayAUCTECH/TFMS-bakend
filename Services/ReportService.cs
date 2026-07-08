@@ -51,6 +51,13 @@ public class ReportService : IReportService
             PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
     }
 
+    public async Task<ApiResponse<DueReportResponse>> GetDueReportAsync(ReportRequest request)
+    {
+        var result = await _repo.GetDueReportAsync(request);
+        return ApiResponse<DueReportResponse>.Ok(result, "Due report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
+    }
+
     public async Task<ApiResponse<TenantLedgerSummary>> GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo)
     {
         var result = await _repo.GetTenantLedgerAsync(tenantId, contractId, dateFrom, dateTo);

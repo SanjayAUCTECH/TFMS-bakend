@@ -12,6 +12,7 @@ public interface IReportRepository
     Task<WaiverReportResponse>     GetWaiverReportAsync(ReportRequest r);
     Task<TransactionReportResponse>GetTransactionStatementAsync(ReportRequest r);
     Task<TenantLedgerSummary?>     GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo);
+    Task<DueReportResponse>        GetDueReportAsync(ReportRequest r);
 
     // Room History
     Task<IEnumerable<RoomHistoryRow>> GetRoomHistoryAsync(int roomId);
