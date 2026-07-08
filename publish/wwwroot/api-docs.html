@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -50,10 +50,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
 <body>
 
 <div class="top-bar">
-  <h1>📋 TFMS API Documentation</h1>
+  <h1>ðŸ“‹ TFMS API Documentation</h1>
   <div class="btns">
-    <a href="/swagger" class="btn btn-swagger" target="_blank">⚡ Swagger UI</a>
-    <a href="/" class="btn btn-back">← Back</a>
+    <a href="/swagger" class="btn btn-swagger" target="_blank">âš¡ Swagger UI</a>
+    <a href="/" class="btn btn-back">â† Back</a>
   </div>
 </div>
 
@@ -86,7 +86,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <a href="#contracts">View Contract</a>
   <a href="#contracts">Contract List</a>
   <div class="group">Payments</div>
-  <a href="#payments">Payments</a>
+  <a href="#payments">Record Payment</a>
+  <a href="#payments">Make Payment</a>
   <a href="#waivers">Waivers</a>
   <div class="group">Accounts</div>
   <a href="#incomes">Income</a>
@@ -104,12 +105,12 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
 
 <!-- AUTH -->
 <div class="section" id="auth">
-<div class="section-title">🔐 Auth / Login Page</div>
+<div class="section-title">ðŸ” Auth / Login Page</div>
 
 <div class="endpoint">
 <div class="ep-header" onclick="toggle(this)">
   <span class="method POST">POST</span><span class="ep-path">/api/auth/login</span>
-  <span class="ep-desc">Login — get JWT token</span>
+  <span class="ep-desc">Login â€” get JWT token</span>
 </div>
 <div class="ep-body">
   <div class="sub-label">UI Page</div><span class="ui-label">Login Page</span>
@@ -125,7 +126,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Get logged-in user profile</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">Profile Icon → View Profile</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">Profile Icon â†’ View Profile</span>
   <div class="sub-label">Response</div>
   <div class="code-block">{"success": true, "data": {"id": 1, "name": "admin", "username": "admin", "role": "Admin", "status": "Active"}}</div>
 </div></div>
@@ -136,7 +137,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Update own profile</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">Profile → Edit</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">Profile â†’ Edit</span>
   <div class="sub-label">Request Body</div>
   <div class="code-block">{"name": "Admin User", "contact": "0501234567", "email": "admin@tfms.ae"}</div>
 </div></div>
@@ -147,7 +148,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Change own password</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">Profile → Change Password</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">Profile â†’ Change Password</span>
   <div class="sub-label">Request Body</div>
   <div class="code-block">{"currentPassword": "Admin@1234", "newPassword": "New@1234", "confirmPassword": "New@1234"}</div>
 </div></div>
@@ -159,13 +160,13 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
 </div>
 <div class="ep-body">
   <div class="sub-label">UI Page</div><span class="ui-label">Logout button</span>
-  <div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">JWT is stateless — client discards token. Server records logout timestamp.</p>
+  <div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">JWT is stateless â€” client discards token. Server records logout timestamp.</p>
 </div></div>
 </div>
 
 <!-- DASHBOARD -->
 <div class="section" id="dashboard">
-<div class="section-title">📊 Dashboard</div>
+<div class="section-title">ðŸ“Š Dashboard</div>
 <div class="endpoint">
 <div class="ep-header" onclick="toggle(this)">
   <span class="method GET">GET</span><span class="ep-path">/api/dashboard/stats</span>
@@ -180,7 +181,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
 
 <!-- USERS -->
 <div class="section" id="users">
-<div class="section-title">👥 User Management</div>
+<div class="section-title">ðŸ‘¥ User Management</div>
 
 <div class="endpoint">
 <div class="ep-header" onclick="toggle(this)">
@@ -199,7 +200,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Add new user</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">User List → Add User</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">User List â†’ Add User</span>
   <div class="sub-label">Request Body</div>
   <div class="code-block">{"name":"Sanjay Kumar","username":"sanjay.kumar","password":"Pass@123","role":"Admin","contact":"0501234567","email":"sanjay@test.com","isAdmin":false,"loginAccess":"enabled","status":"Active","menuAccess":"{}"}</div>
 </div></div>
@@ -210,7 +211,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Update user</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">User List → Edit</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">User List â†’ Edit</span>
   <div class="sub-label">Request Body</div>
   <div class="code-block">{"name":"Sanjay Kumar","role":"Admin","contact":"0501234567","loginAccess":"enabled","status":"Active","menuAccess":"{}"}</div>
 </div></div>
@@ -221,7 +222,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Reset password (admin)</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">User List → Reset Password</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">User List â†’ Reset Password</span>
   <div class="sub-label">Request Body</div>
   <div class="code-block">{"newPassword":"NewPass@123"}</div>
 </div></div>
@@ -232,7 +233,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Enable / Disable login</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">User List → Enable/Disable button</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">User List â†’ Enable/Disable button</span>
   <div class="sub-label">Request Body</div>
   <div class="code-block">{"loginAccess":"disabled"}</div>
 </div></div>
@@ -254,142 +255,142 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <span class="ep-desc">Delete user</span>
 </div>
 <div class="ep-body">
-  <div class="sub-label">UI Page</div><span class="ui-label">User List → Delete</span>
+  <div class="sub-label">UI Page</div><span class="ui-label">User List â†’ Delete</span>
 </div></div>
 </div>
 
 <!-- MASTERS -->
 <div class="section" id="partners">
-<div class="section-title">🤝 Partners</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/partners?PageSize=500</span><span class="ep-desc">All partners + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Partners</span><div class="sub-label">Response cards</div><div class="code-block">{"cards":{"total":9,"active":8,"inactive":1,"assigned":7}}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/partners</span><span class="ep-desc">Add partner</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Partners → Add Partner</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"Test Partner","contact":"Contact Person","mobile":"9876543210","email":"p@test.com","status":"Active"}</div></div></div>
+<div class="section-title">ðŸ¤ Partners</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/partners?PageSize=500</span><span class="ep-desc">All partners + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Partners</span><div class="sub-label">Response cards</div><div class="code-block">{"cards":{"total":9,"active":8,"inactive":1,"assigned":7}}</div></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/partners</span><span class="ep-desc">Add partner</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Partners â†’ Add Partner</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"Test Partner","contact":"Contact Person","mobile":"9876543210","email":"p@test.com","status":"Active"}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/partners/{id}</span><span class="ep-desc">Update partner</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Updated Partner","contact":"Person","mobile":"9876543210","email":"p@test.com","status":"Active"}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/partners/{id}</span><span class="ep-desc">Delete partner</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Will fail if partner is assigned to a camp.</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/partners/{id}</span><span class="ep-desc">Delete partner</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">âš  Will fail if partner is assigned to a camp.</p></div></div>
 </div>
 
 <div class="section" id="owners">
-<div class="section-title">🏠 Owners</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/owners?PageSize=500</span><span class="ep-desc">All owners</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Owners</span></div></div>
+<div class="section-title">ðŸ  Owners</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/owners?PageSize=500</span><span class="ep-desc">All owners</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Owners</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/owners</span><span class="ep-desc">Add owner</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Test Owner","contact":"9876543210","email":"o@test.com","status":"Active"}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/owners/{id}</span><span class="ep-desc">Update owner</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Updated Owner","contact":"9876543210","email":"o@test.com","status":"Active"}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/owners/{id}</span><span class="ep-desc">Delete owner</span></div><div class="ep-body"></div></div>
 </div>
 
 <div class="section" id="floors">
-<div class="section-title">🏢 Floors</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/floors?PageSize=500</span><span class="ep-desc">All floors</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Floors</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/floors/active</span><span class="ep-desc">Active floors for dropdowns</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">Room Master → Add Room dropdown</span></div></div>
+<div class="section-title">ðŸ¢ Floors</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/floors?PageSize=500</span><span class="ep-desc">All floors</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Floors</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/floors/active</span><span class="ep-desc">Active floors for dropdowns</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">Room Master â†’ Add Room dropdown</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/floors</span><span class="ep-desc">Add floor</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Ground Floor","number":0,"status":"Active"}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/floors/{id}</span><span class="ep-desc">Delete floor</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Will fail if rooms exist on this floor.</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/floors/{id}</span><span class="ep-desc">Delete floor</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">âš  Will fail if rooms exist on this floor.</p></div></div>
 </div>
 
 <div class="section" id="roomstatus">
-<div class="section-title">🚪 Room Statuses</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/roomstatuses?PageSize=500</span><span class="ep-desc">All statuses</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Room Status</span></div></div>
+<div class="section-title">ðŸšª Room Statuses</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/roomstatuses?PageSize=500</span><span class="ep-desc">All statuses</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Room Status</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/roomstatuses</span><span class="ep-desc">Add status</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Maintenance","status":"Active"}</div></div></div>
 </div>
 
 <div class="section" id="paymentmodes">
-<div class="section-title">💳 Payment Modes</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/paymentmodes?PageSize=500</span><span class="ep-desc">All payment modes</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Payment Modes</span></div></div>
+<div class="section-title">ðŸ’³ Payment Modes</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/paymentmodes?PageSize=500</span><span class="ep-desc">All payment modes</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Payment Modes</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/paymentmodes</span><span class="ep-desc">Add payment mode</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Bank Transfer","status":"Active"}</div></div></div>
 </div>
 
 <div class="section" id="fundpools">
-<div class="section-title">💰 Fund Pools</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/fundpools?PageSize=500</span><span class="ep-desc">All fund pools</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Fund Pool</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/fundpools/active</span><span class="ep-desc">Active pools for dropdowns</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">Income / Expense → Fund Pool dropdown</span></div></div>
+<div class="section-title">ðŸ’° Fund Pools</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/fundpools?PageSize=500</span><span class="ep-desc">All fund pools</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Fund Pool</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/fundpools/active</span><span class="ep-desc">Active pools for dropdowns</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">Income / Expense â†’ Fund Pool dropdown</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/fundpools</span><span class="ep-desc">Add fund pool</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Main Pool","status":"Active"}</div></div></div>
 </div>
 
 <div class="section" id="roles">
-<div class="section-title">🛡 Role Master</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/roles?PageSize=500</span><span class="ep-desc">All roles + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Role Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"total":6,"active":6,"inactive":0,"usersAssigned":7}}</div></div></div>
+<div class="section-title">ðŸ›¡ Role Master</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/roles?PageSize=500</span><span class="ep-desc">All roles + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Role Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"total":6,"active":6,"inactive":0,"usersAssigned":7}}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/roles</span><span class="ep-desc">Add role</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"roleName":"Manager","status":"Active"}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/roles/{id}</span><span class="ep-desc">Update role</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"roleName":"Manager","status":"Active"}</div></div></div>
 </div>
 
 <div class="section" id="accountshead">
-<div class="section-title">📒 Accounts Head</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/accountsheads?PageSize=500</span><span class="ep-desc">All accounts heads</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Accounts Head</span></div></div>
+<div class="section-title">ðŸ“’ Accounts Head</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/accountsheads?PageSize=500</span><span class="ep-desc">All accounts heads</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Accounts Head</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/accountsheads</span><span class="ep-desc">Add head</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Rent Income","type":"Income","status":"Active"}</div></div></div>
 </div>
 
 <div class="section" id="designations">
-<div class="section-title">🎖 Designations</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/designations?PageSize=500</span><span class="ep-desc">All designations</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Designation</span></div></div>
+<div class="section-title">ðŸŽ– Designations</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/designations?PageSize=500</span><span class="ep-desc">All designations</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Designation</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/designations</span><span class="ep-desc">Add designation</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"Supervisor","status":"Active"}</div></div></div>
 </div>
 
 <div class="section" id="otherpersons">
-<div class="section-title">👤 Other Persons</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/otherpersons?PageSize=500</span><span class="ep-desc">All other persons</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters → Other Accounts</span></div></div>
+<div class="section-title">ðŸ‘¤ Other Persons</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/otherpersons?PageSize=500</span><span class="ep-desc">All other persons</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Masters â†’ Other Accounts</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/otherpersons</span><span class="ep-desc">Add person</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"name":"John Doe","mobile":"9876543210","email":"john@test.com","status":"Active"}</div></div></div>
 </div>
 
 <!-- INVENTORY -->
 <div class="section" id="camps">
-<div class="section-title">🏕 Camp Master</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/camps?PageSize=500</span><span class="ep-desc">All camps + partners + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Inventory → Camp Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"total":9,"active":9,"totalRooms":137,"avgRooms":15}}</div><div class="sub-label">Each camp includes</div><div class="code-block">{"partners":[{"partnerId":1,"partnerName":"Al Habtoor","shareType":"percentage","shareValue":20}]}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/camps</span><span class="ep-desc">Add camp</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master → Add Camp</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"New Camp","status":"Active","partners":[],"owners":[]}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/camps/{id}</span><span class="ep-desc">Update camp + Assign Partners</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master → Edit / Partner button → Assign</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"Al Nahda Camp","status":"Active","partners":[{"partnerId":1,"shareType":"percentage","shareValue":20}],"owners":[]}</div><div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">Partners array replace karta hai — pehle delete, phir insert. [] bhejne pe sab remove.</p></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/camps/{id}</span><span class="ep-desc">Delete camp</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Will fail if rooms or contracts exist for this camp.</p></div></div>
+<div class="section-title">ðŸ• Camp Master</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/camps?PageSize=500</span><span class="ep-desc">All camps + partners + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Inventory â†’ Camp Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"total":9,"active":9,"totalRooms":137,"avgRooms":15}}</div><div class="sub-label">Each camp includes</div><div class="code-block">{"partners":[{"partnerId":1,"partnerName":"Al Habtoor","shareType":"percentage","shareValue":20}]}</div></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/camps</span><span class="ep-desc">Add camp</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master â†’ Add Camp</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"New Camp","status":"Active","partners":[],"owners":[]}</div></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/camps/{id}</span><span class="ep-desc">Update camp + Assign Partners</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master â†’ Edit / Partner button â†’ Assign</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"Al Nahda Camp","status":"Active","partners":[{"partnerId":1,"shareType":"percentage","shareValue":20}],"owners":[]}</div><div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">Partners array replace karta hai â€” pehle delete, phir insert. [] bhejne pe sab remove.</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/camps/{id}</span><span class="ep-desc">Delete camp</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">âš  Will fail if rooms or contracts exist for this camp.</p></div></div>
 </div>
 
 <div class="section" id="ownercontracts">
-<div class="section-title">📄 Owner Contracts</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/ownercontracts?campId={id}</span><span class="ep-desc">Get contracts for a camp</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master → Owner button</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/ownercontracts</span><span class="ep-desc">Create owner contract + installments + DR txn</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master → Owner → Save Contract</span><div class="sub-label">Request Body</div><div class="code-block">{"campId":1,"ownerId":1,"paymentType":"monthly","totalAmount":120000,"startDate":"2026-07-01","installments":[{"no":1,"amount":10000,"dueDate":"2026-07-01"},{"no":2,"amount":10000,"dueDate":"2026-08-01"}]}</div><div class="sub-label">DB Tables updated</div><p style="font-size:12px;color:#667;margin-top:6px">OwnerContracts + OwnerInstallments + OwnerTransactions (DR entry)</p></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/ownercontracts/{id}</span><span class="ep-desc">Delete contract + installments + transactions</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master → Owner → Delete contract</span></div></div>
+<div class="section-title">ðŸ“„ Owner Contracts</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/ownercontracts?campId={id}</span><span class="ep-desc">Get contracts for a camp</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master â†’ Owner button</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/ownercontracts</span><span class="ep-desc">Create owner contract + installments + DR txn</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master â†’ Owner â†’ Save Contract</span><div class="sub-label">Request Body</div><div class="code-block">{"campId":1,"ownerId":1,"paymentType":"monthly","totalAmount":120000,"startDate":"2026-07-01","installments":[{"no":1,"amount":10000,"dueDate":"2026-07-01"},{"no":2,"amount":10000,"dueDate":"2026-08-01"}]}</div><div class="sub-label">DB Tables updated</div><p style="font-size:12px;color:#667;margin-top:6px">OwnerContracts + OwnerInstallments + OwnerTransactions (DR entry)</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/ownercontracts/{id}</span><span class="ep-desc">Delete contract + installments + transactions</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Camp Master â†’ Owner â†’ Delete contract</span></div></div>
 </div>
 
 <div class="section" id="rooms">
-<div class="section-title">🚪 Room Master</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms?PageSize=1000</span><span class="ep-desc">All rooms + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Inventory → Room Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"totalRooms":137,"occupied":72,"vacant":39,"occupancyRate":"53%"}}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms/vacant/{campId}</span><span class="ep-desc">Vacant rooms for a camp</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">New Contract → Room Selection grid</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/rooms</span><span class="ep-desc">Add room (also used for bulk — called in loop)</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Room Master → Add Room / Bulk Room</span><div class="sub-label">Request Body</div><div class="code-block">{"campId":1,"floorId":1,"roomNo":"A-101","monthlyPrice":1500,"status":"Vacant","otherDetails":""}</div><div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">Bulk create: same API called in loop. Max 2000 rooms at once.</p></div></div>
+<div class="section-title">ðŸšª Room Master</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms?PageSize=1000</span><span class="ep-desc">All rooms + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Inventory â†’ Room Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"totalRooms":137,"occupied":72,"vacant":39,"occupancyRate":"53%"}}</div></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms/vacant/{campId}</span><span class="ep-desc">Vacant rooms for a camp</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">New Contract â†’ Room Selection grid</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/rooms</span><span class="ep-desc">Add room (also used for bulk â€” called in loop)</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Room Master â†’ Add Room / Bulk Room</span><div class="sub-label">Request Body</div><div class="code-block">{"campId":1,"floorId":1,"roomNo":"A-101","monthlyPrice":1500,"status":"Vacant","otherDetails":""}</div><div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">Bulk create: same API called in loop. Max 2000 rooms at once.</p></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/rooms/{id}</span><span class="ep-desc">Update room</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"campId":1,"floorId":1,"roomNo":"A-101","monthlyPrice":1800,"status":"Vacant","otherDetails":"Corner room"}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/rooms/{id}</span><span class="ep-desc">Delete room</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Will fail if room is in an active contract.</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/rooms/{id}</span><span class="ep-desc">Delete room</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">âš  Will fail if room is in an active contract.</p></div></div>
 </div>
 
 <div class="section" id="tenants">
-<div class="section-title">👥 Tenant Master</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/tenants?PageSize=500</span><span class="ep-desc">All tenants + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Inventory → Tenant Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"total":10,"active":10,"inactive":0,"companies":4}}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/tenants</span><span class="ep-desc">Add tenant</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Tenant Master → Add Tenant</span><div class="sub-label">Request Body</div><div class="code-block">{"type":"Individual","name":"Ravi Kumar","emiratesId":"784-1990-1234567-1","contact":"0501234567","whatsapp":"0501234567","passport":"A1234567","nationality":"Indian","email":"ravi@test.com","address":"Dubai","status":"Active","company":"","tradeLicense":"","licensingAuthority":"","numberOfCoOccupants":"1","plotNo":"","makaniNo":"","propertyArea":"","premisesNo":"","lessorName":"","lessorEid":"","lessorLicense":"","lessorLicAuthority":"","lessorEmail":"","lessorPhone":""}</div></div></div>
+<div class="section-title">ðŸ‘¥ Tenant Master</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/tenants?PageSize=500</span><span class="ep-desc">All tenants + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Inventory â†’ Tenant Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"total":10,"active":10,"inactive":0,"companies":4}}</div></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/tenants</span><span class="ep-desc">Add tenant</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Tenant Master â†’ Add Tenant</span><div class="sub-label">Request Body</div><div class="code-block">{"type":"Individual","name":"Ravi Kumar","emiratesId":"784-1990-1234567-1","contact":"0501234567","whatsapp":"0501234567","passport":"A1234567","nationality":"Indian","email":"ravi@test.com","address":"Dubai","status":"Active","company":"","tradeLicense":"","licensingAuthority":"","numberOfCoOccupants":"1","plotNo":"","makaniNo":"","propertyArea":"","premisesNo":"","lessorName":"","lessorEid":"","lessorLicense":"","lessorLicAuthority":"","lessorEmail":"","lessorPhone":""}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/tenants/{id}</span><span class="ep-desc">Update tenant</span></div><div class="ep-body"></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/tenants/{id}</span><span class="ep-desc">Delete tenant</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Will fail if tenant has active contracts.</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/tenants/{id}</span><span class="ep-desc">Delete tenant</span></div><div class="ep-body"><div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">âš  Will fail if tenant has active contracts.</p></div></div>
 </div>
 
 <!-- CONTRACTS -->
 <div class="section" id="contracts">
-<div class="section-title">📝 Contracts</div>
+<div class="section-title">ðŸ“ Contracts</div>
 
 <!-- NEW CONTRACT -->
-<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin-bottom:10px;font-size:12px;font-weight:700;color:#1e40af">🆕 NEW CONTRACT — Page 1: Save &amp; Next</div>
+<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin-bottom:10px;font-size:12px;font-weight:700;color:#1e40af">ðŸ†• NEW CONTRACT â€” Page 1: Save &amp; Next</div>
 
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/tenants?PageSize=500</span><span class="ep-desc">Tenant dropdown</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Tenant dropdown</span><div class="sub-label">Called on</div><p style="font-size:12px;color:#667;margin-top:6px">Page load</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/tenants?PageSize=500</span><span class="ep-desc">Tenant dropdown</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract â†’ Select Tenant dropdown</span><div class="sub-label">Called on</div><p style="font-size:12px;color:#667;margin-top:6px">Page load</p></div></div>
 
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/camps?PageSize=500</span><span class="ep-desc">Camp + rooms grid</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Camps dropdown</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/camps?PageSize=500</span><span class="ep-desc">Camp + rooms grid</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract â†’ Select Camps dropdown</span></div></div>
 
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms?PageSize=2000</span><span class="ep-desc">All rooms for room selection grid</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Rooms grid</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms?PageSize=2000</span><span class="ep-desc">All rooms for room selection grid</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract â†’ Select Rooms grid</span></div></div>
 
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms/vacant/{campId}</span><span class="ep-desc">Vacant rooms for a specific camp</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract → Select Rooms button per camp</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/rooms/vacant/{campId}</span><span class="ep-desc">Vacant rooms for a specific camp</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">New Contract â†’ Select Rooms button per camp</span></div></div>
 
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Create contract — Save &amp; Next button</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">New Contract → Save &amp; Next</span>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Create contract â€” Save &amp; Next button</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">New Contract â†’ Save &amp; Next</span>
 <div class="sub-label">Request Body</div>
 <div class="code-block">{"tenantId":1,"campId":1,"startDate":"2026-07-01T00:00:00","months":12,"roomIds":[1,2,3],"lessorAmount":5000,"installmentType":"monthly","issuedBy":"","notes":""}</div>
 <div class="sub-label">DB Tables updated automatically</div>
-<p style="font-size:12px;color:#667;margin-top:6px">✅ Contracts + ContractRooms + ContractInstallments (auto monthly) + Rooms → Occupied</p>
+<p style="font-size:12px;color:#667;margin-top:6px">âœ… Contracts + ContractRooms + ContractInstallments (auto monthly) + Rooms â†’ Occupied</p>
 <div class="sub-label">Response includes</div>
 <div class="code-block">{"data":{"contractId":"CNT-000001","contractTotal":36000,"months":12,"roomIds":[1,2,3],"payments":[{"installmentNo":1,"amount":3000,"dueDate":"2026-07-01"},{"installmentNo":2,"amount":3000,"dueDate":"2026-08-01"},...]}}</div>
 </div></div>
 
-<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#1e40af">🆕 NEW CONTRACT — Page 2: Save Schedule</div>
+<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#1e40af">ðŸ†• NEW CONTRACT â€” Page 2: Save Schedule</div>
 
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/schedule</span><span class="ep-desc">Save payment schedule</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">New Contract → Schedule Tab → Save Schedule button</span>
-<div class="sub-label">How it works</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ DELETE all existing installments for this contractId, then INSERT fresh schedule</p>
+<div class="sub-label">UI Page</div><span class="ui-label">New Contract â†’ Schedule Tab â†’ Save Schedule button</span>
+<div class="sub-label">How it works</div><p style="font-size:12px;color:#b00;margin-top:6px">âš  DELETE all existing installments for this contractId, then INSERT fresh schedule</p>
 <div class="sub-label">Request Body</div>
 <div class="code-block">{"contractId":"CNT-000001","schedule":[{"no":1,"amount":3000,"dueDate":"2026-07-01","mode":"Cheque","cheque":"CHQ-001","clearance":"2026-07-05"},{"no":2,"amount":3000,"dueDate":"2026-08-01","mode":"Cash","cheque":"","clearance":""}]}</div>
 <div class="sub-label">Fields</div>
@@ -404,124 +405,193 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
 </table>
 </div></div>
 
-<div style="background:#fef3c7;border-left:4px solid #92400e;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#92400e">✏️ UPDATE CONTRACT</div>
+<div style="background:#fef3c7;border-left:4px solid #92400e;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#92400e">📋 CONTRACT LIST — API Flow</div>
 
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts/by-contractid/{contractId}</span><span class="ep-desc">Load contract details</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Enter Contract ID → Load button</span>
-<div class="sub-label">Response includes</div>
-<div class="code-block">{"contractId":"CNT-000001","tenantId":1,"tenantName":"Ravi Kumar","campId":1,"startDate":"2026-07-01","endDate":"2027-06-30","months":12,"contractTotal":36000,"lessorAmount":5000,"roomIds":[1,2],"payments":[...]}</div>
-</div></div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments/contract/{contractId}</span><span class="ep-desc">Load existing payment schedule</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Payment Schedule tab (loads existing installments)</span>
-</div></div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Update contract details + rooms</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Update Contract button</span>
-<div class="sub-label">Request Body</div>
-<div class="code-block">{"contractId":"CNT-000001","tenantId":1,"startDate":"2026-07-01T00:00:00","months":12,"roomIds":[1,2,3],"lessorAmount":5000,"notes":""}</div>
-<div class="sub-label">DB Action</div>
-<p style="font-size:12px;color:#667;margin-top:6px">Updates Contracts table + free old rooms (Vacant) + link new rooms (Occupied)</p>
-</div></div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/schedule</span><span class="ep-desc">Update payment schedule</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Payment Schedule → Update Payment Schedule button</span>
-<div class="sub-label">Same as New Contract schedule</div>
-<div class="code-block">{"contractId":"CNT-000001","schedule":[{"no":1,"amount":3000,"dueDate":"2026-07-01","mode":"Cheque","cheque":"CHQ-001","clearance":""},...]}</div>
-</div></div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/{contractId}/status</span><span class="ep-desc">Update status</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">Update Contract → Status dropdown</span>
-<div class="sub-label">Request Body</div><div class="code-block">{"status":"Terminated"}</div>
-<div class="sub-label">Valid values</div><p style="font-size:12px;color:#667;margin-top:6px">Active | Expired | Terminated</p>
-</div></div>
-
-<div style="background:#f0fdf4;border-left:4px solid #166534;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#166534">👁 VIEW CONTRACT — List + 2 Page + 3 Page + Summary</div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500</span><span class="ep-desc">Contract list (page load)</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">View Contract → table list</span>
-<div class="sub-label">Called with</div><p style="font-size:12px;color:#667;margin-top:6px">Also loads: GET /api/payments?PageSize=2000</p>
-</div></div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts/by-contractid/{contractId}</span><span class="ep-desc">Load contract for 2-Page / 3-Page / Summary</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">View Contract → 2 Page button / 3 Page button / Summary button</span>
-<div class="sub-label">Also calls</div><p style="font-size:12px;color:#667;margin-top:6px">GET /api/payments/contract/{contractId} — to get installment data for PDF</p>
-<div class="sub-label">Note</div><p style="font-size:12px;color:#667;margin-top:6px">All three buttons (2-Page, 3-Page, Summary) use the same APIs — only PDF layout differs</p>
-</div></div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/contracts/{id}</span><span class="ep-desc">Delete contract</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">Contract List → Delete</span>
-<div class="sub-label">Note</div><p style="font-size:12px;color:#b00;margin-top:6px">⚠ Cannot delete Active contracts.</p>
-</div></div>
-
-<div style="background:#fef3c7;border-left:4px solid #92400e;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#92400e">📋 CONTRACT LIST</div>
-
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500&Status=Active</span><span class="ep-desc">Filtered contracts</span></div><div class="ep-body">
-<div class="sub-label">UI Page</div><span class="ui-label">Contract List → filter by status</span>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500&Status=Active</span><span class="ep-desc">Filtered contracts for list</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Contract List → filter by status / search</span>
 <div class="sub-label">Query Params</div>
 <table class="params-table"><tr><th>Param</th><th>Description</th></tr>
 <tr><td>Status</td><td>Active | Expired | Terminated</td></tr>
 <tr><td>TenantId</td><td>Filter by tenant</td></tr>
 <tr><td>CampId</td><td>Filter by camp</td></tr>
 <tr><td>SearchText</td><td>Search by Contract ID</td></tr>
-<tr><td>PageNumber / PageSize</td><td>Pagination</td></tr>
 </table>
+<div class="sub-label">Also loads on page</div><p style="font-size:12px;color:#667;margin-top:6px">GET /api/payments?PageSize=2000 — for Total Paid + Last Payment columns</p>
 </div></div>
 </div>
 
 <!-- PAYMENTS -->
 <div class="section" id="payments">
-<div class="section-title">💵 Payments</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments?PageSize=1000</span><span class="ep-desc">All payments</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Payments → Record Payment</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments/contract/{contractId}</span><span class="ep-desc">Payments for a contract</span></div><div class="ep-body"><div class="sub-label">Used in</div><span class="ui-label">View Contract / Record Payment</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/payments/record</span><span class="ep-desc">Record a payment</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Record Payment → Save</span><div class="sub-label">Request Body</div><div class="code-block">{"paymentId":1,"paidAmount":3000,"paidDate":"2026-07-05","paymentMode":"Bank Transfer","remarks":"July rent"}</div></div></div>
+<div class="section-title">ðŸ’µ Payments â€” Receive Payment</div>
+
+<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin-bottom:10px;font-size:12px;font-weight:700;color:#1e40af">ðŸ“‹ RECORD PAYMENT PAGE â€” API Flow</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500</span><span class="ep-desc">Load contract dropdown</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Record Payment â†’ Select Contract dropdown</span>
+<div class="sub-label">Called on</div><p style="font-size:12px;color:#667;margin-top:6px">Page load â€” fills the contract dropdown</p>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments/contract/{contractId}</span><span class="ep-desc">Load installments for selected contract</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Record Payment â†’ Contract dropdown OnChange</span>
+<div class="sub-label">Called when</div><p style="font-size:12px;color:#667;margin-top:6px">User selects a contract from dropdown â€” shows installment table</p>
+<div class="sub-label">Response</div>
+<div class="code-block">[{"id":1,"installmentNo":1,"amount":3000,"dueDate":"2026-07-01","paidAmount":0,"status":"Pending","paymentMode":"","chequeNumber":""},{"installmentNo":2,"amount":3000,"dueDate":"2026-08-01","status":"Pending"}]</div>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/waivers?PageSize=500</span><span class="ep-desc">Load waivers (for waiver badges in table)</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Record Payment â†’ Waiver column in installments table</span>
+</div></div>
+
+<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#1e40af">ðŸ’° MAKE PAYMENT (Receive Payment popup)</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments?PageSize=2000</span><span class="ep-desc">All payments for Make Payment page</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Make Payment â†’ page load</span>
+<div class="sub-label">Query Params</div>
+<table class="params-table"><tr><th>Param</th><th>Description</th></tr>
+<tr><td>PageSize</td><td>Number of records</td></tr>
+<tr><td>ContractId</td><td>Filter by contract</td></tr>
+<tr><td>PaymentStatus</td><td>Pending | Paid | Partial</td></tr>
+<tr><td>TenantId</td><td>Filter by tenant</td></tr>
+<tr><td>DateFrom / DateTo</td><td>Date range filter</td></tr>
+</table>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments/contract/{contractId}</span><span class="ep-desc">Get specific contract payments</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Make Payment â†’ contract search â†’ select â†’ load installments</span>
+<div class="sub-label">Example</div>
+<div class="code-block">GET /api/payments/contract/CNT-000001</div>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/payments/record</span><span class="ep-desc">Record a payment (Save button in popup)</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Make Payment â†’ Pay Now button â†’ popup â†’ Save</span>
+<div class="sub-label">Also used in</div><span class="ui-label">Record Payment â†’ Edit payment modal â†’ Save</span>
+<div class="sub-label">Request Body</div>
+<div class="code-block">{"contractId":"CNT-000001","installmentNo":1,"paidAmount":3000,"paidDate":"2026-07-05","paymentModeId":1,"paymentMode":"Cheque","chequeNumber":"CHQ-001","clearanceDate":"2026-07-10","description":"July rent","receivedBy":"Admin","receivedContact":"0501234567","fundPoolId":1,"fundPoolName":"Main Pool","issuedBy":"System"}</div>
+<div class="sub-label">Fields</div>
+<table class="params-table">
+<tr><th>Field</th><th>Type</th><th class="tag-req">Required</th><th>Description</th></tr>
+<tr><td>contractId</td><td>string</td><td><span class="tag tag-req">Required</span></td><td>e.g. CNT-000001</td></tr>
+<tr><td>installmentNo</td><td>int</td><td><span class="tag tag-req">Required</span></td><td>Installment number</td></tr>
+<tr><td>paidAmount</td><td>decimal</td><td><span class="tag tag-req">Required</span></td><td>Amount paid (can be partial)</td></tr>
+<tr><td>paidDate</td><td>datetime</td><td><span class="tag tag-req">Required</span></td><td>Payment date</td></tr>
+<tr><td>paymentModeId</td><td>int</td><td><span class="tag tag-opt">Optional</span></td><td>Payment mode ID</td></tr>
+<tr><td>paymentMode</td><td>string</td><td><span class="tag tag-opt">Optional</span></td><td>Cheque / Cash / Bank Transfer</td></tr>
+<tr><td>chequeNumber</td><td>string</td><td><span class="tag tag-opt">Optional</span></td><td>Cheque number</td></tr>
+<tr><td>clearanceDate</td><td>string</td><td><span class="tag tag-opt">Optional</span></td><td>Cheque clearance date</td></tr>
+<tr><td>fundPoolId</td><td>int</td><td><span class="tag tag-opt">Optional</span></td><td>Fund Pool ID</td></tr>
+<tr><td>issuedBy</td><td>string</td><td><span class="tag tag-opt">Optional</span></td><td>Issued by person name</td></tr>
+<tr><td>receivedBy</td><td>string</td><td><span class="tag tag-opt">Optional</span></td><td>Received by person name</td></tr>
+</table>
+<div class="sub-label">DB Action (sp_RecordPayment)</div>
+<p style="font-size:12px;color:#667;margin-top:6px">Updates ContractInstallments: PaidAmount, PaidDate, Status (Paid/Partial/Pending), PaymentMode, ChequeNumber. Also updates FundPool balance.</p>
+<div class="sub-label">Response</div>
+<div class="code-block">{"success":true,"message":"Payment recorded successfully."}</div>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments/{id}</span><span class="ep-desc">Get single payment by ID</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Edit payment modal (load existing payment data)</span>
+</div></div>
+
+<div style="background:#fef3c7;border-left:4px solid #92400e;padding:8px 14px;border-radius:6px;margin:14px 0 10px;font-size:12px;font-weight:700;color:#92400e">ðŸ“Š STATUS VALUES</div>
+<div style="background:#fff;border:1px solid #e4e7ef;border-radius:8px;padding:12px 16px;font-size:12px">
+<table class="params-table">
+<tr><th>Status</th><th>Condition</th></tr>
+<tr><td><span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-weight:600">Paid</span></td><td>paidAmount &gt;= amount</td></tr>
+<tr><td><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-weight:600">Partial</span></td><td>0 &lt; paidAmount &lt; amount</td></tr>
+<tr><td><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:600">Pending</span></td><td>paidAmount = 0</td></tr>
+</table>
+</div>
 </div>
 
 <div class="section" id="waivers">
-<div class="section-title">🎁 Waivers</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/waivers?PageSize=500</span><span class="ep-desc">All waivers</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Payments → Waiver</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/waivers</span><span class="ep-desc">Create waiver</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"tenantId":1,"contractId":"CNT-000001","installmentNo":2,"waiverAmount":500,"remark":"Special discount","waiverDate":"2026-07-06T00:00:00Z"}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/waivers/{id}</span><span class="ep-desc">Delete waiver</span></div><div class="ep-body"></div></div>
+<div class="section-title">🎁 Waiver Management</div>
+
+<div style="background:#e8f4fd;border-left:4px solid #1e40af;padding:8px 14px;border-radius:6px;margin-bottom:10px;font-size:12px;font-weight:700;color:#1e40af">📋 WAIVER PAGE — API Flow</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/waivers?PageSize=500</span><span class="ep-desc">All waivers (page load)</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Waiver Management → table list</span>
+<div class="sub-label">Response</div>
+<div class="code-block">{"data":[{"id":1,"contractId":"CNT-000001","installmentNo":2,"waiverAmount":500,"originalAmount":3000,"balanceAmount":2500,"remark":"Early payment","waiverDate":"2026-07-06","tenantId":1}]}</div>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contracts?PageSize=500</span><span class="ep-desc">Contracts for Add Waiver dropdown</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Waiver → Add Waiver → Contract dropdown</span>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/payments/contract/{contractId}</span><span class="ep-desc">Pending installments on contract select</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Waiver → Add Waiver → Contract dropdown OnChange → Installment dropdown</span>
+<div class="sub-label">Called when</div><p style="font-size:12px;color:#667;margin-top:6px">User selects a contract — loads only Pending installments in dropdown</p>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/waivers</span><span class="ep-desc">Create waiver</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Waiver → Add Waiver → Save Waiver button</span>
+<div class="sub-label">Request Body</div>
+<div class="code-block">{"tenantId":1,"contractId":"CNT-000001","installmentNo":2,"waiverAmount":500,"remark":"Early payment discount","waiverDate":"2026-07-06T00:00:00Z"}</div>
+<div class="sub-label">Fields</div>
+<table class="params-table">
+<tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+<tr><td>tenantId</td><td>int</td><td><span class="tag tag-req">Required</span></td><td>Tenant ID from contract</td></tr>
+<tr><td>contractId</td><td>string</td><td><span class="tag tag-req">Required</span></td><td>e.g. CNT-000001</td></tr>
+<tr><td>installmentNo</td><td>int</td><td><span class="tag tag-req">Required</span></td><td>Installment number</td></tr>
+<tr><td>waiverAmount</td><td>decimal</td><td><span class="tag tag-req">Required</span></td><td>Amount to waive (must be &le; installment amount)</td></tr>
+<tr><td>remark</td><td>string</td><td><span class="tag tag-opt">Optional</span></td><td>Reason for waiver</td></tr>
+<tr><td>waiverDate</td><td>datetime</td><td><span class="tag tag-req">Required</span></td><td>ISO format: 2026-07-06T00:00:00Z</td></tr>
+</table>
+<div class="sub-label">Response</div>
+<div class="code-block">{"success":true,"message":"Waiver recorded!"}</div>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/waivers/{id}</span><span class="ep-desc">Delete waiver</span></div><div class="ep-body">
+<div class="sub-label">UI Page</div><span class="ui-label">Waiver Management → Delete button</span>
+</div></div>
+
+<div style="background:#f0fdf4;border-left:4px solid #166534;padding:8px 14px;border-radius:6px;margin:10px 0;font-size:12px;font-weight:700;color:#166534">📋 COMPLETE WAIVER FLOW</div>
+<div style="background:#fff;border:1px solid #e4e7ef;border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.8">
+<strong>1.</strong> Page load → <code>GET /api/waivers?PageSize=500</code> + <code>GET /api/contracts?PageSize=500</code><br>
+<strong>2.</strong> Add Waiver → Contract select → <code>GET /api/payments/contract/{cid}</code> → Pending installments<br>
+<strong>3.</strong> Fill waiver amount + remark → Save → <code>POST /api/waivers</code><br>
+<strong>4.</strong> Delete → <code>DELETE /api/waivers/{id}</code>
+</div>
 </div>
 
 <div class="section" id="incomes">
-<div class="section-title">📈 Income</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/incomes?PageSize=500</span><span class="ep-desc">All incomes</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Accounts → Income</span></div></div>
+<div class="section-title">ðŸ“ˆ Income</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/incomes?PageSize=500</span><span class="ep-desc">All incomes</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Accounts â†’ Income</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/incomes</span><span class="ep-desc">Add income</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"date":"2026-07-06","mode":"Cash","head":"Rent Income","fundPoolId":1,"amount":5000,"purpose":"Monthly rent","source":"Manual","sourceRef":""}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/incomes/{id}</span><span class="ep-desc">Update income</span></div><div class="ep-body"></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/incomes/{id}</span><span class="ep-desc">Delete income</span></div><div class="ep-body"></div></div>
 </div>
 
 <div class="section" id="expenses">
-<div class="section-title">📉 Expense</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/expenses?PageSize=500</span><span class="ep-desc">All expenses</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Accounts → Expense</span></div></div>
+<div class="section-title">ðŸ“‰ Expense</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/expenses?PageSize=500</span><span class="ep-desc">All expenses</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Accounts â†’ Expense</span></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/expenses</span><span class="ep-desc">Add expense</span></div><div class="ep-body"><div class="sub-label">Request Body</div><div class="code-block">{"date":"2026-07-06","mode":"Bank Transfer","head":"Maintenance","fundPoolId":1,"amount":2000,"nature":"Camp","campId":1,"recipientName":"ABC Co.","purpose":"AC repair"}</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/expenses/{id}</span><span class="ep-desc">Delete expense</span></div><div class="ep-body"></div></div>
 </div>
 
 <div class="section" id="reports">
-<div class="section-title">📊 Reports</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/inventory</span><span class="ep-desc">Inventory report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Inventory</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenants</span><span class="ep-desc">Tenant report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Tenant</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/partners</span><span class="ep-desc">Partner report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Partner</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/camps</span><span class="ep-desc">Camp report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Camp</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/transactions</span><span class="ep-desc">Transaction report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Transaction</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenant-ledger/{tenantId}</span><span class="ep-desc">Tenant ledger</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Ledger</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/due-payments</span><span class="ep-desc">Due report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Due</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/waivers</span><span class="ep-desc">Waiver report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Waiver</span></div></div>
+<div class="section-title">ðŸ“Š Reports</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/inventory</span><span class="ep-desc">Inventory report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Inventory</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenants</span><span class="ep-desc">Tenant report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Tenant</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/partners</span><span class="ep-desc">Partner report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Partner</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/camps</span><span class="ep-desc">Camp report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Camp</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/transactions</span><span class="ep-desc">Transaction report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Transaction</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenant-ledger/{tenantId}</span><span class="ep-desc">Tenant ledger</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Ledger</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/due-payments</span><span class="ep-desc">Due report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Due</span></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/waivers</span><span class="ep-desc">Waiver report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Waiver</span></div></div>
 </div>
 
 <div class="section" id="mis">
-<div class="section-title">📈 MIS Dashboard</div>
+<div class="section-title">ðŸ“ˆ MIS Dashboard</div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/mis/stats</span><span class="ep-desc">MIS KPIs</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">MIS Dashboard</span><div class="sub-label">Query Params (optional)</div><div class="code-block">?campId=1&month=2026-07&partnerId=1</div></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/mis/owner-report</span><span class="ep-desc">Owner financial report</span></div><div class="ep-body"></div></div>
 </div>
 
 <div class="section" id="staff">
-<div class="section-title">👔 Staff Master</div>
+<div class="section-title">ðŸ‘” Staff Master</div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/staff?PageSize=500</span><span class="ep-desc">All staff + cards</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Staff Master</span><div class="sub-label">Cards</div><div class="code-block">{"cards":{"total":5,"active":4,"inactive":1,"withAccess":4}}</div></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/staff</span><span class="ep-desc">Add staff</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Staff Master → Add Staff</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"Ramesh Kumar","contact":"0501234567","email":"r@test.com","address":"Dubai","username":"ramesh.kumar","password":"Pass@123","loginAccess":"enabled","status":"Active","remarks":""}</div><div class="sub-label">DB Trigger</div><p style="font-size:12px;color:#667;margin-top:6px">trg_Staff_AfterInsert → auto creates user in AppUsers table</p></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/staff/{id}</span><span class="ep-desc">Update staff</span></div><div class="ep-body"><div class="sub-label">DB Trigger</div><p style="font-size:12px;color:#667;margin-top:6px">trg_Staff_AfterUpdate → syncs name/contact/status in AppUsers</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/staff</span><span class="ep-desc">Add staff</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Staff Master â†’ Add Staff</span><div class="sub-label">Request Body</div><div class="code-block">{"name":"Ramesh Kumar","contact":"0501234567","email":"r@test.com","address":"Dubai","username":"ramesh.kumar","password":"Pass@123","loginAccess":"enabled","status":"Active","remarks":""}</div><div class="sub-label">DB Trigger</div><p style="font-size:12px;color:#667;margin-top:6px">trg_Staff_AfterInsert â†’ auto creates user in AppUsers table</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/staff/{id}</span><span class="ep-desc">Update staff</span></div><div class="ep-body"><div class="sub-label">DB Trigger</div><p style="font-size:12px;color:#667;margin-top:6px">trg_Staff_AfterUpdate â†’ syncs name/contact/status in AppUsers</p></div></div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/staff/{id}</span><span class="ep-desc">Delete staff</span></div><div class="ep-body"></div></div>
 </div>
 
