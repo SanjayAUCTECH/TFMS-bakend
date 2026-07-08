@@ -570,15 +570,122 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
 </div>
 
 <div class="section" id="reports">
-<div class="section-title">ðŸ“Š Reports</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/inventory</span><span class="ep-desc">Inventory report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Inventory</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenants</span><span class="ep-desc">Tenant report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Tenant</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/partners</span><span class="ep-desc">Partner report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Partner</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/camps</span><span class="ep-desc">Camp report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Camp</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/transactions</span><span class="ep-desc">Transaction report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Transaction</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenant-ledger/{tenantId}</span><span class="ep-desc">Tenant ledger</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Ledger</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/due-payments</span><span class="ep-desc">Due report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Due</span></div></div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/waivers</span><span class="ep-desc">Waiver report</span></div><div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports â†’ Waiver</span></div></div>
+<div class="section-title">📊 Reports</div>
+<p style="font-size:13px;color:#667;margin-bottom:16px">All report APIs return a unified response: <strong>summary</strong> (cards) + <strong>chart data</strong> + <strong>rows</strong> (table) — single API call per report page.</p>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/inventory</span><span class="ep-desc">Room inventory — cards + pie(status) + bar(camps) + table</span></div>
+<div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Inventory Report</span>
+<div class="sub-label">Query Params (optional)</div><div class="code-block">?CampId=1&Status=Occupied&SearchText=BH101&PageSize=500</div>
+<div class="sub-label">Response</div><div class="code-block">{
+  "data": {
+    "summary": { "totalRooms":389, "occupiedRooms":197, "vacantRooms":173, "occupancyRate":50.6 },
+    "statusBreakdown": [{ "status":"Occupied","count":197 }, { "status":"Vacant","count":173 }],
+    "campBreakdown":   [{ "campName":"Al Barsha", "totalRooms":28, "occupiedRooms":28, "vacantRooms":0 }],
+    "rows": [{ "roomId":1,"roomNo":"BH101","campName":"Al Barsha Heights","floorName":"First Floor",
+               "status":"Occupied","occupied":true,"monthlyPrice":1400,"tenantName":"Ahmed Al Rashidi",
+               "contractId":"CNT0001","contractStatus":"Active","otherDetails":"Furnished" }],
+    "totalRecords": 389
+  }
+}</div></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenants</span><span class="ep-desc">Tenant financials — cards + pie(type) + bar(status) + table</span></div>
+<div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Tenant Report</span>
+<div class="sub-label">Query Params</div><div class="code-block">?Status=Active&CampId=1&SearchText=Ahmed</div>
+<div class="sub-label">Response</div><div class="code-block">{
+  "data": {
+    "summary": { "totalTenants":12,"activeTenants":12,"inactiveTenants":0,"companies":4,"individuals":8 },
+    "typeBreakdown":   [{ "type":"Individual","count":8 }, { "type":"Company","count":4 }],
+    "statusBreakdown": [{ "status":"Active","count":12 }, { "status":"Inactive","count":0 }],
+    "rows": [{ "tenantId":1,"tenantName":"Ahmed Al Rashidi","contact":"0501112233",
+               "emiratesId":"784-1980-1234567-1","nationality":"UAE","status":"Active","type":"Individual",
+               "contractId":"CNT0001","campName":"Al Nahda Camp","roomNo":"NA101",
+               "monthlyRent":1250,"totalAmount":15000,"roomsBooked":1,
+               "totalPaid":5000,"totalDue":7500,"balance":10000,"waiverAmount":0 }],
+    "totalRecords": 12
+  }
+}</div></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/partners</span><span class="ep-desc">Partner financials — cards + pie + bar(per camp) + table</span></div>
+<div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Partner Report</span>
+<div class="sub-label">Response</div><div class="code-block">{
+  "data": {
+    "summary": { "totalPartners":14,"activePartners":12,"inactivePartners":2,"assignedToCamps":11 },
+    "campBreakdown": [{ "campName":"Al Nahda Camp","partnerCount":3 }],
+    "rows": [{ "partnerId":1,"partnerCode":"PRT-000001","partnerName":"Al Habtoor Group",
+               "contact":"Ahmed","mobile":"0501112222","email":"p@example.com","status":"Active",
+               "totalCamps":2,"campNames":"Al Nahda, Al Barsha",
+               "shareValue":1000,"shareType":"fixed",
+               "totalCollected":45000,"totalPaid":10000 }],
+    "totalRecords": 14
+  }
+}</div></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/camps</span><span class="ep-desc">Camp P&amp;L — cards + bar(Rent/Collected/Outstanding) + pie + table</span></div>
+<div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Camp Report</span>
+<div class="sub-label">Response</div><div class="code-block">{
+  "data": {
+    "summary": { "totalCamps":16,"activeCamps":16,"totalRooms":300,"avgRoomsPerCamp":19 },
+    "chartData": [{ "campName":"Al Barsha Heights","monthlyRent":700500,"collected":43500,"outstanding":1984200 }],
+    "rows": [{ "campId":6,"campCode":"CMP006","campName":"Al Barsha Heights","status":"Active",
+               "totalRooms":28,"occupiedRooms":28,"vacantRooms":0,"activeContracts":15,
+               "totalMonthlyRent":700500,"totalCollected":43500,"totalDue":1984200,
+               "campExpense":0,"hoAllocated":0,"totalExpense":0,"profit":43500 }],
+    "totalRecords": 16
+  }
+}
+// campExpense = direct expenses (Nature=Camp)
+// hoAllocated = (Total HO expenses / total rooms) × camp rooms
+// profit      = totalCollected - totalExpense</div></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/transactions</span><span class="ep-desc">Transaction statement DR/CR — cards + line(monthly) + doughnut + table</span></div>
+<div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Transaction Statement</span>
+<div class="sub-label">Query Params</div><div class="code-block">?CampId=1&ContractId=CNT0001&Status=DR&DateFrom=2026-01-01&DateTo=2026-12-31</div>
+<div class="sub-label">Response</div><div class="code-block">{
+  "data": {
+    "summary": { "totalCount":403,"totalIncome":492500,"paidCount":132,"pendingCount":262 },
+    "monthlyData": [{ "month":"Jan","income":45000,"expenses":10000 }],
+    "rows": [{ "id":438,"date":"2026-07-07","txnType":"DR",
+               "accountHead":"Rent Income","particular":"Ahmed Al Rashidi",
+               "campName":"Al Barsha Heights","fundPoolName":"Main Operations",
+               "source":"Inst #12","mode":"Cash","amount":3500,"status":"Paid",
+               "contractId":"CNT-000033" }],
+    "totalRecords": 403
+  }
+}
+// txnType: DR = Income (paid installments) | CR = Expense</div></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/waivers</span><span class="ep-desc">Waiver report — cards + monthly bar + tenant pie + table</span></div>
+<div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Waiver Report</span>
+<div class="sub-label">Query Params</div><div class="code-block">?TenantId=1&DateFrom=2026-01-01&DateTo=2026-12-31</div>
+<div class="sub-label">Response</div><div class="code-block">{
+  "data": {
+    "summary": { "totalWaivers":9,"totalAmount":1930,"avgAmount":214.44,"uniqueTenants":3 },
+    "monthlyData":     [{ "month":"Jan","amount":500 }],
+    "tenantBreakdown": [{ "tenantName":"Ahmed Al Rashidi","amount":800 }],
+    "rows": [{ "waiverId":1,"tenantId":1,"tenantName":"Ahmed Al Rashidi",
+               "contractId":"CNT0001","installmentNo":3,
+               "originalAmount":1500,"waiverAmount":300,"balanceAmount":1200,
+               "remark":"Goodwill discount","waiverDate":"2026-03-15" }],
+    "totalRecords": 9
+  }
+}</div></div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/reports/tenant-ledger/{tenantId}</span><span class="ep-desc">Tenant ledger — Debit/Credit running balance</span></div>
+<div class="ep-body"><div class="sub-label">UI Page</div><span class="ui-label">Reports → Tenant Ledger → View button</span>
+<div class="sub-label">Path Params</div>
+<table class="params-table"><tr><th>Param</th><th>Type</th><th>Description</th></tr>
+<tr><td>tenantId</td><td><span class="tag tag-req">required</span> int</td><td>Tenant ID</td></tr></table>
+<div class="sub-label">Query Params</div><div class="code-block">?contractId=CNT0001&dateFrom=2026-01-01&dateTo=2026-12-31</div>
+<div class="sub-label">Response</div><div class="code-block">{
+  "data": {
+    "tenantName":"Ahmed Al Rashidi","contact":"0501112233",
+    "totalDebit":15000,"totalCredit":5000,"netBalance":10000,
+    "rows": [{ "serialNo":1,"date":"2026-01-01","description":"Installment #1 - Due",
+               "type":"Debit","debit":1250,"credit":0,"balance":1250,
+               "contractId":"CNT0001","installmentNo":1,"paymentMode":"Cash","reference":"" }]
+  }
+}</div></div></div>
+
 </div>
 
 <div class="section" id="mis">
