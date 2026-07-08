@@ -4,26 +4,14 @@ namespace TFMS_software_api.Repositories;
 
 public interface IReportRepository
 {
-    // Inventory Report
-    Task<(IEnumerable<InventoryReportRow> Data, int Total)> GetInventoryReportAsync(ReportRequest r);
-
-    // Tenant Report
-    Task<(IEnumerable<TenantReportRow> Data, int Total)> GetTenantReportAsync(ReportRequest r);
-
-    // Partner Report
-    Task<(IEnumerable<PartnerReportRow> Data, int Total)> GetPartnerReportAsync(ReportRequest r);
-
-    // Camp Report
-    Task<(IEnumerable<CampReportRow> Data, int Total)> GetCampReportAsync(ReportRequest r);
-
-    // Waiver Report
-    Task<(IEnumerable<WaiverReportRow> Data, int Total)> GetWaiverReportAsync(ReportRequest r);
-
-    // Tenant Ledger
-    Task<TenantLedgerSummary?> GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo);
-
-    // Transaction Statement
-    Task<(IEnumerable<TransactionRow> Data, int Total)> GetTransactionStatementAsync(ReportRequest r);
+    // Inventory Report — returns full response with rows + summary + charts
+    Task<InventoryReportResponse>  GetInventoryReportAsync(ReportRequest r);
+    Task<TenantReportResponse>     GetTenantReportAsync(ReportRequest r);
+    Task<PartnerReportResponse>    GetPartnerReportAsync(ReportRequest r);
+    Task<CampReportResponse>       GetCampReportAsync(ReportRequest r);
+    Task<WaiverReportResponse>     GetWaiverReportAsync(ReportRequest r);
+    Task<TransactionReportResponse>GetTransactionStatementAsync(ReportRequest r);
+    Task<TenantLedgerSummary?>     GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo);
 
     // Room History
     Task<IEnumerable<RoomHistoryRow>> GetRoomHistoryAsync(int roomId);

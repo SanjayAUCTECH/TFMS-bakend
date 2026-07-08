@@ -9,39 +9,46 @@ public class ReportService : IReportService
     private readonly IReportRepository _repo;
     public ReportService(IReportRepository repo) => _repo = repo;
 
-    public async Task<ApiResponse<IEnumerable<InventoryReportRow>>> GetInventoryReportAsync(ReportRequest request)
+    public async Task<ApiResponse<InventoryReportResponse>> GetInventoryReportAsync(ReportRequest request)
     {
-        var (data, total) = await _repo.GetInventoryReportAsync(request);
-        return ApiResponse<IEnumerable<InventoryReportRow>>.Ok(data, "Inventory report retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPage, request.ResolvedPageSize));
+        var result = await _repo.GetInventoryReportAsync(request);
+        return ApiResponse<InventoryReportResponse>.Ok(result, "Inventory report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
     }
 
-    public async Task<ApiResponse<IEnumerable<TenantReportRow>>> GetTenantReportAsync(ReportRequest request)
+    public async Task<ApiResponse<TenantReportResponse>> GetTenantReportAsync(ReportRequest request)
     {
-        var (data, total) = await _repo.GetTenantReportAsync(request);
-        return ApiResponse<IEnumerable<TenantReportRow>>.Ok(data, "Tenant report retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPage, request.ResolvedPageSize));
+        var result = await _repo.GetTenantReportAsync(request);
+        return ApiResponse<TenantReportResponse>.Ok(result, "Tenant report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
     }
 
-    public async Task<ApiResponse<IEnumerable<PartnerReportRow>>> GetPartnerReportAsync(ReportRequest request)
+    public async Task<ApiResponse<PartnerReportResponse>> GetPartnerReportAsync(ReportRequest request)
     {
-        var (data, total) = await _repo.GetPartnerReportAsync(request);
-        return ApiResponse<IEnumerable<PartnerReportRow>>.Ok(data, "Partner report retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPage, request.ResolvedPageSize));
+        var result = await _repo.GetPartnerReportAsync(request);
+        return ApiResponse<PartnerReportResponse>.Ok(result, "Partner report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
     }
 
-    public async Task<ApiResponse<IEnumerable<CampReportRow>>> GetCampReportAsync(ReportRequest request)
+    public async Task<ApiResponse<CampReportResponse>> GetCampReportAsync(ReportRequest request)
     {
-        var (data, total) = await _repo.GetCampReportAsync(request);
-        return ApiResponse<IEnumerable<CampReportRow>>.Ok(data, "Camp report retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPage, request.ResolvedPageSize));
+        var result = await _repo.GetCampReportAsync(request);
+        return ApiResponse<CampReportResponse>.Ok(result, "Camp report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
     }
 
-    public async Task<ApiResponse<IEnumerable<WaiverReportRow>>> GetWaiverReportAsync(ReportRequest request)
+    public async Task<ApiResponse<WaiverReportResponse>> GetWaiverReportAsync(ReportRequest request)
     {
-        var (data, total) = await _repo.GetWaiverReportAsync(request);
-        return ApiResponse<IEnumerable<WaiverReportRow>>.Ok(data, "Waiver report retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPage, request.ResolvedPageSize));
+        var result = await _repo.GetWaiverReportAsync(request);
+        return ApiResponse<WaiverReportResponse>.Ok(result, "Waiver report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
+    }
+
+    public async Task<ApiResponse<TransactionReportResponse>> GetTransactionStatementAsync(ReportRequest request)
+    {
+        var result = await _repo.GetTransactionStatementAsync(request);
+        return ApiResponse<TransactionReportResponse>.Ok(result, "Transaction statement retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
     }
 
     public async Task<ApiResponse<TenantLedgerSummary>> GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo)
@@ -50,13 +57,6 @@ public class ReportService : IReportService
         return result == null
             ? ApiResponse<TenantLedgerSummary>.Fail("No ledger data found for this tenant.")
             : ApiResponse<TenantLedgerSummary>.Ok(result, "Tenant ledger retrieved.");
-    }
-
-    public async Task<ApiResponse<IEnumerable<TransactionRow>>> GetTransactionStatementAsync(ReportRequest request)
-    {
-        var (data, total) = await _repo.GetTransactionStatementAsync(request);
-        return ApiResponse<IEnumerable<TransactionRow>>.Ok(data, "Transaction statement retrieved.",
-            PaginationHelper.Build(total, request.ResolvedPage, request.ResolvedPageSize));
     }
 
     public async Task<ApiResponse<IEnumerable<RoomHistoryRow>>> GetRoomHistoryAsync(int roomId)

@@ -34,17 +34,52 @@ public class ReportRequest
 // ── Inventory Report ───────────────────────────────────────────────────────
 public class InventoryReportRow
 {
-    public int     RoomId       { get; set; }
-    public string  RoomNo       { get; set; } = string.Empty;
-    public string  CampName     { get; set; } = string.Empty;
-    public string  FloorName    { get; set; } = string.Empty;
-    public string  Status       { get; set; } = string.Empty;
-    public bool    Occupied     { get; set; }
-    public decimal MonthlyPrice { get; set; }
-    public string  TenantName   { get; set; } = string.Empty;
-    public string  ContractId   { get; set; } = string.Empty;
+    public int     RoomId         { get; set; }
+    public string  RoomNo         { get; set; } = string.Empty;
+    public string  CampName       { get; set; } = string.Empty;
+    public string  FloorName      { get; set; } = string.Empty;
+    public string  Status         { get; set; } = string.Empty;
+    public bool    Occupied       { get; set; }
+    public decimal MonthlyPrice   { get; set; }
+    public string  TenantName     { get; set; } = string.Empty;
+    public string  ContractId     { get; set; } = string.Empty;
     public string  ContractStatus { get; set; } = string.Empty;
-    public string  OtherDetails { get; set; } = string.Empty;
+    public string  OtherDetails   { get; set; } = string.Empty;
+}
+
+// Summary cards for Inventory Report
+public class InventorySummary
+{
+    public int     TotalRooms     { get; set; }
+    public int     OccupiedRooms  { get; set; }
+    public int     VacantRooms    { get; set; }
+    public decimal OccupancyRate  { get; set; }   // percentage
+}
+
+// Per-status breakdown for Pie chart
+public class InventoryStatusBreakdown
+{
+    public string Status { get; set; } = string.Empty;
+    public int    Count  { get; set; }
+}
+
+// Per-camp breakdown for Bar chart
+public class InventoryCampBreakdown
+{
+    public string CampName     { get; set; } = string.Empty;
+    public int    TotalRooms   { get; set; }
+    public int    OccupiedRooms{ get; set; }
+    public int    VacantRooms  { get; set; }
+}
+
+// Full response wrapping rows + charts + cards
+public class InventoryReportResponse
+{
+    public InventorySummary                    Summary         { get; set; } = new();
+    public List<InventoryStatusBreakdown>      StatusBreakdown { get; set; } = new();
+    public List<InventoryCampBreakdown>        CampBreakdown   { get; set; } = new();
+    public List<InventoryReportRow>            Rows            { get; set; } = new();
+    public int                                 TotalRecords    { get; set; }
 }
 
 // ── Tenant Report ──────────────────────────────────────────────────────────
@@ -57,6 +92,7 @@ public class TenantReportRow
     public string   EmiratesId    { get; set; } = string.Empty;
     public string   Nationality   { get; set; } = string.Empty;
     public string   Status        { get; set; } = string.Empty;
+    public string   Type          { get; set; } = string.Empty;   // Individual | Company
     public string   ContractId    { get; set; } = string.Empty;
     public string   CampName      { get; set; } = string.Empty;
     public string   RoomNo        { get; set; } = string.Empty;
@@ -161,7 +197,95 @@ public class TransactionRow
     public string   ChequeNumber   { get; set; } = string.Empty;
 }
 
-// ── Room History ──────────────────────────────────────────────────────────
+// ── Tenant Report — Response wrapper ──────────────────────────────────────
+public class TenantReportSummary
+{
+    public int TotalTenants    { get; set; }
+    public int ActiveTenants   { get; set; }
+    public int InactiveTenants { get; set; }
+    public int Companies       { get; set; }
+    public int Individuals     { get; set; }
+}
+public class TenantTypeBreakdown   { public string Type   { get; set; } = ""; public int Count { get; set; } }
+public class TenantStatusBreakdown { public string Status { get; set; } = ""; public int Count { get; set; } }
+public class TenantReportResponse
+{
+    public TenantReportSummary         Summary         { get; set; } = new();
+    public List<TenantTypeBreakdown>   TypeBreakdown   { get; set; } = new();
+    public List<TenantStatusBreakdown> StatusBreakdown { get; set; } = new();
+    public List<TenantReportRow>       Rows            { get; set; } = new();
+    public int                         TotalRecords    { get; set; }
+}
+
+// ── Partner Report — Response wrapper ─────────────────────────────────────
+public class PartnerReportSummary
+{
+    public int TotalPartners    { get; set; }
+    public int ActivePartners   { get; set; }
+    public int InactivePartners { get; set; }
+    public int AssignedToCamps  { get; set; }
+}
+public class PartnerCampCount { public string CampName { get; set; } = ""; public int PartnerCount { get; set; } }
+public class PartnerReportResponse
+{
+    public PartnerReportSummary   Summary       { get; set; } = new();
+    public List<PartnerCampCount> CampBreakdown { get; set; } = new();
+    public List<PartnerReportRow> Rows          { get; set; } = new();
+    public int                    TotalRecords  { get; set; }
+}
+
+// ── Camp Report — Response wrapper ────────────────────────────────────────
+public class CampReportSummary
+{
+    public int TotalCamps      { get; set; }
+    public int ActiveCamps     { get; set; }
+    public int TotalRooms      { get; set; }
+    public int AvgRoomsPerCamp { get; set; }
+}
+public class CampChartBar { public string CampName { get; set; } = ""; public decimal Collected { get; set; } public decimal Outstanding { get; set; } public decimal MonthlyRent { get; set; } }
+public class CampReportResponse
+{
+    public CampReportSummary    Summary      { get; set; } = new();
+    public List<CampChartBar>   ChartData    { get; set; } = new();
+    public List<CampReportRow>  Rows         { get; set; } = new();
+    public int                  TotalRecords { get; set; }
+}
+
+// ── Waiver Report — Response wrapper ──────────────────────────────────────
+public class WaiverReportSummary
+{
+    public int     TotalWaivers  { get; set; }
+    public decimal TotalAmount   { get; set; }
+    public decimal AvgAmount     { get; set; }
+    public int     UniqueTenants { get; set; }
+}
+public class WaiverMonthlyData { public string Month { get; set; } = ""; public decimal Amount { get; set; } }
+public class WaiverTenantData  { public string TenantName { get; set; } = ""; public decimal Amount { get; set; } }
+public class WaiverReportResponse
+{
+    public WaiverReportSummary      Summary         { get; set; } = new();
+    public List<WaiverMonthlyData>  MonthlyData     { get; set; } = new();
+    public List<WaiverTenantData>   TenantBreakdown { get; set; } = new();
+    public List<WaiverReportRow>    Rows            { get; set; } = new();
+    public int                      TotalRecords    { get; set; }
+}
+
+// ── Transaction Report — Response wrapper ─────────────────────────────────
+public class TransactionReportSummary
+{
+    public int     TotalCount   { get; set; }
+    public decimal TotalIncome  { get; set; }
+    public int     PaidCount    { get; set; }
+    public int     PendingCount { get; set; }
+}
+public class TransactionMonthlyData { public string Month { get; set; } = ""; public decimal Income { get; set; } public decimal Expenses { get; set; } }
+public class TransactionReportResponse
+{
+    public TransactionReportSummary        Summary      { get; set; } = new();
+    public List<TransactionMonthlyData>    MonthlyData  { get; set; } = new();
+    public List<TransactionRow>            Rows         { get; set; } = new();
+    public int                             TotalRecords { get; set; }
+}
 public class RoomHistoryRow
 {
     public string   ContractId   { get; set; } = string.Empty;
