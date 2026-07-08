@@ -72,9 +72,12 @@ public class ReportRepository : IReportRepository
                 ContractEnd=rd.IsDBNull(rd.GetOrdinal("ContractEnd"))?null:rd.GetDateTime(rd.GetOrdinal("ContractEnd")),
                 ContractStatus=rd.IsDBNull(rd.GetOrdinal("ContractStatus"))?"":rd.GetString(rd.GetOrdinal("ContractStatus")),
                 MonthlyRent=rd.IsDBNull(rd.GetOrdinal("MonthlyRent"))?0:rd.GetDecimal(rd.GetOrdinal("MonthlyRent")),
+                TotalAmount=rd.IsDBNull(rd.GetOrdinal("TotalAmount"))?0:rd.GetDecimal(rd.GetOrdinal("TotalAmount")),
+                RoomsBooked=rd.IsDBNull(rd.GetOrdinal("RoomsBooked"))?0:rd.GetInt32(rd.GetOrdinal("RoomsBooked")),
                 TotalPaid=rd.IsDBNull(rd.GetOrdinal("TotalPaid"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPaid")),
                 TotalDue=rd.IsDBNull(rd.GetOrdinal("TotalDue"))?0:rd.GetDecimal(rd.GetOrdinal("TotalDue")),
                 Balance=rd.IsDBNull(rd.GetOrdinal("Balance"))?0:rd.GetDecimal(rd.GetOrdinal("Balance")),
+                WaiverAmount=rd.IsDBNull(rd.GetOrdinal("WaiverAmount"))?0:rd.GetDecimal(rd.GetOrdinal("WaiverAmount")),
             });
 
         // Unique tenants (SP returns one row per contract — deduplicate by TenantId)
@@ -128,11 +131,14 @@ public class ReportRepository : IReportRepository
                 PartnerName=rd.GetString(rd.GetOrdinal("PartnerName")),
                 Contact=rd.IsDBNull(rd.GetOrdinal("Contact"))?"":rd.GetString(rd.GetOrdinal("Contact")),
                 Mobile=rd.IsDBNull(rd.GetOrdinal("Mobile"))?"":rd.GetString(rd.GetOrdinal("Mobile")),
+                Email=rd.IsDBNull(rd.GetOrdinal("Email"))?"":rd.GetString(rd.GetOrdinal("Email")),
                 Status=rd.GetString(rd.GetOrdinal("Status")),
                 TotalCamps=rd.IsDBNull(rd.GetOrdinal("TotalCamps"))?0:rd.GetInt32(rd.GetOrdinal("TotalCamps")),
                 CampNames=rd.IsDBNull(rd.GetOrdinal("CampNames"))?"":rd.GetString(rd.GetOrdinal("CampNames")),
                 ShareValue=rd.IsDBNull(rd.GetOrdinal("ShareValue"))?0:rd.GetDecimal(rd.GetOrdinal("ShareValue")),
                 ShareType=rd.IsDBNull(rd.GetOrdinal("ShareType"))?"":rd.GetString(rd.GetOrdinal("ShareType")),
+                TotalCollected=rd.IsDBNull(rd.GetOrdinal("TotalCollected"))?0:rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
+                TotalPaid=rd.IsDBNull(rd.GetOrdinal("TotalPaid"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPaid")),
             });
         int total=all.Count, active=all.Count(x=>x.Status=="Active"), inactive=all.Count(x=>x.Status!="Active");
         var campMap = new Dictionary<string,int>();
@@ -170,6 +176,10 @@ public class ReportRepository : IReportRepository
                 TotalMonthlyRent=rd.IsDBNull(rd.GetOrdinal("TotalMonthlyRent"))?0:rd.GetDecimal(rd.GetOrdinal("TotalMonthlyRent")),
                 TotalCollected=rd.IsDBNull(rd.GetOrdinal("TotalCollected"))?0:rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
                 TotalDue=rd.IsDBNull(rd.GetOrdinal("TotalDue"))?0:rd.GetDecimal(rd.GetOrdinal("TotalDue")),
+                CampExpense=rd.IsDBNull(rd.GetOrdinal("CampExpense"))?0:rd.GetDecimal(rd.GetOrdinal("CampExpense")),
+                HOAllocated=rd.IsDBNull(rd.GetOrdinal("HOAllocated"))?0:rd.GetDecimal(rd.GetOrdinal("HOAllocated")),
+                TotalExpense=rd.IsDBNull(rd.GetOrdinal("TotalExpense"))?0:rd.GetDecimal(rd.GetOrdinal("TotalExpense")),
+                Profit=rd.IsDBNull(rd.GetOrdinal("Profit"))?0:rd.GetDecimal(rd.GetOrdinal("Profit")),
             });
         int total=all.Count, active=all.Count(x=>x.Status=="Active"), rooms=all.Sum(x=>x.TotalRooms);
         int pg=r.ResolvedPage, ps=r.ResolvedPageSize==int.MaxValue?all.Count:r.ResolvedPageSize;
@@ -239,20 +249,25 @@ public class ReportRepository : IReportRepository
         await using (var rd = await cmd.ExecuteReaderAsync())
             while (await rd.ReadAsync()) all.Add(new TransactionRow {
                 Id=rd.GetInt32(rd.GetOrdinal("Id")),
-                Date=rd.GetDateTime(rd.GetOrdinal("Date")),
-                ContractId=rd.GetString(rd.GetOrdinal("ContractId")),
+                Date=rd.IsDBNull(rd.GetOrdinal("Date"))?DateTime.MinValue:rd.GetDateTime(rd.GetOrdinal("Date")),
+                ContractId=rd.IsDBNull(rd.GetOrdinal("ContractId"))?"":rd.GetString(rd.GetOrdinal("ContractId")),
                 TenantName=rd.IsDBNull(rd.GetOrdinal("TenantName"))?"":rd.GetString(rd.GetOrdinal("TenantName")),
                 CampName=rd.IsDBNull(rd.GetOrdinal("CampName"))?"":rd.GetString(rd.GetOrdinal("CampName")),
-                RoomNo=rd.IsDBNull(rd.GetOrdinal("RoomNo"))?"":rd.GetString(rd.GetOrdinal("RoomNo")),
-                InstallmentNo=rd.GetInt32(rd.GetOrdinal("InstallmentNo")),
-                Amount=rd.GetDecimal(rd.GetOrdinal("Amount")),
-                PaidAmount=rd.GetDecimal(rd.GetOrdinal("PaidAmount")),
-                Balance=rd.GetDecimal(rd.GetOrdinal("Balance")),
-                PaymentMode=rd.IsDBNull(rd.GetOrdinal("PaymentMode"))?"":rd.GetString(rd.GetOrdinal("PaymentMode")),
-                Status=rd.GetString(rd.GetOrdinal("Status")),
-                ReceivedBy=rd.IsDBNull(rd.GetOrdinal("ReceivedBy"))?"":rd.GetString(rd.GetOrdinal("ReceivedBy")),
+                RoomNo="",
+                InstallmentNo=0,
+                Amount=rd.IsDBNull(rd.GetOrdinal("Amount"))?0:rd.GetDecimal(rd.GetOrdinal("Amount")),
+                PaidAmount=rd.IsDBNull(rd.GetOrdinal("Amount"))?0:rd.GetDecimal(rd.GetOrdinal("Amount")),
+                Balance=0,
+                PaymentMode=rd.IsDBNull(rd.GetOrdinal("Mode"))?"":rd.GetString(rd.GetOrdinal("Mode")),
+                Status=rd.IsDBNull(rd.GetOrdinal("Status"))?"":rd.GetString(rd.GetOrdinal("Status")),
+                ReceivedBy="",
                 FundPoolName=rd.IsDBNull(rd.GetOrdinal("FundPoolName"))?"":rd.GetString(rd.GetOrdinal("FundPoolName")),
-                ChequeNumber=rd.IsDBNull(rd.GetOrdinal("ChequeNumber"))?"":rd.GetString(rd.GetOrdinal("ChequeNumber")),
+                ChequeNumber="",
+                // Extra fields from new SP
+                AccountHead=rd.IsDBNull(rd.GetOrdinal("AccountHead"))?"":rd.GetString(rd.GetOrdinal("AccountHead")),
+                Particular=rd.IsDBNull(rd.GetOrdinal("Particular"))?"":rd.GetString(rd.GetOrdinal("Particular")),
+                TxnType=rd.IsDBNull(rd.GetOrdinal("TxnType"))?"":rd.GetString(rd.GetOrdinal("TxnType")),
+                Source=rd.IsDBNull(rd.GetOrdinal("Source"))?"":rd.GetString(rd.GetOrdinal("Source")),
             });
         var paid=all.Where(x=>x.Status=="Paid").ToList();
         decimal totalIncome=paid.Sum(x=>x.PaidAmount);

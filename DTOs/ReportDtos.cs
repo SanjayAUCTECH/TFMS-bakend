@@ -85,55 +85,65 @@ public class InventoryReportResponse
 // ── Tenant Report ──────────────────────────────────────────────────────────
 public class TenantReportRow
 {
-    public int      TenantId      { get; set; }
-    public string   TenantName    { get; set; } = string.Empty;
-    public string   Contact       { get; set; } = string.Empty;
-    public string   Email         { get; set; } = string.Empty;
-    public string   EmiratesId    { get; set; } = string.Empty;
-    public string   Nationality   { get; set; } = string.Empty;
-    public string   Status        { get; set; } = string.Empty;
-    public string   Type          { get; set; } = string.Empty;   // Individual | Company
-    public string   ContractId    { get; set; } = string.Empty;
-    public string   CampName      { get; set; } = string.Empty;
-    public string   RoomNo        { get; set; } = string.Empty;
+    public int      TenantId       { get; set; }
+    public string   TenantName     { get; set; } = string.Empty;
+    public string   Contact        { get; set; } = string.Empty;
+    public string   Email          { get; set; } = string.Empty;
+    public string   EmiratesId     { get; set; } = string.Empty;
+    public string   Nationality    { get; set; } = string.Empty;
+    public string   Status         { get; set; } = string.Empty;
+    public string   Type           { get; set; } = string.Empty;
+    public string   ContractId     { get; set; } = string.Empty;
+    public string   CampName       { get; set; } = string.Empty;
+    public string   RoomNo         { get; set; } = string.Empty;
     public DateTime? ContractStart { get; set; }
     public DateTime? ContractEnd   { get; set; }
     public string   ContractStatus { get; set; } = string.Empty;
-    public decimal  MonthlyRent   { get; set; }
-    public decimal  TotalPaid     { get; set; }
-    public decimal  TotalDue      { get; set; }
-    public decimal  Balance       { get; set; }
+    public decimal  MonthlyRent    { get; set; }
+    public decimal  TotalAmount    { get; set; }   // ContractTotal
+    public int      RoomsBooked    { get; set; }
+    public decimal  TotalPaid      { get; set; }
+    public decimal  TotalDue       { get; set; }
+    public decimal  Balance        { get; set; }
+    public decimal  WaiverAmount   { get; set; }
 }
 
 // ── Partner Report ─────────────────────────────────────────────────────────
 public class PartnerReportRow
 {
-    public int     PartnerId    { get; set; }
-    public string  PartnerCode  { get; set; } = string.Empty;
-    public string  PartnerName  { get; set; } = string.Empty;
-    public string  Contact      { get; set; } = string.Empty;
-    public string  Mobile       { get; set; } = string.Empty;
-    public string  Status       { get; set; } = string.Empty;
-    public int     TotalCamps   { get; set; }
-    public string  CampNames    { get; set; } = string.Empty;
-    public decimal ShareValue   { get; set; }
-    public string  ShareType    { get; set; } = string.Empty;
+    public int     PartnerId       { get; set; }
+    public string  PartnerCode     { get; set; } = string.Empty;
+    public string  PartnerName     { get; set; } = string.Empty;
+    public string  Contact         { get; set; } = string.Empty;
+    public string  Mobile          { get; set; } = string.Empty;
+    public string  Email           { get; set; } = string.Empty;
+    public string  Status          { get; set; } = string.Empty;
+    public int     TotalCamps      { get; set; }
+    public string  CampNames       { get; set; } = string.Empty;
+    public decimal ShareValue      { get; set; }
+    public string  ShareType       { get; set; } = string.Empty;
+    public decimal TotalCollected  { get; set; }
+    public decimal TotalPaid       { get; set; }
 }
 
 // ── Camp Report ────────────────────────────────────────────────────────────
 public class CampReportRow
 {
-    public int     CampId         { get; set; }
-    public string  CampCode       { get; set; } = string.Empty;
-    public string  CampName       { get; set; } = string.Empty;
-    public string  Status         { get; set; } = string.Empty;
-    public int     TotalRooms     { get; set; }
-    public int     OccupiedRooms  { get; set; }
-    public int     VacantRooms    { get; set; }
-    public int     ActiveContracts { get; set; }
+    public int     CampId           { get; set; }
+    public string  CampCode         { get; set; } = string.Empty;
+    public string  CampName         { get; set; } = string.Empty;
+    public string  Status           { get; set; } = string.Empty;
+    public int     TotalRooms       { get; set; }
+    public int     OccupiedRooms    { get; set; }
+    public int     VacantRooms      { get; set; }
+    public int     ActiveContracts  { get; set; }
     public decimal TotalMonthlyRent { get; set; }
-    public decimal TotalCollected  { get; set; }
-    public decimal TotalDue        { get; set; }
+    public decimal TotalCollected   { get; set; }
+    public decimal TotalDue         { get; set; }
+    public decimal CampExpense      { get; set; }
+    public decimal HOAllocated      { get; set; }
+    public decimal TotalExpense     { get; set; }
+    public decimal Profit           { get; set; }
 }
 
 // ── Waiver Report ──────────────────────────────────────────────────────────
@@ -195,6 +205,11 @@ public class TransactionRow
     public string   ReceivedBy     { get; set; } = string.Empty;
     public string   FundPoolName   { get; set; } = string.Empty;
     public string   ChequeNumber   { get; set; } = string.Empty;
+    // Extended fields from new SP
+    public string   AccountHead    { get; set; } = string.Empty;
+    public string   Particular     { get; set; } = string.Empty;
+    public string   TxnType        { get; set; } = string.Empty;   // DR | CR
+    public string   Source         { get; set; } = string.Empty;
 }
 
 // ── Tenant Report — Response wrapper ──────────────────────────────────────
