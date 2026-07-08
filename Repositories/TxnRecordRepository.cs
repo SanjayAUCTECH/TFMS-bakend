@@ -1,0 +1,113 @@
+using Microsoft.Data.SqlClient;
+using System.Data;
+using TFMS_software_api.DTOs;
+using TFMS_software_api.Models;
+
+namespace TFMS_software_api.Repositories;
+
+public class TxnRecordRepository : ITxnRecordRepository
+{
+    private readonly IDbConnectionFactory _factory;
+    public TxnRecordRepository(IDbConnectionFactory factory) => _factory = factory;
+
+    public async Task<(IEnumerable<TxnRecord> Data, int Total)> GetAllAsync(TxnRecordListRequest r)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_GetTxnRecords", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@PageNumber", r.ResolvedPage);
+        cmd.Parameters.AddWithValue("@PageSize",   r.ResolvedPageSize);
+        cmd.Parameters.AddWithValue("@ContractId", (object?)r.ContractId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TenantId",   (object?)r.TenantId   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId",     (object?)r.CampId     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TxnType",    (object?)r.TxnType    ?? DBNull.Value);
+        var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(totalParam);
+        var list = new List<TxnRecord>();
+        await using (var rd = await cmd.ExecuteReaderAsync())
+            while (await rd.ReadAsync()) list.Add(Map(rd));
+        return (list, (int)(totalParam.Value == DBNull.Value ? 0 : totalParam.Value));
+    }
+
+    public async Task<int> CreateAsync(TxnRecord t)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_CreateTxnRecord", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@TxnType",       t.TxnType);
+        cmd.Parameters.AddWithValue("@ContractId",    t.ContractId);
+        cmd.Parameters.AddWithValue("@ContractCode",  t.ContractCode);
+        cmd.Parameters.AddWithValue("@TenantId",      t.TenantId);
+        cmd.Parameters.AddWithValue("@CampId",        t.CampId);
+        cmd.Parameters.AddWithValue("@TotalAmount",   t.TotalAmount);
+        cmd.Parameters.AddWithValue("@Amount",        t.Amount);
+        cmd.Parameters.AddWithValue("@TxnDate",       t.TxnDate);
+        cmd.Parameters.AddWithValue("@FromDate",      (object?)t.FromDate    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ToDate",        (object?)t.ToDate      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PaymentMode",   t.PaymentMode);
+        cmd.Parameters.AddWithValue("@PaymentModeId", (object?)t.PaymentModeId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPoolId",    (object?)t.FundPoolId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPoolName",  t.FundPoolName);
+        cmd.Parameters.AddWithValue("@Description",   t.Description);
+        cmd.Parameters.AddWithValue("@ReceivedBy",    t.ReceivedBy);
+        cmd.Parameters.AddWithValue("@InstallmentNo", (object?)t.InstallmentNo ?? DBNull.Value);
+        var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(newId);
+        await cmd.ExecuteNonQueryAsync();
+        return (int)newId.Value;
+    }
+
+    public async Task<bool> UpdateAsync(int id, UpdateTxnRecordRequest r)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_UpdateTxnRecord", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@Id",            id);
+        cmd.Parameters.AddWithValue("@Amount",        r.Amount);
+        cmd.Parameters.AddWithValue("@TxnDate",       r.TxnDate);
+        cmd.Parameters.AddWithValue("@PaymentMode",   r.PaymentMode);
+        cmd.Parameters.AddWithValue("@PaymentModeId", (object?)r.PaymentModeId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPoolId",    (object?)r.FundPoolId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPoolName",  r.FundPoolName);
+        cmd.Parameters.AddWithValue("@Description",   r.Description);
+        cmd.Parameters.AddWithValue("@ReceivedBy",    r.ReceivedBy);
+        return await cmd.ExecuteNonQueryAsync() >= 0;
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_DeleteTxnRecord", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@Id", id);
+        await cmd.ExecuteNonQueryAsync();
+        return true;
+    }
+
+    private static TxnRecord Map(SqlDataReader r) => new()
+    {
+        Id            = r.GetInt32(r.GetOrdinal("Id")),
+        TxnId         = r.IsDBNull(r.GetOrdinal("TxnId"))         ? "" : r.GetString(r.GetOrdinal("TxnId")),
+        TxnType       = r.IsDBNull(r.GetOrdinal("TxnType"))       ? "DR": r.GetString(r.GetOrdinal("TxnType")),
+        ContractId    = r.IsDBNull(r.GetOrdinal("ContractId"))    ? "" : r.GetString(r.GetOrdinal("ContractId")),
+        ContractCode  = r.IsDBNull(r.GetOrdinal("ContractCode"))  ? "" : r.GetString(r.GetOrdinal("ContractCode")),
+        TenantId      = r.IsDBNull(r.GetOrdinal("TenantId"))      ? 0  : r.GetInt32(r.GetOrdinal("TenantId")),
+        TenantName    = r.IsDBNull(r.GetOrdinal("TenantName"))    ? "" : r.GetString(r.GetOrdinal("TenantName")),
+        CampId        = r.IsDBNull(r.GetOrdinal("CampId"))        ? 0  : r.GetInt32(r.GetOrdinal("CampId")),
+        CampName      = r.IsDBNull(r.GetOrdinal("CampName"))      ? "" : r.GetString(r.GetOrdinal("CampName")),
+        TotalAmount   = r.IsDBNull(r.GetOrdinal("TotalAmount"))   ? 0  : r.GetDecimal(r.GetOrdinal("TotalAmount")),
+        Amount        = r.IsDBNull(r.GetOrdinal("Amount"))        ? 0  : r.GetDecimal(r.GetOrdinal("Amount")),
+        TxnDate       = r.IsDBNull(r.GetOrdinal("TxnDate"))       ? DateTime.UtcNow : r.GetDateTime(r.GetOrdinal("TxnDate")),
+        FromDate      = r.IsDBNull(r.GetOrdinal("FromDate"))      ? null : r.GetDateTime(r.GetOrdinal("FromDate")),
+        ToDate        = r.IsDBNull(r.GetOrdinal("ToDate"))        ? null : r.GetDateTime(r.GetOrdinal("ToDate")),
+        PaymentMode   = r.IsDBNull(r.GetOrdinal("PaymentMode"))   ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
+        PaymentModeId = r.IsDBNull(r.GetOrdinal("PaymentModeId")) ? null : r.GetInt32(r.GetOrdinal("PaymentModeId")),
+        FundPoolId    = r.IsDBNull(r.GetOrdinal("FundPoolId"))    ? null : r.GetInt32(r.GetOrdinal("FundPoolId")),
+        FundPoolName  = r.IsDBNull(r.GetOrdinal("FundPoolName"))  ? "" : r.GetString(r.GetOrdinal("FundPoolName")),
+        Description   = r.IsDBNull(r.GetOrdinal("Description"))   ? "" : r.GetString(r.GetOrdinal("Description")),
+        ReceivedBy    = r.IsDBNull(r.GetOrdinal("ReceivedBy"))    ? "" : r.GetString(r.GetOrdinal("ReceivedBy")),
+        InstallmentNo = r.IsDBNull(r.GetOrdinal("InstallmentNo")) ? null : r.GetInt32(r.GetOrdinal("InstallmentNo")),
+        CreatedAt     = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+        UpdatedAt     = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
+    };
+}

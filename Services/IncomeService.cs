@@ -104,6 +104,8 @@ public class IncomeService : IIncomeService
         Purpose      = i.Purpose,
         Source       = i.Source,
         SourceRef    = i.SourceRef,
+        ContractId   = i.ContractId,
+        ContractCode = i.ContractCode,
         CreatedAt    = i.CreatedAt,
         UpdatedAt    = i.UpdatedAt,
     };

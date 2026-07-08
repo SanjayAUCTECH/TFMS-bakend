@@ -7,15 +7,17 @@ namespace TFMS_software_api.Services;
 
 public class ContractService : IContractService
 {
-    private readonly IContractRepository _repo;
-    private readonly ITenantRepository   _tenantRepo;
-    private readonly ICampRepository     _campRepo;
-    private readonly IRoomRepository     _roomRepo;
+    private readonly IContractRepository  _repo;
+    private readonly ITenantRepository    _tenantRepo;
+    private readonly ICampRepository      _campRepo;
+    private readonly IRoomRepository      _roomRepo;
+    private readonly ITxnRecordRepository _txnRepo;
 
     public ContractService(IContractRepository repo, ITenantRepository tenantRepo,
-        ICampRepository campRepo, IRoomRepository roomRepo)
+        ICampRepository campRepo, IRoomRepository roomRepo, ITxnRecordRepository txnRepo)
     {
-        _repo = repo; _tenantRepo = tenantRepo; _campRepo = campRepo; _roomRepo = roomRepo;
+        _repo = repo; _tenantRepo = tenantRepo; _campRepo = campRepo;
+        _roomRepo = roomRepo; _txnRepo = txnRepo;
     }
 
     public async Task<ApiResponse<IEnumerable<ContractResponse>>> GetAllAsync(ContractListRequest request)
@@ -60,7 +62,36 @@ public class ContractService : IContractService
             Notes           = request.Notes,
             LessorAmount    = request.LessorAmount,
         });
+
         var created = await _repo.GetByContractIdAsync(contractId);
+
+        // ── Auto-create DR TxnRecord ──────────────────────────────────────
+        if (created != null)
+        {
+            try
+            {
+                await _txnRepo.CreateAsync(new TxnRecord
+                {
+                    TxnType      = "DR",
+                    ContractId   = created.ContractId,
+                    ContractCode = created.ContractId,
+                    TenantId     = created.TenantId,
+                    CampId       = created.CampId,
+                    TotalAmount  = created.ContractTotal,
+                    Amount       = created.ContractTotal,
+                    TxnDate      = created.StartDate,
+                    FromDate     = created.StartDate,
+                    ToDate       = created.EndDate,
+                    Description  = $"Contract created - {created.Months} months @ {created.MonthlyTotal}/mo",
+                    ReceivedBy   = request.IssuedBy,
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[ContractService] TxnRecord DR create failed: {ex.Message}");
+            }
+        }
+
         return ApiResponse<ContractResponse>.Ok(ToResponse(created!), "Contract created successfully.");
     }
 
@@ -97,15 +128,7 @@ public class ContractService : IContractService
         var contract = await _repo.GetByContractIdAsync(request.ContractId);
         if (contract == null) return ApiResponse<bool>.Fail("Contract not found.");
         var scheduleJson = System.Text.Json.JsonSerializer.Serialize(
-            request.Schedule.Select(s => new
-            {
-                no        = s.No,
-                amount    = s.Amount,
-                dueDate   = s.DueDate,
-                mode      = s.Mode,
-                cheque    = s.Cheque,
-                clearance = s.Clearance,
-            }));
+            request.Schedule.Select(s => new { no=s.No, amount=s.Amount, dueDate=s.DueDate, mode=s.Mode, cheque=s.Cheque, clearance=s.Clearance }));
         await _repo.UpdateScheduleAsync(request.ContractId, scheduleJson);
         return ApiResponse<bool>.Ok(true, $"Schedule updated for {request.ContractId}.");
     }

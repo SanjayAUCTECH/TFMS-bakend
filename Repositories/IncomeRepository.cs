@@ -59,6 +59,8 @@ public class IncomeRepository : IIncomeRepository
         cmd.Parameters.AddWithValue("@Purpose",     income.Purpose);
         cmd.Parameters.AddWithValue("@Source",      income.Source);
         cmd.Parameters.AddWithValue("@SourceRef",   income.SourceRef);
+        cmd.Parameters.AddWithValue("@ContractId",  income.ContractId   ?? "");
+        cmd.Parameters.AddWithValue("@ContractCode",income.ContractCode ?? "");
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -134,6 +136,8 @@ public class IncomeRepository : IIncomeRepository
         Purpose      = r.IsDBNull(r.GetOrdinal("Purpose"))      ? "" : r.GetString(r.GetOrdinal("Purpose")),
         Source       = r.IsDBNull(r.GetOrdinal("Source"))       ? "" : r.GetString(r.GetOrdinal("Source")),
         SourceRef    = r.IsDBNull(r.GetOrdinal("SourceRef"))    ? "" : r.GetString(r.GetOrdinal("SourceRef")),
+        ContractId   = r.IsDBNull(r.GetOrdinal("ContractId"))   ? "" : r.GetString(r.GetOrdinal("ContractId")),
+        ContractCode = r.IsDBNull(r.GetOrdinal("ContractCode")) ? "" : r.GetString(r.GetOrdinal("ContractCode")),
         CreatedAt    = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt    = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };

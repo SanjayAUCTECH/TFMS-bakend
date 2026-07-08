@@ -1,4 +1,4 @@
-using TFMS_software_api.Common;
+﻿using TFMS_software_api.Common;
 using TFMS_software_api.DTOs;
 using TFMS_software_api.Models;
 using TFMS_software_api.Repositories;
@@ -11,17 +11,20 @@ public class PaymentService : IPaymentService
     private readonly IPaymentModeRepository _modeRepo;
     private readonly IFundPoolRepository    _fundRepo;
     private readonly IIncomeRepository      _incomeRepo;
+    private readonly ITxnRecordRepository   _txnRepo;
 
     public PaymentService(
         IPaymentRepository     repo,
         IPaymentModeRepository modeRepo,
         IFundPoolRepository    fundRepo,
-        IIncomeRepository      incomeRepo)
+        IIncomeRepository      incomeRepo,
+        ITxnRecordRepository   txnRepo)
     {
         _repo       = repo;
         _modeRepo   = modeRepo;
         _fundRepo   = fundRepo;
         _incomeRepo = incomeRepo;
+        _txnRepo    = txnRepo;
     }
 
     public async Task<ApiResponse<IEnumerable<PaymentResponse>>> GetAllAsync(PaymentListRequest request)
@@ -85,32 +88,7 @@ public class PaymentService : IPaymentService
         if (!result)
             return ApiResponse<bool>.Fail("Payment recording failed. Check contract and installment number.");
 
-        // 2. Auto-create Income entry
-        try
-        {
-            var purpose = !string.IsNullOrWhiteSpace(request.Description)
-                ? request.Description
-                : $"Rent payment — Contract {request.ContractId}, Inst #{request.InstallmentNo}";
-
-            await _incomeRepo.CreateAsync(new Income
-            {
-                Date         = request.PaidDate,
-                Mode         = pmName,
-                Head         = "Rent Income",
-                FundPool     = fundPoolCode,
-                FundPoolName = fundPoolName,
-                Amount       = request.PaidAmount,
-                Purpose      = purpose,
-                Source       = "Room Payment",
-                SourceRef    = $"{request.ContractId}/Inst#{request.InstallmentNo}",
-            });
-        }
-        catch (Exception ex)
-        {
-            // Income creation failure should not fail the payment — log and continue
-            Console.Error.WriteLine($"[PaymentService] Income auto-create failed: {ex.Message}");
-        }
-
+        // Income + TxnRecord are auto-created inside sp_RecordPayment (DB transaction)
         return ApiResponse<bool>.Ok(true, "Payment recorded successfully.");
     }
 

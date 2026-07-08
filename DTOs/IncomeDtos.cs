@@ -52,6 +52,8 @@ public class IncomeResponse
     public string   Purpose      { get; set; } = string.Empty;
     public string   Source       { get; set; } = string.Empty;
     public string   SourceRef    { get; set; } = string.Empty;
+    public string   ContractId   { get; set; } = string.Empty;
+    public string   ContractCode { get; set; } = string.Empty;
     public DateTime CreatedAt    { get; set; }
     public DateTime UpdatedAt    { get; set; }
 }
