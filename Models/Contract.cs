@@ -19,6 +19,10 @@ public class Contract
     public string        Notes           { get; set; } = string.Empty;
     public decimal       LessorAmount    { get; set; }
     public string        Status          { get; set; } = "Active";
+    public decimal       TotalPaid       { get; set; }   // SUM from TxnRecords WHERE TxnType='CR'
+    public decimal       TotalDue        { get; set; }   // ContractTotal - TotalPaid
+    public decimal?      LastPaymentAmount { get; set; }
+    public DateTime?     LastPaymentDate   { get; set; }
     public DateTime      CreatedAt       { get; set; }
     public DateTime      UpdatedAt       { get; set; }
     public List<int>     RoomIds         { get; set; } = new();

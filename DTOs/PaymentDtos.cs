@@ -4,10 +4,11 @@ namespace TFMS_software_api.DTOs;
 
 public class RecordPaymentRequest
 {
-    [Required]              public string   ContractId      { get; set; } = string.Empty;
-    [Range(1, int.MaxValue)] public int     InstallmentNo   { get; set; }
+    [Required] public string  ContractId      { get; set; } = string.Empty;
+    // InstallmentNo = 0 means auto-distribute across pending installments
+    public int     InstallmentNo   { get; set; } = 0;
     [Range(0.01, double.MaxValue)] public decimal PaidAmount { get; set; }
-    [Required]              public DateTime PaidDate        { get; set; }
+    [Required] public DateTime PaidDate        { get; set; }
     public int?    PaymentModeId   { get; set; }
     public string  PaymentMode     { get; set; } = string.Empty;
     public string  ChequeNumber    { get; set; } = string.Empty;

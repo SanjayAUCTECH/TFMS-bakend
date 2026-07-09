@@ -200,13 +200,28 @@ public class ContractRepository : IContractRepository
         EndDate         = r.GetDateTime(r.GetOrdinal("EndDate")),
         MonthlyTotal    = r.GetDecimal(r.GetOrdinal("MonthlyTotal")),
         ContractTotal   = r.GetDecimal(r.GetOrdinal("ContractTotal")),
-        SecurityDeposit = r.IsDBNull(r.GetOrdinal("SecurityDeposit")) ? 0 : r.GetDecimal(r.GetOrdinal("SecurityDeposit")),
-        InstallmentType = r.IsDBNull(r.GetOrdinal("InstallmentType")) ? "monthly" : r.GetString(r.GetOrdinal("InstallmentType")),
-        IssuedBy        = r.IsDBNull(r.GetOrdinal("IssuedBy"))        ? "" : r.GetString(r.GetOrdinal("IssuedBy")),
-        Notes           = r.IsDBNull(r.GetOrdinal("Notes"))           ? "" : r.GetString(r.GetOrdinal("Notes")),
-        LessorAmount    = r.IsDBNull(r.GetOrdinal("LessorAmount"))    ? 0 : r.GetDecimal(r.GetOrdinal("LessorAmount")),
+        SecurityDeposit = HasColumn(r,"SecurityDeposit") && !r.IsDBNull(r.GetOrdinal("SecurityDeposit")) ? r.GetDecimal(r.GetOrdinal("SecurityDeposit")) : 0,
+        InstallmentType = HasColumn(r,"InstallmentType") && !r.IsDBNull(r.GetOrdinal("InstallmentType")) ? r.GetString(r.GetOrdinal("InstallmentType")) : "monthly",
+        IssuedBy        = HasColumn(r,"IssuedBy")        && !r.IsDBNull(r.GetOrdinal("IssuedBy"))        ? r.GetString(r.GetOrdinal("IssuedBy"))        : "",
+        Notes           = HasColumn(r,"Notes")           && !r.IsDBNull(r.GetOrdinal("Notes"))           ? r.GetString(r.GetOrdinal("Notes"))           : "",
+        LessorAmount    = HasColumn(r,"LessorAmount")    && !r.IsDBNull(r.GetOrdinal("LessorAmount"))    ? r.GetDecimal(r.GetOrdinal("LessorAmount"))    : 0,
         Status          = r.GetString(r.GetOrdinal("Status")),
+        TotalPaid         = HasColumn(r, "TotalPaid")           && !r.IsDBNull(r.GetOrdinal("TotalPaid"))
+                            ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalPaid"))) : 0,
+        TotalDue          = HasColumn(r, "TotalDue")            && !r.IsDBNull(r.GetOrdinal("TotalDue"))
+                            ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalDue")))  : 0,
+        LastPaymentAmount = HasColumn(r, "LastPaymentAmount")   && !r.IsDBNull(r.GetOrdinal("LastPaymentAmount"))
+                            ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("LastPaymentAmount"))) : (decimal?)null,
+        LastPaymentDate   = HasColumn(r, "LastPaymentDate")     && !r.IsDBNull(r.GetOrdinal("LastPaymentDate"))
+                            ? r.GetDateTime(r.GetOrdinal("LastPaymentDate")) : (DateTime?)null,
         CreatedAt       = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt       = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
+
+    private static bool HasColumn(SqlDataReader r, string name)
+    {
+        for (int i = 0; i < r.FieldCount; i++)
+            if (r.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
 }

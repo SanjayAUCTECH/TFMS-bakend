@@ -141,6 +141,10 @@ public class ContractService : IContractService
         SecurityDeposit = c.SecurityDeposit, InstallmentType = c.InstallmentType,
         IssuedBy = c.IssuedBy, Notes = c.Notes, LessorAmount = c.LessorAmount,
         Status = c.Status, RoomIds = c.RoomIds, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
+        TotalPaid = c.TotalPaid,
+        TotalDue  = c.TotalDue,
+        LastPaymentAmount = c.LastPaymentAmount,
+        LastPaymentDate   = c.LastPaymentDate?.ToString("yyyy-MM-dd"),
         Payments = c.Payments.Select(p => new ContractPaymentResponse
         {
             Id = p.Id, InstallmentNo = p.InstallmentNo, Amount = p.Amount,

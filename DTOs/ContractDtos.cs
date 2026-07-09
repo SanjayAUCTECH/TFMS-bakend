@@ -87,6 +87,10 @@ public class ContractResponse
     public string   Notes           { get; set; } = string.Empty;
     public decimal  LessorAmount    { get; set; }
     public string   Status          { get; set; } = string.Empty;
+    public decimal  TotalPaid         { get; set; }
+    public decimal  TotalDue          { get; set; }
+    public decimal? LastPaymentAmount { get; set; }
+    public string?  LastPaymentDate   { get; set; }
     public List<int>                   RoomIds  { get; set; } = new();
     public List<ContractPaymentResponse> Payments { get; set; } = new();
     public DateTime CreatedAt { get; set; }

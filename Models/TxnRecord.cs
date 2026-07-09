@@ -16,11 +16,16 @@ public class TxnRecord
     public DateTime? ToDate        { get; set; }
     public string   PaymentMode    { get; set; } = string.Empty;
     public int?     PaymentModeId  { get; set; }
+    public string   ChequeNumber   { get; set; } = string.Empty;
     public int?     FundPoolId     { get; set; }
     public string   FundPoolName   { get; set; } = string.Empty;
     public string   Description    { get; set; } = string.Empty;
     public string   ReceivedBy     { get; set; } = string.Empty;
+    public string   ReceivedContact{ get; set; } = string.Empty;
+    public string   IssuedBy       { get; set; } = string.Empty;
     public int?     InstallmentNo  { get; set; }
+    public string   AppliedInstallments { get; set; } = string.Empty;
+    public decimal  Unallocated    { get; set; }
     public DateTime CreatedAt      { get; set; }
     public DateTime UpdatedAt      { get; set; }
     // Joined fields

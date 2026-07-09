@@ -29,9 +29,13 @@ public class TxnRecordsController : ControllerBase
             TotalAmount=t.TotalAmount, Amount=t.Amount,
             TxnDate=t.TxnDate, FromDate=t.FromDate, ToDate=t.ToDate,
             PaymentMode=t.PaymentMode, PaymentModeId=t.PaymentModeId,
+            ChequeNumber=t.ChequeNumber,
             FundPoolId=t.FundPoolId, FundPoolName=t.FundPoolName,
             Description=t.Description, ReceivedBy=t.ReceivedBy,
+            ReceivedContact=t.ReceivedContact, IssuedBy=t.IssuedBy,
             InstallmentNo=t.InstallmentNo,
+            AppliedInstallments=t.AppliedInstallments,
+            Unallocated=t.Unallocated,
             CreatedAt=t.CreatedAt, UpdatedAt=t.UpdatedAt,
         });
         return Ok(ApiResponse<IEnumerable<TxnRecordResponse>>.Ok(response, "Txn records retrieved.",
