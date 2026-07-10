@@ -149,7 +149,9 @@ public class ContractService : IContractService
         {
             Id = p.Id, InstallmentNo = p.InstallmentNo, Amount = p.Amount,
             DueDate = p.DueDate, PaidAmount = p.PaidAmount, PaidDate = p.PaidDate,
-            Status = p.Status, PaymentMode = p.PaymentMode
+            Status = p.Status, PaymentMode = p.PaymentMode,
+            ChequeNumber  = p.ChequeNumber,
+            ClearanceDate = p.ClearanceDate,
         }).ToList(),
     };
 }

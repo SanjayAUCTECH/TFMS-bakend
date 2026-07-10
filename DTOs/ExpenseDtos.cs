@@ -15,6 +15,7 @@ public class CreateExpenseRequest
     [MaxLength(30)]  public string Nature        { get; set; } = "HO";
     public int?    CampId        { get; set; }
     [MaxLength(30)]  public string RecipientRole { get; set; } = string.Empty;
+    public int?    RecipientId   { get; set; }
     [MaxLength(200)] public string RecipientName { get; set; } = string.Empty;
     [MaxLength(500)] public string Purpose       { get; set; } = string.Empty;
 }
@@ -29,6 +30,7 @@ public class UpdateExpenseRequest
     [MaxLength(30)]  public string Nature        { get; set; } = "HO";
     public int?    CampId        { get; set; }
     [MaxLength(30)]  public string RecipientRole { get; set; } = string.Empty;
+    public int?    RecipientId   { get; set; }
     [MaxLength(200)] public string RecipientName { get; set; } = string.Empty;
     [MaxLength(500)] public string Purpose       { get; set; } = string.Empty;
 }
@@ -59,6 +61,7 @@ public class ExpenseResponse
     public int?     CampId        { get; set; }
     public string   CampName      { get; set; } = string.Empty;
     public string   RecipientRole { get; set; } = string.Empty;
+    public int?     RecipientId   { get; set; }
     public string   RecipientName { get; set; } = string.Empty;
     public string   Purpose       { get; set; } = string.Empty;
     public DateTime CreatedAt     { get; set; }

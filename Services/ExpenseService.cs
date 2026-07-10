@@ -59,6 +59,7 @@ public class ExpenseService : IExpenseService
             CampId        = request.CampId,
             CampName      = campName,
             RecipientRole = request.RecipientRole?.Trim() ?? "",
+            RecipientId   = request.RecipientId,
             RecipientName = request.RecipientName?.Trim() ?? "",
             Purpose       = request.Purpose?.Trim() ?? "",
         };
@@ -97,6 +98,7 @@ public class ExpenseService : IExpenseService
             CampId        = request.CampId,
             CampName      = campName,
             RecipientRole = request.RecipientRole?.Trim() ?? "",
+            RecipientId   = request.RecipientId,
             RecipientName = request.RecipientName?.Trim() ?? "",
             Purpose       = request.Purpose?.Trim() ?? "",
         });
@@ -128,6 +130,7 @@ public class ExpenseService : IExpenseService
         CampId        = e.CampId,
         CampName      = e.CampName,
         RecipientRole = e.RecipientRole,
+        RecipientId   = e.RecipientId,
         RecipientName = e.RecipientName,
         Purpose       = e.Purpose,
         CreatedAt     = e.CreatedAt,

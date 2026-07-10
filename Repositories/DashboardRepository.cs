@@ -26,10 +26,14 @@ public class DashboardRepository : IDashboardRepository
             { filterYear = y; filterMonth = m; }
         }
 
-        // ── 1. KPI stats from SP (unfiltered for totals) ─────────────────
+        // ── 1. KPI stats from SP (filtered by campId, tenantId, month) ──────
         await using (var cmd = new SqlCommand("sp_GetDashboardStats", conn) { CommandType = CommandType.StoredProcedure })
-        await using (var r = await cmd.ExecuteReaderAsync())
         {
+            cmd.Parameters.AddWithValue("@CampId",   (object?)campId   ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@TenantId", (object?)tenantId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@Year",     (object?)filterYear  ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@Month",    (object?)filterMonth ?? DBNull.Value);
+            await using var r = await cmd.ExecuteReaderAsync();
             if (await r.ReadAsync())
             {
                 stats.TotalCamps              = r.IsDBNull(r.GetOrdinal("TotalCamps"))              ? 0 : r.GetInt32(r.GetOrdinal("TotalCamps"));

@@ -14,6 +14,7 @@ public class Expense
     public int?     CampId        { get; set; }
     public string   CampName      { get; set; } = string.Empty;
     public string   RecipientRole { get; set; } = string.Empty;
+    public int?     RecipientId   { get; set; }
     public string   RecipientName { get; set; } = string.Empty;
     public string   Purpose       { get; set; } = string.Empty;
     public DateTime CreatedAt     { get; set; }

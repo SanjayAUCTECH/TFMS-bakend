@@ -66,6 +66,8 @@ public class ContractPaymentResponse
     public DateTime? PaidDate     { get; set; }
     public string   Status        { get; set; } = string.Empty;
     public string   PaymentMode   { get; set; } = string.Empty;
+    public string   ChequeNumber  { get; set; } = string.Empty;
+    public string   ClearanceDate { get; set; } = string.Empty;
 }
 
 public class ContractResponse

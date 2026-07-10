@@ -66,8 +66,8 @@ public class TxnRecordsController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateTxnRecordRequest req)
     {
         var ok = await _repo.UpdateAsync(id, req);
-        return ok ? Ok(ApiResponse<object>.Ok(null, "Txn record updated."))
-                  : NotFound(ApiResponse<object>.Fail("Txn record not found."));
+        return ok ? Ok(ApiResponse<object?>.Ok(null, "Txn record updated."))
+                  : NotFound(ApiResponse<object?>.Fail("Txn record not found."));
     }
 
     /// <summary>DELETE api/txnrecords/{id}</summary>
@@ -75,6 +75,6 @@ public class TxnRecordsController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         await _repo.DeleteAsync(id);
-        return Ok(ApiResponse<object>.Ok(null, "Txn record deleted."));
+        return Ok(ApiResponse<object?>.Ok(null, "Txn record deleted."));
     }
 }

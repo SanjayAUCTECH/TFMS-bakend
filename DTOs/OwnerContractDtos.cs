@@ -37,7 +37,8 @@ public class OwnerContractResponse
     public string   StartDate   { get; set; } = string.Empty;
     public string   Status      { get; set; } = string.Empty;
     public DateTime CreatedAt   { get; set; }
-    public List<OwnerInstallmentResponse> Installments { get; set; } = new();
+    public List<OwnerInstallmentResponse>  Installments { get; set; } = new();
+    public List<OwnerTransactionResponse>  Transactions { get; set; } = new();
 }
 
 public class OwnerInstallmentResponse
@@ -51,4 +52,23 @@ public class OwnerInstallmentResponse
     public string?  PaidDate        { get; set; }
     public string   Status          { get; set; } = string.Empty;
     public int?     ExpenseId       { get; set; }
+}
+
+public class OwnerTransactionResponse
+{
+    public int      Id              { get; set; }
+    public string   TxnCode         { get; set; } = string.Empty;
+    public int      OwnerContractId { get; set; }
+    public string   OcCode          { get; set; } = string.Empty;
+    public int      CampId          { get; set; }
+    public string   CampName        { get; set; } = string.Empty;
+    public int      OwnerId         { get; set; }
+    public string   OwnerName       { get; set; } = string.Empty;
+    public string   Type            { get; set; } = string.Empty;
+    public decimal  Amount          { get; set; }
+    public string   Date            { get; set; } = string.Empty;
+    public string   Description     { get; set; } = string.Empty;
+    public string   InstallmentNos  { get; set; } = string.Empty;
+    public int?     ExpenseId       { get; set; }
+    public DateTime CreatedAt       { get; set; }
 }

@@ -100,5 +100,23 @@ public class OwnerContractsController : ControllerBase
             Status          = i.Status,
             ExpenseId       = i.ExpenseId,
         }).ToList(),
+        Transactions = c.Transactions.Select(t => new OwnerTransactionResponse
+        {
+            Id              = t.Id,
+            TxnCode         = t.TxnCode,
+            OwnerContractId = t.OwnerContractId,
+            OcCode          = t.OcCode,
+            CampId          = t.CampId,
+            CampName        = t.CampName,
+            OwnerId         = t.OwnerId,
+            OwnerName       = t.OwnerName,
+            Type            = t.Type,
+            Amount          = t.Amount,
+            Date            = t.Date.ToString("yyyy-MM-dd"),
+            Description     = t.Description,
+            InstallmentNos  = t.InstallmentNos,
+            ExpenseId       = t.ExpenseId,
+            CreatedAt       = t.CreatedAt,
+        }).ToList(),
     };
 }

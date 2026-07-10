@@ -173,7 +173,9 @@ public class ContractRepository : IContractRepository
                             PaidAmount    = r.GetDecimal(r.GetOrdinal("PaidAmount")),
                             PaidDate      = r.IsDBNull(r.GetOrdinal("PaidDate")) ? null : r.GetDateTime(r.GetOrdinal("PaidDate")),
                             Status        = r.GetString(r.GetOrdinal("PayStatus")),
-                            PaymentMode   = r.IsDBNull(r.GetOrdinal("PaymentMode")) ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
+                            PaymentMode   = r.IsDBNull(r.GetOrdinal("PaymentMode"))   ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
+                            ChequeNumber  = r.IsDBNull(r.GetOrdinal("ChequeNumber"))  ? "" : r.GetString(r.GetOrdinal("ChequeNumber")),
+                            ClearanceDate = r.IsDBNull(r.GetOrdinal("ClearanceDate")) ? "" : r.GetString(r.GetOrdinal("ClearanceDate")),
                         });
                     }
                 }

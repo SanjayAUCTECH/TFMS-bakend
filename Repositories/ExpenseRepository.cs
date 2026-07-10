@@ -59,8 +59,9 @@ public class ExpenseRepository : IExpenseRepository
         cmd.Parameters.AddWithValue("@FundPool",      expense.FundPool);
         cmd.Parameters.AddWithValue("@Amount",        expense.Amount);
         cmd.Parameters.AddWithValue("@Nature",        expense.Nature);
-        cmd.Parameters.AddWithValue("@CampId",        (object?)expense.CampId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId",        (object?)expense.CampId        ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RecipientRole", expense.RecipientRole);
+        cmd.Parameters.AddWithValue("@RecipientId",   (object?)expense.RecipientId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RecipientName", expense.RecipientName);
         cmd.Parameters.AddWithValue("@Purpose",       expense.Purpose);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
@@ -81,8 +82,9 @@ public class ExpenseRepository : IExpenseRepository
         cmd.Parameters.AddWithValue("@FundPool",      expense.FundPool);
         cmd.Parameters.AddWithValue("@Amount",        expense.Amount);
         cmd.Parameters.AddWithValue("@Nature",        expense.Nature);
-        cmd.Parameters.AddWithValue("@CampId",        (object?)expense.CampId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId",        (object?)expense.CampId        ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RecipientRole", expense.RecipientRole);
+        cmd.Parameters.AddWithValue("@RecipientId",   (object?)expense.RecipientId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RecipientName", expense.RecipientName);
         cmd.Parameters.AddWithValue("@Purpose",       expense.Purpose);
         return await cmd.ExecuteNonQueryAsync() > 0;
@@ -145,6 +147,7 @@ public class ExpenseRepository : IExpenseRepository
         CampId        = r.IsDBNull(r.GetOrdinal("CampId"))        ? null : r.GetInt32(r.GetOrdinal("CampId")),
         CampName      = r.IsDBNull(r.GetOrdinal("CampName"))      ? "" : r.GetString(r.GetOrdinal("CampName")),
         RecipientRole = r.IsDBNull(r.GetOrdinal("RecipientRole")) ? "" : r.GetString(r.GetOrdinal("RecipientRole")),
+        RecipientId   = r.IsDBNull(r.GetOrdinal("RecipientId"))   ? null : r.GetInt32(r.GetOrdinal("RecipientId")),
         RecipientName = r.IsDBNull(r.GetOrdinal("RecipientName")) ? "" : r.GetString(r.GetOrdinal("RecipientName")),
         Purpose       = r.IsDBNull(r.GetOrdinal("Purpose"))       ? "" : r.GetString(r.GetOrdinal("Purpose")),
         CreatedAt     = r.GetDateTime(r.GetOrdinal("CreatedAt")),
