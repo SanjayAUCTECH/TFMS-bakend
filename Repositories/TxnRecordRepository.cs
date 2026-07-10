@@ -71,7 +71,9 @@ public class TxnRecordRepository : ITxnRecordRepository
         cmd.Parameters.AddWithValue("@FundPoolName",  r.FundPoolName);
         cmd.Parameters.AddWithValue("@Description",   r.Description);
         cmd.Parameters.AddWithValue("@ReceivedBy",    r.ReceivedBy);
-        return await cmd.ExecuteNonQueryAsync() >= 0;
+        cmd.Parameters.AddWithValue("@ChequeNumber",  r.ChequeNumber);
+        try { await cmd.ExecuteNonQueryAsync(); return true; }
+        catch { return false; }
     }
 
     public async Task<bool> DeleteAsync(int id)
