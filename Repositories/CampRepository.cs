@@ -123,15 +123,21 @@ public class CampRepository : ICampRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateCamp", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Name",   camp.Name);
-        cmd.Parameters.AddWithValue("@Status", camp.Status);
-
-        // Pass partners/owners as JSON for SP to parse
+        cmd.Parameters.AddWithValue("@Name",               camp.Name);
+        cmd.Parameters.AddWithValue("@Status",             camp.Status);
+        cmd.Parameters.AddWithValue("@CampPropertyUsage",  camp.CampPropertyUsage);
+        cmd.Parameters.AddWithValue("@CampBuildingName",   camp.CampBuildingName);
+        cmd.Parameters.AddWithValue("@CampPropertyType",   camp.CampPropertyType);
+        cmd.Parameters.AddWithValue("@CampLocation",       camp.CampLocation);
+        cmd.Parameters.AddWithValue("@CampPropertyNo",     camp.CampPropertyNo);
+        cmd.Parameters.AddWithValue("@CampPropertyArea",   camp.CampPropertyArea);
+        cmd.Parameters.AddWithValue("@CampPremisesNo",     camp.CampPremisesNo);
+        cmd.Parameters.AddWithValue("@CampPlotNo",         camp.CampPlotNo);
+        cmd.Parameters.AddWithValue("@CampMakaniNo",       camp.CampMakaniNo);
         var partnersJson = System.Text.Json.JsonSerializer.Serialize(camp.Partners.Select(p => new { p.PartnerId, p.ShareType, p.ShareValue }));
         var ownersJson   = System.Text.Json.JsonSerializer.Serialize(camp.Owners.Select(o => new { o.OwnerId, o.ShareType, o.ShareValue }));
         cmd.Parameters.AddWithValue("@PartnersJson", partnersJson);
         cmd.Parameters.AddWithValue("@OwnersJson",   ownersJson);
-
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -143,9 +149,18 @@ public class CampRepository : ICampRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateCamp", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",     camp.Id);
-        cmd.Parameters.AddWithValue("@Name",   camp.Name);
-        cmd.Parameters.AddWithValue("@Status", camp.Status);
+        cmd.Parameters.AddWithValue("@Id",                 camp.Id);
+        cmd.Parameters.AddWithValue("@Name",               camp.Name);
+        cmd.Parameters.AddWithValue("@Status",             camp.Status);
+        cmd.Parameters.AddWithValue("@CampPropertyUsage",  camp.CampPropertyUsage);
+        cmd.Parameters.AddWithValue("@CampBuildingName",   camp.CampBuildingName);
+        cmd.Parameters.AddWithValue("@CampPropertyType",   camp.CampPropertyType);
+        cmd.Parameters.AddWithValue("@CampLocation",       camp.CampLocation);
+        cmd.Parameters.AddWithValue("@CampPropertyNo",     camp.CampPropertyNo);
+        cmd.Parameters.AddWithValue("@CampPropertyArea",   camp.CampPropertyArea);
+        cmd.Parameters.AddWithValue("@CampPremisesNo",     camp.CampPremisesNo);
+        cmd.Parameters.AddWithValue("@CampPlotNo",         camp.CampPlotNo);
+        cmd.Parameters.AddWithValue("@CampMakaniNo",       camp.CampMakaniNo);
         var partnersJson = System.Text.Json.JsonSerializer.Serialize(camp.Partners.Select(p => new { p.PartnerId, p.ShareType, p.ShareValue }));
         var ownersJson   = System.Text.Json.JsonSerializer.Serialize(camp.Owners.Select(o => new { o.OwnerId, o.ShareType, o.ShareValue }));
         cmd.Parameters.AddWithValue("@PartnersJson", partnersJson);
@@ -185,13 +200,28 @@ public class CampRepository : ICampRepository
 
     private static Camp MapCamp(SqlDataReader r) => new()
     {
-        Id        = r.GetInt32(r.GetOrdinal("Id")),
-        Code      = r.GetString(r.GetOrdinal("Code")),
-        Name      = r.GetString(r.GetOrdinal("Name")),
-        Rooms     = r.GetInt32(r.GetOrdinal("Rooms")),
-        Floors    = r.GetInt32(r.GetOrdinal("Floors")),
-        Status    = r.GetString(r.GetOrdinal("Status")),
-        CreatedAt = r.GetDateTime(r.GetOrdinal("CreatedAt")),
-        UpdatedAt = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
+        Id                = r.GetInt32(r.GetOrdinal("Id")),
+        Code              = r.GetString(r.GetOrdinal("Code")),
+        Name              = r.GetString(r.GetOrdinal("Name")),
+        Rooms             = r.GetInt32(r.GetOrdinal("Rooms")),
+        Floors            = r.GetInt32(r.GetOrdinal("Floors")),
+        Status            = r.GetString(r.GetOrdinal("Status")),
+        CampPropertyUsage = SafeStr(r, "CampPropertyUsage"),
+        CampBuildingName  = SafeStr(r, "CampBuildingName"),
+        CampPropertyType  = SafeStr(r, "CampPropertyType"),
+        CampLocation      = SafeStr(r, "CampLocation"),
+        CampPropertyNo    = SafeStr(r, "CampPropertyNo"),
+        CampPropertyArea  = SafeStr(r, "CampPropertyArea"),
+        CampPremisesNo    = SafeStr(r, "CampPremisesNo"),
+        CampPlotNo        = SafeStr(r, "CampPlotNo"),
+        CampMakaniNo      = SafeStr(r, "CampMakaniNo"),
+        CreatedAt         = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+        UpdatedAt         = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
+
+    private static string SafeStr(SqlDataReader r, string col)
+    {
+        try { var ord = r.GetOrdinal(col); return r.IsDBNull(ord) ? "" : r.GetString(ord); }
+        catch { return ""; }
+    }
 }

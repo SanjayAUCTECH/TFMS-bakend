@@ -14,6 +14,17 @@ public class CreateContractRequest
     public string             IssuedBy             { get; set; } = string.Empty;
     public string             Notes                { get; set; } = string.Empty;
     public decimal            LessorAmount         { get; set; } = 0;
+    public decimal?           MonthlyTotal         { get; set; }   // override room-calculated value
+    public decimal?           ContractTotal        { get; set; }   // override calculated total
+    // ── Property Information ──────────────────────────────────────────────
+    public string  ContractPropertyUsage  { get; set; } = string.Empty;
+    public string  ContractBuildingName   { get; set; } = string.Empty;
+    public string  ContractPropertyType   { get; set; } = string.Empty;
+    public string  ContractLocation       { get; set; } = string.Empty;
+    public string  ContractPropertyNo     { get; set; } = string.Empty;
+    public string  ContractPropertyArea   { get; set; } = string.Empty;
+    public string  ContractPremisesNo     { get; set; } = string.Empty;
+    public string  ContractPaymentMode    { get; set; } = string.Empty;
 }
 
 public class UpdateContractStatusRequest
@@ -36,6 +47,17 @@ public class UpdateContractRequest
     public List<int>           RoomIds       { get; set; } = new();
     public decimal             LessorAmount  { get; set; } = 0;
     public string              Notes         { get; set; } = string.Empty;
+    public decimal?            MonthlyTotal  { get; set; }   // override room-calculated value
+    public decimal?            ContractTotal { get; set; }   // override calculated total
+    // ── Property Information ──────────────────────────────────────────────
+    public string  ContractPropertyUsage  { get; set; } = string.Empty;
+    public string  ContractBuildingName   { get; set; } = string.Empty;
+    public string  ContractPropertyType   { get; set; } = string.Empty;
+    public string  ContractLocation       { get; set; } = string.Empty;
+    public string  ContractPropertyNo     { get; set; } = string.Empty;
+    public string  ContractPropertyArea   { get; set; } = string.Empty;
+    public string  ContractPremisesNo     { get; set; } = string.Empty;
+    public string  ContractPaymentMode    { get; set; } = string.Empty;
 }
 
 public class ScheduleItemRequest
@@ -89,6 +111,16 @@ public class ContractResponse
     public string   Notes           { get; set; } = string.Empty;
     public decimal  LessorAmount    { get; set; }
     public string   Status          { get; set; } = string.Empty;
+    // ── Property Information ──────────────────────────────────────────────
+    public string   ContractPropertyUsage  { get; set; } = string.Empty;
+    public string   ContractBuildingName   { get; set; } = string.Empty;
+    public string   ContractPropertyType   { get; set; } = string.Empty;
+    public string   ContractLocation       { get; set; } = string.Empty;
+    public string   ContractPropertyNo     { get; set; } = string.Empty;
+    public string   ContractPropertyArea   { get; set; } = string.Empty;
+    public string   ContractPremisesNo     { get; set; } = string.Empty;
+    public string   ContractPaymentMode    { get; set; } = string.Empty;
+    // ─────────────────────────────────────────────────────────────────────
     public decimal  TotalPaid         { get; set; }
     public decimal  TotalDue          { get; set; }
     public decimal? LastPaymentAmount { get; set; }

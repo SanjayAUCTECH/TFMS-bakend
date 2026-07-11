@@ -32,8 +32,17 @@ public class CampService : ICampService
     {
         var camp = new Camp
         {
-            Name   = request.Name.Trim(),
-            Status = request.Status,
+            Name               = request.Name.Trim(),
+            Status             = request.Status,
+            CampPropertyUsage  = request.CampPropertyUsage?.Trim() ?? "",
+            CampBuildingName   = request.CampBuildingName?.Trim()  ?? "",
+            CampPropertyType   = request.CampPropertyType?.Trim()  ?? "",
+            CampLocation       = request.CampLocation?.Trim()      ?? "",
+            CampPropertyNo     = request.CampPropertyNo?.Trim()    ?? "",
+            CampPropertyArea   = request.CampPropertyArea?.Trim()  ?? "",
+            CampPremisesNo     = request.CampPremisesNo?.Trim()    ?? "",
+            CampPlotNo         = request.CampPlotNo?.Trim()        ?? "",
+            CampMakaniNo       = request.CampMakaniNo?.Trim()      ?? "",
             Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
             Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
         };
@@ -46,7 +55,18 @@ public class CampService : ICampService
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<CampResponse>.Fail("Not found.");
         var camp = new Camp
         {
-            Id = id, Name = request.Name.Trim(), Status = request.Status,
+            Id                 = id,
+            Name               = request.Name.Trim(),
+            Status             = request.Status,
+            CampPropertyUsage  = request.CampPropertyUsage?.Trim() ?? "",
+            CampBuildingName   = request.CampBuildingName?.Trim()  ?? "",
+            CampPropertyType   = request.CampPropertyType?.Trim()  ?? "",
+            CampLocation       = request.CampLocation?.Trim()      ?? "",
+            CampPropertyNo     = request.CampPropertyNo?.Trim()    ?? "",
+            CampPropertyArea   = request.CampPropertyArea?.Trim()  ?? "",
+            CampPremisesNo     = request.CampPremisesNo?.Trim()    ?? "",
+            CampPlotNo         = request.CampPlotNo?.Trim()        ?? "",
+            CampMakaniNo       = request.CampMakaniNo?.Trim()      ?? "",
             Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
             Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
         };
@@ -62,8 +82,23 @@ public class CampService : ICampService
 
     private static CampResponse ToResponse(Camp c) => new()
     {
-        Id = c.Id, Code = c.Code, Name = c.Name, Rooms = c.Rooms, Floors = c.Floors,
-        Status = c.Status, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
+        Id                = c.Id,
+        Code              = c.Code,
+        Name              = c.Name,
+        Rooms             = c.Rooms,
+        Floors            = c.Floors,
+        Status            = c.Status,
+        CampPropertyUsage = c.CampPropertyUsage,
+        CampBuildingName  = c.CampBuildingName,
+        CampPropertyType  = c.CampPropertyType,
+        CampLocation      = c.CampLocation,
+        CampPropertyNo    = c.CampPropertyNo,
+        CampPropertyArea  = c.CampPropertyArea,
+        CampPremisesNo    = c.CampPremisesNo,
+        CampPlotNo        = c.CampPlotNo,
+        CampMakaniNo      = c.CampMakaniNo,
+        CreatedAt         = c.CreatedAt,
+        UpdatedAt         = c.UpdatedAt,
         Partners = c.Partners.Select(p => new CampPartnerResponse
             { Id = p.Id, PartnerId = p.PartnerId, PartnerName = p.PartnerName, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
         Owners = c.Owners.Select(o => new CampOwnerResponse

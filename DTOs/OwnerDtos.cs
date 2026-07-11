@@ -18,7 +18,11 @@ public class UpdateOwnerRequest
     public string Status { get; set; } = "Active";
 }
 
-public class OwnerListRequest : Common.PagedRequest { }
+public class OwnerListRequest : Common.PagedRequest
+{
+    /// <summary>Optional — filter by specific owner ID</summary>
+    public int? Id { get; set; }
+}
 
 public class OwnerResponse
 {

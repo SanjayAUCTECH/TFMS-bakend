@@ -54,6 +54,7 @@ public class AuthService : IAuthService
             Contact    = user.Contact,
             Email      = user.Email,
             Source     = user.Source,
+            SourceId   = user.SourceId,
             LastLogin  = user.LastLogin,
             ExpiresAt  = expiresAt,
         }, "Login successful.");
@@ -162,6 +163,7 @@ public class AuthService : IAuthService
             Contact    = user.Contact,
             Email      = user.Email,
             Source     = user.Source,
+            SourceId   = user.SourceId,
             LastLogin  = user.LastLogin,
             ExpiresAt  = expiresAt,
         }, "Token refreshed successfully.");

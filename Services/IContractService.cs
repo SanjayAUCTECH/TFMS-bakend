@@ -13,4 +13,5 @@ public interface IContractService
     Task<ApiResponse<bool>>                          DeleteAsync(int id);
     Task<ApiResponse<bool>>                          UpdateScheduleAsync(UpdateContractScheduleRequest request);
     Task<ApiResponse<ContractResponse>>              UpdateContractAsync(UpdateContractRequest request);
+    Task<ApiResponse<ContractDocResponse>>           GetDocumentAsync(string contractId);
 }

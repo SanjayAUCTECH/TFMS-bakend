@@ -36,6 +36,18 @@ public class ContractsController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
+    /// <summary>
+    /// GET api/contracts/{contractId}/document
+    /// Full contract document data — for 2-page and 3-page contract preview/print.
+    /// Returns contract + tenant + lessor + property + rooms + installments + payment summary.
+    /// </summary>
+    [HttpGet("{contractId}/document")]
+    public async Task<IActionResult> GetDocument(string contractId)
+    {
+        var r = await _service.GetDocumentAsync(contractId);
+        return r.Success ? Ok(r) : NotFound(r);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateContractRequest request)
     {

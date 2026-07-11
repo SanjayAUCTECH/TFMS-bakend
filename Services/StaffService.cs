@@ -29,8 +29,10 @@ public class StaffService : IStaffService
 
     public async Task<ApiResponse<StaffResponse>> CreateAsync(CreateStaffRequest request)
     {
-        if (await _repo.UsernameExistsAsync(request.Username?.Trim() ?? ""))
-            return ApiResponse<StaffResponse>.Fail("Username already exists.");
+        // Username check — sirf tab karo jab username diya ho (optional field)
+        var uname = request.Username?.Trim().ToLower() ?? "";
+        if (!string.IsNullOrWhiteSpace(uname) && await _repo.UsernameExistsAsync(uname))
+            return ApiResponse<StaffResponse>.Fail("Username already exists. Please use a different username.");
 
         var staff = new Staff
         {
@@ -43,6 +45,12 @@ public class StaffService : IStaffService
             LoginAccess = request.LoginAccess,
             Status      = request.Status,
             Remarks     = request.Remarks?.Trim() ?? "",
+            EmiratesId  = request.EmiratesId?.Trim() ?? "",
+            PassportNo  = request.PassportNo?.Trim() ?? "",
+            Nationality = request.Nationality?.Trim() ?? "",
+            JobTitle    = request.JobTitle?.Trim() ?? "",
+            MoveInDate  = string.IsNullOrWhiteSpace(request.MoveInDate) ? null : DateTime.Parse(request.MoveInDate),
+            VisaExpiry  = string.IsNullOrWhiteSpace(request.VisaExpiry) ? null : DateTime.Parse(request.VisaExpiry),
         };
 
         var id = await _repo.CreateAsync(staff);
@@ -55,7 +63,9 @@ public class StaffService : IStaffService
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return ApiResponse<StaffResponse>.Fail("Staff member not found.");
 
-        if (await _repo.UsernameExistsAsync(request.Username?.Trim() ?? "", id))
+        // Username check — sirf tab karo jab username diya ho aur kisi aur ke paas na ho
+        var uname2 = request.Username?.Trim().ToLower() ?? "";
+        if (!string.IsNullOrWhiteSpace(uname2) && await _repo.UsernameExistsAsync(uname2, id))
             return ApiResponse<StaffResponse>.Fail("Username already taken by another staff member.");
 
         existing.Name        = request.Name?.Trim() ?? "";
@@ -66,6 +76,12 @@ public class StaffService : IStaffService
         existing.LoginAccess = request.LoginAccess;
         existing.Status      = request.Status;
         existing.Remarks     = request.Remarks?.Trim() ?? "";
+        existing.EmiratesId  = request.EmiratesId?.Trim() ?? "";
+        existing.PassportNo  = request.PassportNo?.Trim() ?? "";
+        existing.Nationality = request.Nationality?.Trim() ?? "";
+        existing.JobTitle    = request.JobTitle?.Trim() ?? "";
+        existing.MoveInDate  = string.IsNullOrWhiteSpace(request.MoveInDate) ? null : DateTime.Parse(request.MoveInDate);
+        existing.VisaExpiry  = string.IsNullOrWhiteSpace(request.VisaExpiry) ? null : DateTime.Parse(request.VisaExpiry);
 
         // Only update password if provided
         if (!string.IsNullOrWhiteSpace(request.Password))
@@ -91,6 +107,7 @@ public class StaffService : IStaffService
         StaffId     = s.StaffId,
         Name        = s.Name,
         Role        = s.Role,
+        Designation = s.Designation,
         Contact     = s.Contact,
         Email       = s.Email,
         Address     = s.Address,
@@ -98,6 +115,12 @@ public class StaffService : IStaffService
         LoginAccess = s.LoginAccess,
         Status      = s.Status,
         Remarks     = s.Remarks,
+        EmiratesId  = s.EmiratesId,
+        PassportNo  = s.PassportNo,
+        Nationality = s.Nationality,
+        JobTitle    = s.JobTitle,
+        MoveInDate  = s.MoveInDate?.ToString("yyyy-MM-dd"),
+        VisaExpiry  = s.VisaExpiry?.ToString("yyyy-MM-dd"),
         CreatedAt   = s.CreatedAt,
         UpdatedAt   = s.UpdatedAt,
     };

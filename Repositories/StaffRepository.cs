@@ -59,11 +59,17 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@Contact",     staff.Contact);
         cmd.Parameters.AddWithValue("@Email",       staff.Email);
         cmd.Parameters.AddWithValue("@Address",     staff.Address);
-        cmd.Parameters.AddWithValue("@Username",    staff.Username);
+        cmd.Parameters.AddWithValue("@Username",    string.IsNullOrWhiteSpace(staff.Username) ? (object)DBNull.Value : staff.Username);
         cmd.Parameters.AddWithValue("@Password",    staff.Password);
         cmd.Parameters.AddWithValue("@LoginAccess", staff.LoginAccess);
         cmd.Parameters.AddWithValue("@Status",      staff.Status);
         cmd.Parameters.AddWithValue("@Remarks",     staff.Remarks);
+        cmd.Parameters.AddWithValue("@EmiratesId",  staff.EmiratesId);
+        cmd.Parameters.AddWithValue("@PassportNo",  staff.PassportNo);
+        cmd.Parameters.AddWithValue("@Nationality", staff.Nationality);
+        cmd.Parameters.AddWithValue("@JobTitle",    staff.JobTitle);
+        cmd.Parameters.AddWithValue("@MoveInDate",  (object?)staff.MoveInDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@VisaExpiry",  (object?)staff.VisaExpiry ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -80,11 +86,17 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@Contact",     staff.Contact);
         cmd.Parameters.AddWithValue("@Email",       staff.Email);
         cmd.Parameters.AddWithValue("@Address",     staff.Address);
-        cmd.Parameters.AddWithValue("@Username",    staff.Username);
+        cmd.Parameters.AddWithValue("@Username",    string.IsNullOrWhiteSpace(staff.Username) ? (object)DBNull.Value : staff.Username);
         cmd.Parameters.AddWithValue("@Password",    (object?)staff.Password ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@LoginAccess", staff.LoginAccess);
         cmd.Parameters.AddWithValue("@Status",      staff.Status);
         cmd.Parameters.AddWithValue("@Remarks",     staff.Remarks);
+        cmd.Parameters.AddWithValue("@EmiratesId",  staff.EmiratesId);
+        cmd.Parameters.AddWithValue("@PassportNo",  staff.PassportNo);
+        cmd.Parameters.AddWithValue("@Nationality", staff.Nationality);
+        cmd.Parameters.AddWithValue("@JobTitle",    staff.JobTitle);
+        cmd.Parameters.AddWithValue("@MoveInDate",  (object?)staff.MoveInDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@VisaExpiry",  (object?)staff.VisaExpiry ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -154,7 +166,23 @@ public class StaffRepository : IStaffRepository
         LoginAccess = r.IsDBNull(r.GetOrdinal("LoginAccess")) ? "enabled" : r.GetString(r.GetOrdinal("LoginAccess")),
         Status      = r.GetString(r.GetOrdinal("Status")),
         Remarks     = r.IsDBNull(r.GetOrdinal("Remarks"))     ? "" : r.GetString(r.GetOrdinal("Remarks")),
+        EmiratesId  = SafeStr(r, "EmiratesId"),
+        PassportNo  = SafeStr(r, "PassportNo"),
+        Nationality = SafeStr(r, "Nationality"),
+        JobTitle    = SafeStr(r, "JobTitle"),
+        MoveInDate  = SafeDate(r, "MoveInDate"),
+        VisaExpiry  = SafeDate(r, "VisaExpiry"),
         CreatedAt   = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt   = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
+
+    private static string SafeStr(SqlDataReader r, string col)
+    {
+        try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? "" : r.GetString(o); } catch { return ""; }
+    }
+
+    private static DateTime? SafeDate(SqlDataReader r, string col)
+    {
+        try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? null : r.GetDateTime(o); } catch { return null; }
+    }
 }

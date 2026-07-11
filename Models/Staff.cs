@@ -15,6 +15,14 @@ public class Staff
     public string   LoginAccess { get; set; } = "enabled";
     public string   Status      { get; set; } = "Active";
     public string   Remarks     { get; set; } = string.Empty;
+    // ── New fields ────────────────────────────────────────────────────────
+    public string    EmiratesId  { get; set; } = string.Empty;
+    public string    PassportNo  { get; set; } = string.Empty;
+    public string    Nationality { get; set; } = string.Empty;
+    public string    JobTitle    { get; set; } = string.Empty;
+    public DateTime? MoveInDate  { get; set; }
+    public DateTime? VisaExpiry  { get; set; }
+    // ─────────────────────────────────────────────────────────────────────
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }
 }

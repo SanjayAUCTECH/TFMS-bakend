@@ -22,6 +22,7 @@ public class LoginResponse
     public string   Contact    { get; set; } = string.Empty;
     public string   Email      { get; set; } = string.Empty;
     public string   Source     { get; set; } = string.Empty;
+    public int?     SourceId   { get; set; }
     public DateTime? LastLogin  { get; set; }
     public DateTime ExpiresAt  { get; set; }
 }

@@ -21,6 +21,7 @@ public class OwnerRepository : IOwnerRepository
         cmd.Parameters.AddWithValue("@SortBy",        (object?)request.SortBy    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortDirection", request.ResolvedSortDir);
         cmd.Parameters.AddWithValue("@Status",        (object?)request.Status    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Id",            (object?)request.Id        ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(total);
 

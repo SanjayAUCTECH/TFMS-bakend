@@ -51,16 +51,26 @@ public class ContractService : IContractService
 
         var contractId = await _repo.CreateAsync(new Contract
         {
-            TenantId        = request.TenantId,
-            CampId          = request.CampId,
-            StartDate       = request.StartDate,
-            Months          = request.Months,
-            RoomIds         = request.RoomIds,
-            SecurityDeposit = request.SecurityDeposit,
-            InstallmentType = request.InstallmentType,
-            IssuedBy        = request.IssuedBy,
-            Notes           = request.Notes,
-            LessorAmount    = request.LessorAmount,
+            TenantId               = request.TenantId,
+            CampId                 = request.CampId,
+            StartDate              = request.StartDate,
+            Months                 = request.Months,
+            RoomIds                = request.RoomIds,
+            SecurityDeposit        = request.SecurityDeposit,
+            InstallmentType        = request.InstallmentType,
+            IssuedBy               = request.IssuedBy,
+            Notes                  = request.Notes,
+            LessorAmount           = request.LessorAmount,
+            MonthlyTotal           = request.MonthlyTotal  ?? 0,
+            ContractTotal          = request.ContractTotal ?? 0,
+            ContractPropertyUsage  = request.ContractPropertyUsage  ?? "",
+            ContractBuildingName   = request.ContractBuildingName   ?? "",
+            ContractPropertyType   = request.ContractPropertyType   ?? "",
+            ContractLocation       = request.ContractLocation       ?? "",
+            ContractPropertyNo     = request.ContractPropertyNo     ?? "",
+            ContractPropertyArea   = request.ContractPropertyArea   ?? "",
+            ContractPremisesNo     = request.ContractPremisesNo     ?? "",
+            ContractPaymentMode    = request.ContractPaymentMode    ?? "",
         });
 
         var created = await _repo.GetByContractIdAsync(contractId);
@@ -123,6 +133,14 @@ public class ContractService : IContractService
         return ApiResponse<ContractResponse>.Ok(ToResponse(updated!), "Contract updated successfully.");
     }
 
+    public async Task<ApiResponse<ContractDocResponse>> GetDocumentAsync(string contractId)
+    {
+        var doc = await _repo.GetDocumentAsync(contractId);
+        return doc == null
+            ? ApiResponse<ContractDocResponse>.Fail("Contract not found.")
+            : ApiResponse<ContractDocResponse>.Ok(doc, "Contract document retrieved.");
+    }
+
     public async Task<ApiResponse<bool>> UpdateScheduleAsync(UpdateContractScheduleRequest request)
     {
         var contract = await _repo.GetByContractIdAsync(request.ContractId);
@@ -141,6 +159,14 @@ public class ContractService : IContractService
         SecurityDeposit = c.SecurityDeposit, InstallmentType = c.InstallmentType,
         IssuedBy = c.IssuedBy, Notes = c.Notes, LessorAmount = c.LessorAmount,
         Status = c.Status, RoomIds = c.RoomIds, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
+        ContractPropertyUsage = c.ContractPropertyUsage,
+        ContractBuildingName  = c.ContractBuildingName,
+        ContractPropertyType  = c.ContractPropertyType,
+        ContractLocation      = c.ContractLocation,
+        ContractPropertyNo    = c.ContractPropertyNo,
+        ContractPropertyArea  = c.ContractPropertyArea,
+        ContractPremisesNo    = c.ContractPremisesNo,
+        ContractPaymentMode   = c.ContractPaymentMode,
         TotalPaid = c.TotalPaid,
         TotalDue  = c.TotalDue,
         LastPaymentAmount = c.LastPaymentAmount,
