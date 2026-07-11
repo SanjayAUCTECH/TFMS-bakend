@@ -23,6 +23,18 @@ public class ContractDocResponse
     public decimal  LessorAmount    { get; set; }
     public DateTime CreatedAt       { get; set; }
 
+    // ── Contract Property Fields ───────────────────────────────────────────
+    public string   ContractPropertyUsage  { get; set; } = string.Empty;
+    public string   ContractBuildingName   { get; set; } = string.Empty;
+    public string   ContractPropertyType   { get; set; } = string.Empty;
+    public string   ContractLocation       { get; set; } = string.Empty;
+    public string   ContractPropertyNo     { get; set; } = string.Empty;
+    public string   ContractPropertyArea   { get; set; } = string.Empty;
+    public string   ContractPremisesNo     { get; set; } = string.Empty;
+    public string   ContractPaymentMode    { get; set; } = string.Empty;
+    public string   ContractPlotNo         { get; set; } = string.Empty;
+    public string   ContractMakaniNo       { get; set; } = string.Empty;
+
     // ── Camp / Property ────────────────────────────────────────────────────
     public int      CampId          { get; set; }
     public string   CampName        { get; set; } = string.Empty;
