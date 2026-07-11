@@ -28,6 +28,8 @@ public class Contract
     public string        ContractPropertyArea   { get; set; } = string.Empty;
     public string        ContractPremisesNo     { get; set; } = string.Empty;
     public string        ContractPaymentMode    { get; set; } = string.Empty;
+    public string        ContractPlotNo         { get; set; } = string.Empty;
+    public string        ContractMakaniNo       { get; set; } = string.Empty;
     // ─────────────────────────────────────────────────────────────────────
     public decimal       TotalPaid       { get; set; }
     public decimal       TotalDue        { get; set; }

@@ -97,6 +97,8 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@ContractPropertyArea",  contract.ContractPropertyArea);
         cmd.Parameters.AddWithValue("@ContractPremisesNo",    contract.ContractPremisesNo);
         cmd.Parameters.AddWithValue("@ContractPaymentMode",   contract.ContractPaymentMode);
+        cmd.Parameters.AddWithValue("@ContractPlotNo",        contract.ContractPlotNo);
+        cmd.Parameters.AddWithValue("@ContractMakaniNo",      contract.ContractMakaniNo);
         var newContractId = new SqlParameter("@NewContractId", SqlDbType.NVarChar, 20) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newContractId);
         await cmd.ExecuteNonQueryAsync();
@@ -127,23 +129,30 @@ public class ContractRepository : IContractRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateContract", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@ContractId",              request.ContractId);
-        cmd.Parameters.AddWithValue("@TenantId",                request.TenantId);
-        cmd.Parameters.AddWithValue("@StartDate",               request.StartDate);
-        cmd.Parameters.AddWithValue("@Months",                  request.Months);
-        cmd.Parameters.AddWithValue("@RoomIdsJson",             System.Text.Json.JsonSerializer.Serialize(request.RoomIds));
-        cmd.Parameters.AddWithValue("@LessorAmount",            request.LessorAmount);
-        cmd.Parameters.AddWithValue("@Notes",                   request.Notes ?? "");
-        cmd.Parameters.AddWithValue("@MonthlyTotal",            request.MonthlyTotal.HasValue && request.MonthlyTotal > 0 ? (object)request.MonthlyTotal.Value : DBNull.Value);
-        cmd.Parameters.AddWithValue("@ContractTotal",           request.ContractTotal.HasValue && request.ContractTotal > 0 ? (object)request.ContractTotal.Value : DBNull.Value);
-        cmd.Parameters.AddWithValue("@ContractPropertyUsage",   request.ContractPropertyUsage  ?? "");
-        cmd.Parameters.AddWithValue("@ContractBuildingName",    request.ContractBuildingName   ?? "");
-        cmd.Parameters.AddWithValue("@ContractPropertyType",    request.ContractPropertyType   ?? "");
-        cmd.Parameters.AddWithValue("@ContractLocation",        request.ContractLocation       ?? "");
-        cmd.Parameters.AddWithValue("@ContractPropertyNo",      request.ContractPropertyNo     ?? "");
-        cmd.Parameters.AddWithValue("@ContractPropertyArea",    request.ContractPropertyArea   ?? "");
-        cmd.Parameters.AddWithValue("@ContractPremisesNo",      request.ContractPremisesNo     ?? "");
-        cmd.Parameters.AddWithValue("@ContractPaymentMode",     request.ContractPaymentMode    ?? "");
+        cmd.Parameters.AddWithValue("@ContractId",    request.ContractId ?? "");
+        // Only send fields that were actually provided — null = keep existing value in SP
+        cmd.Parameters.AddWithValue("@TenantId",      (object?)request.TenantId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@StartDate",     (object?)request.StartDate   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Months",        (object?)request.Months      ?? DBNull.Value);
+        // Only send RoomIdsJson if rooms were actually provided (non-empty list)
+        var roomJson = (request.RoomIds != null && request.RoomIds.Count > 0)
+            ? System.Text.Json.JsonSerializer.Serialize(request.RoomIds)
+            : null;
+        cmd.Parameters.AddWithValue("@RoomIdsJson",   (object?)roomJson            ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LessorAmount",  (object?)request.LessorAmount ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Notes",         (object?)request.Notes       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@MonthlyTotal",  request.MonthlyTotal  > 0 ? (object)request.MonthlyTotal  : DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractTotal", request.ContractTotal > 0 ? (object)request.ContractTotal : DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractPropertyUsage",  string.IsNullOrEmpty(request.ContractPropertyUsage)  ? (object)DBNull.Value : request.ContractPropertyUsage);
+        cmd.Parameters.AddWithValue("@ContractBuildingName",   string.IsNullOrEmpty(request.ContractBuildingName)   ? (object)DBNull.Value : request.ContractBuildingName);
+        cmd.Parameters.AddWithValue("@ContractPropertyType",   string.IsNullOrEmpty(request.ContractPropertyType)   ? (object)DBNull.Value : request.ContractPropertyType);
+        cmd.Parameters.AddWithValue("@ContractLocation",       string.IsNullOrEmpty(request.ContractLocation)       ? (object)DBNull.Value : request.ContractLocation);
+        cmd.Parameters.AddWithValue("@ContractPropertyNo",     string.IsNullOrEmpty(request.ContractPropertyNo)     ? (object)DBNull.Value : request.ContractPropertyNo);
+        cmd.Parameters.AddWithValue("@ContractPropertyArea",   string.IsNullOrEmpty(request.ContractPropertyArea)   ? (object)DBNull.Value : request.ContractPropertyArea);
+        cmd.Parameters.AddWithValue("@ContractPremisesNo",     string.IsNullOrEmpty(request.ContractPremisesNo)     ? (object)DBNull.Value : request.ContractPremisesNo);
+        cmd.Parameters.AddWithValue("@ContractPaymentMode",    string.IsNullOrEmpty(request.ContractPaymentMode)    ? (object)DBNull.Value : request.ContractPaymentMode);
+        cmd.Parameters.AddWithValue("@ContractPlotNo",         string.IsNullOrEmpty(request.ContractPlotNo)         ? (object)DBNull.Value : request.ContractPlotNo);
+        cmd.Parameters.AddWithValue("@ContractMakaniNo",       string.IsNullOrEmpty(request.ContractMakaniNo)       ? (object)DBNull.Value : request.ContractMakaniNo);
         await cmd.ExecuteNonQueryAsync();
         return true;
     }
@@ -235,6 +244,8 @@ public class ContractRepository : IContractRepository
         ContractPropertyArea  = SafeStr(r, "ContractPropertyArea"),
         ContractPremisesNo    = SafeStr(r, "ContractPremisesNo"),
         ContractPaymentMode   = SafeStr(r, "ContractPaymentMode"),
+        ContractPlotNo        = SafeStr(r, "ContractPlotNo"),
+        ContractMakaniNo      = SafeStr(r, "ContractMakaniNo"),
         Status          = r.GetString(r.GetOrdinal("Status")),
         TotalPaid         = HasColumn(r, "TotalPaid")           && !r.IsDBNull(r.GetOrdinal("TotalPaid"))
                             ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalPaid"))) : 0,

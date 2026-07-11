@@ -42,27 +42,31 @@ public class ContractService : IContractService
 
     public async Task<ApiResponse<ContractResponse>> CreateAsync(CreateContractRequest request)
     {
-        if (!await _tenantRepo.ExistsAsync(request.TenantId))
-            return ApiResponse<ContractResponse>.Fail("Tenant not found.");
-        if (await _campRepo.GetByIdAsync(request.CampId) == null)
-            return ApiResponse<ContractResponse>.Fail("Camp not found.");
-        if (request.RoomIds == null || request.RoomIds.Count == 0)
-            return ApiResponse<ContractResponse>.Fail("At least one room must be selected.");
+        if (request.TenantId.HasValue && request.TenantId > 0)
+        {
+            if (!await _tenantRepo.ExistsAsync(request.TenantId.Value))
+                return ApiResponse<ContractResponse>.Fail("Tenant not found.");
+        }
+        if (request.CampId.HasValue && request.CampId > 0)
+        {
+            if (await _campRepo.GetByIdAsync(request.CampId.Value) == null)
+                return ApiResponse<ContractResponse>.Fail("Camp not found.");
+        }
 
         var contractId = await _repo.CreateAsync(new Contract
         {
-            TenantId               = request.TenantId,
-            CampId                 = request.CampId,
-            StartDate              = request.StartDate,
-            Months                 = request.Months,
-            RoomIds                = request.RoomIds,
-            SecurityDeposit        = request.SecurityDeposit,
-            InstallmentType        = request.InstallmentType,
-            IssuedBy               = request.IssuedBy,
-            Notes                  = request.Notes,
-            LessorAmount           = request.LessorAmount,
-            MonthlyTotal           = request.MonthlyTotal  ?? 0,
-            ContractTotal          = request.ContractTotal ?? 0,
+            TenantId               = request.TenantId      ?? 0,
+            CampId                 = request.CampId        ?? 0,
+            StartDate              = request.StartDate     ?? DateTime.Today,
+            Months                 = request.Months        ?? 12,
+            RoomIds                = request.RoomIds       ?? new(),
+            SecurityDeposit        = request.SecurityDeposit   ?? 0,
+            InstallmentType        = request.InstallmentType   ?? "monthly",
+            IssuedBy               = request.IssuedBy          ?? "",
+            Notes                  = request.Notes             ?? "",
+            LessorAmount           = request.LessorAmount      ?? 0,
+            MonthlyTotal           = request.MonthlyTotal      ?? 0,
+            ContractTotal          = request.ContractTotal     ?? 0,
             ContractPropertyUsage  = request.ContractPropertyUsage  ?? "",
             ContractBuildingName   = request.ContractBuildingName   ?? "",
             ContractPropertyType   = request.ContractPropertyType   ?? "",
@@ -71,6 +75,8 @@ public class ContractService : IContractService
             ContractPropertyArea   = request.ContractPropertyArea   ?? "",
             ContractPremisesNo     = request.ContractPremisesNo     ?? "",
             ContractPaymentMode    = request.ContractPaymentMode    ?? "",
+            ContractPlotNo         = request.ContractPlotNo         ?? "",
+            ContractMakaniNo       = request.ContractMakaniNo       ?? "",
         });
 
         var created = await _repo.GetByContractIdAsync(contractId);
@@ -93,7 +99,7 @@ public class ContractService : IContractService
                     FromDate     = created.StartDate,
                     ToDate       = created.EndDate,
                     Description  = $"Contract created - {created.Months} months @ {created.MonthlyTotal}/mo",
-                    ReceivedBy   = request.IssuedBy,
+                    ReceivedBy   = request.IssuedBy ?? "",
                 });
             }
             catch (Exception ex)
@@ -108,7 +114,7 @@ public class ContractService : IContractService
     public async Task<ApiResponse<bool>> UpdateStatusAsync(string contractId, UpdateContractStatusRequest request)
     {
         var valid = new[] { "Active", "Expired", "Terminated" };
-        if (!valid.Contains(request.Status))
+        if (string.IsNullOrEmpty(request.Status) || !valid.Contains(request.Status))
             return ApiResponse<bool>.Fail("Invalid status. Use Active, Expired, or Terminated.");
         var result = await _repo.UpdateStatusAsync(contractId, request.Status);
         return result ? ApiResponse<bool>.Ok(true, "Contract status updated.") : ApiResponse<bool>.Fail("Contract not found.");
@@ -124,12 +130,10 @@ public class ContractService : IContractService
 
     public async Task<ApiResponse<ContractResponse>> UpdateContractAsync(UpdateContractRequest request)
     {
-        var existing = await _repo.GetByContractIdAsync(request.ContractId);
+        var existing = await _repo.GetByContractIdAsync(request.ContractId ?? "");
         if (existing == null) return ApiResponse<ContractResponse>.Fail("Contract not found.");
-        if (request.RoomIds == null || request.RoomIds.Count == 0)
-            return ApiResponse<ContractResponse>.Fail("At least one room must be selected.");
         await _repo.UpdateContractAsync(request);
-        var updated = await _repo.GetByContractIdAsync(request.ContractId);
+        var updated = await _repo.GetByContractIdAsync(request.ContractId ?? "");
         return ApiResponse<ContractResponse>.Ok(ToResponse(updated!), "Contract updated successfully.");
     }
 
@@ -143,12 +147,13 @@ public class ContractService : IContractService
 
     public async Task<ApiResponse<bool>> UpdateScheduleAsync(UpdateContractScheduleRequest request)
     {
-        var contract = await _repo.GetByContractIdAsync(request.ContractId);
+        var contractId = request.ContractId ?? "";
+        var contract = await _repo.GetByContractIdAsync(contractId);
         if (contract == null) return ApiResponse<bool>.Fail("Contract not found.");
         var scheduleJson = System.Text.Json.JsonSerializer.Serialize(
-            request.Schedule.Select(s => new { no=s.No, amount=s.Amount, dueDate=s.DueDate, mode=s.Mode, cheque=s.Cheque, clearance=s.Clearance }));
-        await _repo.UpdateScheduleAsync(request.ContractId, scheduleJson);
-        return ApiResponse<bool>.Ok(true, $"Schedule updated for {request.ContractId}.");
+            (request.Schedule ?? new()).Select(s => new { no=s.No, amount=s.Amount, dueDate=s.DueDate, mode=s.Mode, cheque=s.Cheque, clearance=s.Clearance }));
+        await _repo.UpdateScheduleAsync(contractId, scheduleJson);
+        return ApiResponse<bool>.Ok(true, $"Schedule updated for {contractId}.");
     }
 
     private static ContractResponse ToResponse(Contract c) => new()
@@ -167,6 +172,8 @@ public class ContractService : IContractService
         ContractPropertyArea  = c.ContractPropertyArea,
         ContractPremisesNo    = c.ContractPremisesNo,
         ContractPaymentMode   = c.ContractPaymentMode,
+        ContractPlotNo        = c.ContractPlotNo,
+        ContractMakaniNo      = c.ContractMakaniNo,
         TotalPaid = c.TotalPaid,
         TotalDue  = c.TotalDue,
         LastPaymentAmount = c.LastPaymentAmount,

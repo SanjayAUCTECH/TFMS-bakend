@@ -1,63 +1,65 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace TFMS_software_api.DTOs;
 
 public class CreateContractRequest
 {
-    [Range(1, int.MaxValue)]  public int           TenantId          { get; set; }
-    [Range(1, int.MaxValue)]  public int           CampId            { get; set; }
-    [Required]                public DateTime      StartDate         { get; set; }
-    [Range(1, 120)]           public int           Months            { get; set; } = 12;
-    public List<int>          RoomIds              { get; set; } = new();
-    public decimal            SecurityDeposit      { get; set; } = 0;
-    public string             InstallmentType      { get; set; } = "monthly";
-    public string             IssuedBy             { get; set; } = string.Empty;
-    public string             Notes                { get; set; } = string.Empty;
-    public decimal            LessorAmount         { get; set; } = 0;
-    public decimal?           MonthlyTotal         { get; set; }   // override room-calculated value
-    public decimal?           ContractTotal        { get; set; }   // override calculated total
+    public int?          TenantId          { get; set; }
+    public int?          CampId            { get; set; }
+    public DateTime?     StartDate         { get; set; }
+    public int?          Months            { get; set; } = 12;
+    public List<int>     RoomIds           { get; set; } = new();
+    public decimal?      SecurityDeposit   { get; set; } = 0;
+    public string?       InstallmentType   { get; set; } = "monthly";
+    public string?       IssuedBy          { get; set; } = string.Empty;
+    public string?       Notes             { get; set; } = string.Empty;
+    public decimal?      LessorAmount      { get; set; } = 0;
+    public decimal?      MonthlyTotal      { get; set; }   // override room-calculated value
+    public decimal?      ContractTotal     { get; set; }   // override calculated total
     // ── Property Information ──────────────────────────────────────────────
-    public string  ContractPropertyUsage  { get; set; } = string.Empty;
-    public string  ContractBuildingName   { get; set; } = string.Empty;
-    public string  ContractPropertyType   { get; set; } = string.Empty;
-    public string  ContractLocation       { get; set; } = string.Empty;
-    public string  ContractPropertyNo     { get; set; } = string.Empty;
-    public string  ContractPropertyArea   { get; set; } = string.Empty;
-    public string  ContractPremisesNo     { get; set; } = string.Empty;
-    public string  ContractPaymentMode    { get; set; } = string.Empty;
+    public string?  ContractPropertyUsage  { get; set; } = string.Empty;
+    public string?  ContractBuildingName   { get; set; } = string.Empty;
+    public string?  ContractPropertyType   { get; set; } = string.Empty;
+    public string?  ContractLocation       { get; set; } = string.Empty;
+    public string?  ContractPropertyNo     { get; set; } = string.Empty;
+    public string?  ContractPropertyArea   { get; set; } = string.Empty;
+    public string?  ContractPremisesNo     { get; set; } = string.Empty;
+    public string?  ContractPaymentMode    { get; set; } = string.Empty;
+    public string?  ContractPlotNo         { get; set; } = string.Empty;
+    public string?  ContractMakaniNo       { get; set; } = string.Empty;
 }
 
 public class UpdateContractStatusRequest
 {
-    [Required] public string Status { get; set; } = string.Empty;   // Active | Expired | Terminated
+    public string? Status { get; set; } = string.Empty;   // Active | Expired | Terminated
 }
 
 public class UpdateContractScheduleRequest
 {
-    [Required] public string ContractId { get; set; } = string.Empty;
-    [Required] public List<ScheduleItemRequest> Schedule { get; set; } = new();
+    public string? ContractId { get; set; } = string.Empty;
+    public List<ScheduleItemRequest>? Schedule { get; set; } = new();
 }
 
 public class UpdateContractRequest
 {
-    [Required] public string   ContractId    { get; set; } = string.Empty;
-    [Required] public int      TenantId      { get; set; }
-    [Required] public DateTime StartDate     { get; set; }
-    [Range(1,120)] public int  Months        { get; set; } = 12;
-    public List<int>           RoomIds       { get; set; } = new();
-    public decimal             LessorAmount  { get; set; } = 0;
-    public string              Notes         { get; set; } = string.Empty;
-    public decimal?            MonthlyTotal  { get; set; }   // override room-calculated value
-    public decimal?            ContractTotal { get; set; }   // override calculated total
+    public string?   ContractId    { get; set; } = string.Empty;
+    public int?      TenantId      { get; set; }
+    public DateTime? StartDate     { get; set; }
+    public int?      Months        { get; set; } = 12;
+    public List<int>?  RoomIds     { get; set; } = new();
+    public decimal?  LessorAmount  { get; set; } = 0;
+    public string?   Notes         { get; set; } = string.Empty;
+    public decimal?  MonthlyTotal  { get; set; }   // override room-calculated value
+    public decimal?  ContractTotal { get; set; }   // override calculated total
     // ── Property Information ──────────────────────────────────────────────
-    public string  ContractPropertyUsage  { get; set; } = string.Empty;
-    public string  ContractBuildingName   { get; set; } = string.Empty;
-    public string  ContractPropertyType   { get; set; } = string.Empty;
-    public string  ContractLocation       { get; set; } = string.Empty;
-    public string  ContractPropertyNo     { get; set; } = string.Empty;
-    public string  ContractPropertyArea   { get; set; } = string.Empty;
-    public string  ContractPremisesNo     { get; set; } = string.Empty;
-    public string  ContractPaymentMode    { get; set; } = string.Empty;
+    public string?  ContractPropertyUsage  { get; set; } = string.Empty;
+    public string?  ContractBuildingName   { get; set; } = string.Empty;
+    public string?  ContractPropertyType   { get; set; } = string.Empty;
+    public string?  ContractLocation       { get; set; } = string.Empty;
+    public string?  ContractPropertyNo     { get; set; } = string.Empty;
+    public string?  ContractPropertyArea   { get; set; } = string.Empty;
+    public string?  ContractPremisesNo     { get; set; } = string.Empty;
+    public string?  ContractPaymentMode    { get; set; } = string.Empty;
+    public string?  ContractPlotNo         { get; set; } = string.Empty;
+    public string?  ContractMakaniNo       { get; set; } = string.Empty;
 }
 
 public class ScheduleItemRequest
@@ -120,6 +122,8 @@ public class ContractResponse
     public string   ContractPropertyArea   { get; set; } = string.Empty;
     public string   ContractPremisesNo     { get; set; } = string.Empty;
     public string   ContractPaymentMode    { get; set; } = string.Empty;
+    public string   ContractPlotNo         { get; set; } = string.Empty;
+    public string   ContractMakaniNo       { get; set; } = string.Empty;
     // ─────────────────────────────────────────────────────────────────────
     public decimal  TotalPaid         { get; set; }
     public decimal  TotalDue          { get; set; }
