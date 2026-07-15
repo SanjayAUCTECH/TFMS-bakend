@@ -1,16 +1,14 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace TFMS_software_api.DTOs;
 
 public class CreatePaymentModeRequest
 {
-    [MaxLength(50)] public string Name   { get; set; } = string.Empty;
+    public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 
 public class UpdatePaymentModeRequest
 {
-    [MaxLength(50)] public string Name   { get; set; } = string.Empty;
+    public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 

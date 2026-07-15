@@ -37,6 +37,7 @@ public class StaffService : IStaffService
         var staff = new Staff
         {
             Name        = request.Name?.Trim() ?? "",
+            Designation = request.Designation?.Trim() ?? "",
             Contact     = request.Contact?.Trim() ?? "",
             Email       = request.Email?.Trim() ?? "",
             Address     = request.Address?.Trim() ?? "",
@@ -69,6 +70,7 @@ public class StaffService : IStaffService
             return ApiResponse<StaffResponse>.Fail("Username already taken by another staff member.");
 
         existing.Name        = request.Name?.Trim() ?? "";
+        existing.Designation = request.Designation?.Trim() ?? "";
         existing.Contact     = request.Contact?.Trim() ?? "";
         existing.Email       = request.Email?.Trim() ?? "";
         existing.Address     = request.Address?.Trim() ?? "";

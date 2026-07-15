@@ -1,17 +1,15 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace TFMS_software_api.DTOs;
 
 public class CreateRoleRequest
 {
-    [MaxLength(100)] public string RoleName { get; set; } = string.Empty;
-    public string Status { get; set; } = "Active";
+    public string RoleName { get; set; } = string.Empty;
+    public string Status   { get; set; } = "Active";
 }
 
 public class UpdateRoleRequest
 {
-    [MaxLength(100)] public string RoleName { get; set; } = string.Empty;
-    public string Status { get; set; } = "Active";
+    public string RoleName { get; set; } = string.Empty;
+    public string Status   { get; set; } = "Active";
 }
 
 public class RoleListRequest : Common.PagedRequest { }

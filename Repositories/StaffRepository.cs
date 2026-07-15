@@ -56,6 +56,7 @@ public class StaffRepository : IStaffRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateStaff", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Name",        staff.Name);
+        cmd.Parameters.AddWithValue("@Designation", staff.Designation ?? "");
         cmd.Parameters.AddWithValue("@Contact",     staff.Contact);
         cmd.Parameters.AddWithValue("@Email",       staff.Email);
         cmd.Parameters.AddWithValue("@Address",     staff.Address);
@@ -83,6 +84,7 @@ public class StaffRepository : IStaffRepository
         await using var cmd = new SqlCommand("sp_UpdateStaff", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id",          staff.Id);
         cmd.Parameters.AddWithValue("@Name",        staff.Name);
+        cmd.Parameters.AddWithValue("@Designation", staff.Designation ?? "");
         cmd.Parameters.AddWithValue("@Contact",     staff.Contact);
         cmd.Parameters.AddWithValue("@Email",       staff.Email);
         cmd.Parameters.AddWithValue("@Address",     staff.Address);
@@ -158,6 +160,7 @@ public class StaffRepository : IStaffRepository
         StaffId     = r.GetString(r.GetOrdinal("StaffId")),
         Name        = r.GetString(r.GetOrdinal("Name")),
         Role        = r.IsDBNull(r.GetOrdinal("Role"))        ? "Staff" : r.GetString(r.GetOrdinal("Role")),
+        Designation = SafeStr(r, "Designation"),
         Contact     = r.IsDBNull(r.GetOrdinal("Contact"))     ? "" : r.GetString(r.GetOrdinal("Contact")),
         Email       = r.IsDBNull(r.GetOrdinal("Email"))       ? "" : r.GetString(r.GetOrdinal("Email")),
         Address     = r.IsDBNull(r.GetOrdinal("Address"))     ? "" : r.GetString(r.GetOrdinal("Address")),

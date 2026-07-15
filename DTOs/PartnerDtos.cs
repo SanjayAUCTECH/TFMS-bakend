@@ -1,30 +1,24 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace TFMS_software_api.DTOs;
-
-// ── Request DTOs ──────────────────────────────────────────────────────────────
 
 public class CreatePartnerRequest
 {
-    [MaxLength(200)] public string  Name    { get; set; } = string.Empty;
-    [MaxLength(100)] public string  Contact { get; set; } = string.Empty;
-    [MaxLength(20)]  public string  Mobile  { get; set; } = string.Empty;
-    [MaxLength(150)] public string? Email   { get; set; }
-    public string Status { get; set; } = "Active";
+    public string  Name    { get; set; } = string.Empty;
+    public string  Contact { get; set; } = string.Empty;
+    public string  Mobile  { get; set; } = string.Empty;
+    public string? Email   { get; set; }
+    public string  Status  { get; set; } = "Active";
 }
 
 public class UpdatePartnerRequest
 {
-    [MaxLength(200)] public string  Name    { get; set; } = string.Empty;
-    [MaxLength(100)] public string  Contact { get; set; } = string.Empty;
-    [MaxLength(20)]  public string  Mobile  { get; set; } = string.Empty;
-    [MaxLength(150)] public string? Email   { get; set; }
-    public string Status { get; set; } = "Active";
+    public string  Name    { get; set; } = string.Empty;
+    public string  Contact { get; set; } = string.Empty;
+    public string  Mobile  { get; set; } = string.Empty;
+    public string? Email   { get; set; }
+    public string  Status  { get; set; } = "Active";
 }
 
 public class PartnerListRequest : Common.PagedRequest { }
-
-// ── Response DTOs ─────────────────────────────────────────────────────────────
 
 public class PartnerResponse
 {

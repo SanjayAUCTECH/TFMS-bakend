@@ -44,12 +44,13 @@ public class TxnRecordRepository : ITxnRecordRepository
         cmd.Parameters.AddWithValue("@TxnDate",       t.TxnDate);
         cmd.Parameters.AddWithValue("@FromDate",      (object?)t.FromDate    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@ToDate",        (object?)t.ToDate      ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@PaymentMode",   t.PaymentMode);
+        cmd.Parameters.AddWithValue("@PaymentMode",   t.PaymentMode    ?? "");
         cmd.Parameters.AddWithValue("@PaymentModeId", (object?)t.PaymentModeId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@FundPoolId",    (object?)t.FundPoolId    ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@FundPoolName",  t.FundPoolName);
-        cmd.Parameters.AddWithValue("@Description",   t.Description);
-        cmd.Parameters.AddWithValue("@ReceivedBy",    t.ReceivedBy);
+        cmd.Parameters.AddWithValue("@FundPoolName",  t.FundPoolName   ?? "");
+        cmd.Parameters.AddWithValue("@Description",   t.Description    ?? "");
+        cmd.Parameters.AddWithValue("@ReceivedBy",    t.ReceivedBy     ?? "");
+        cmd.Parameters.AddWithValue("@ChequeNumber",  t.ChequeNumber   ?? "");
         cmd.Parameters.AddWithValue("@InstallmentNo", (object?)t.InstallmentNo ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);

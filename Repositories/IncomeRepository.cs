@@ -90,7 +90,8 @@ public class IncomeRepository : IIncomeRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteIncome", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;   // SP handles balance update; rowcount unreliable
     }
 
     public async Task<bool> ExistsAsync(int id)

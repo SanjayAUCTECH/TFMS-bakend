@@ -96,7 +96,8 @@ public class ExpenseRepository : IExpenseRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteExpense", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;   // SP handles its own transaction; rowcount unreliable with COMMIT
     }
 
     public async Task<bool> ExistsAsync(int id)

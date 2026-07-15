@@ -99,7 +99,7 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@ContractPaymentMode",   contract.ContractPaymentMode);
         cmd.Parameters.AddWithValue("@ContractPlotNo",        contract.ContractPlotNo);
         cmd.Parameters.AddWithValue("@ContractMakaniNo",      contract.ContractMakaniNo);
-        var newContractId = new SqlParameter("@NewContractId", SqlDbType.NVarChar, 20) { Direction = ParameterDirection.Output };
+        var newContractId = new SqlParameter("@NewContractId", SqlDbType.NVarChar, 450) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newContractId);
         await cmd.ExecuteNonQueryAsync();
         return (string)newContractId.Value;
@@ -109,19 +109,30 @@ public class ContractRepository : IContractRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
+        // First check if contract exists
+        await using var checkCmd = new SqlCommand("SELECT COUNT(1) FROM Contracts WHERE ContractId=@ContractId", conn);
+        checkCmd.Parameters.AddWithValue("@ContractId", contractId);
+        var exists = (int)(await checkCmd.ExecuteScalarAsync())! > 0;
+        if (!exists) return false;
         await using var cmd = new SqlCommand("sp_UpdateContractStatus", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@ContractId", contractId);
         cmd.Parameters.AddWithValue("@Status",     status);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;   // SP handles room status update; rowcount unreliable
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
+        // Check exists first
+        await using var chk = new SqlCommand("SELECT COUNT(1) FROM Contracts WHERE Id=@Id", conn);
+        chk.Parameters.AddWithValue("@Id", id);
+        if ((int)(await chk.ExecuteScalarAsync())! == 0) return false;
         await using var cmd = new SqlCommand("sp_DeleteContract", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;  // SP handles SET NOCOUNT ON; rowcount unreliable
     }
 
     public async Task<bool> UpdateContractAsync(UpdateContractRequest request)

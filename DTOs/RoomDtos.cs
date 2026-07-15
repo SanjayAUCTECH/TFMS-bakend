@@ -4,7 +4,7 @@ namespace TFMS_software_api.DTOs;
 
 public class CreateRoomRequest
 {
-    [MaxLength(20)] public string  RoomNo       { get; set; } = string.Empty;
+    public string  RoomNo       { get; set; } = string.Empty;
     public int?    CampId       { get; set; }
     public int?    FloorId      { get; set; }
     public decimal MonthlyPrice { get; set; }
@@ -32,7 +32,7 @@ public class BulkCreateRoomResponse
 
 public class UpdateRoomRequest
 {
-    [MaxLength(20)] public string  RoomNo       { get; set; } = string.Empty;
+    public string  RoomNo       { get; set; } = string.Empty;
     public int?    CampId       { get; set; }
     public int?    FloorId      { get; set; }
     public decimal MonthlyPrice { get; set; }
@@ -42,9 +42,9 @@ public class UpdateRoomRequest
 
 public class RoomListRequest : Common.PagedRequest
 {
-    public int?    CampId  { get; set; }
-    public int?    FloorId { get; set; }
-    public string? RoomStatus { get; set; }   // Vacant | Occupied | Maintenance
+    public int?    CampId     { get; set; }
+    public int?    FloorId    { get; set; }
+    public string? RoomStatus { get; set; }
 }
 
 public class RoomResponse

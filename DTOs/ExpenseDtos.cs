@@ -1,38 +1,35 @@
-using System.ComponentModel.DataAnnotations;
 using TFMS_software_api.Common;
 
 namespace TFMS_software_api.DTOs;
 
-// ── Request DTOs ──────────────────────────────────────────────────────────────
-
 public class CreateExpenseRequest
 {
-    public DateTime  Date          { get; set; }
-    [MaxLength(50)]  public string  Mode          { get; set; } = string.Empty;
-    [MaxLength(200)] public string  Head          { get; set; } = string.Empty;
-    public int?      FundPoolId    { get; set; }
-    public decimal   Amount        { get; set; }
-    [MaxLength(30)]  public string  Nature        { get; set; } = "HO";
-    public int?      CampId        { get; set; }
-    [MaxLength(30)]  public string? RecipientRole { get; set; }   // nullable — optional
-    public int?      RecipientId   { get; set; }
-    [MaxLength(200)] public string  RecipientName { get; set; } = string.Empty;
-    [MaxLength(500)] public string  Purpose       { get; set; } = string.Empty;
+    public DateTime Date          { get; set; }
+    public string   Mode          { get; set; } = string.Empty;
+    public string   Head          { get; set; } = string.Empty;
+    public int?     FundPoolId    { get; set; }
+    public decimal  Amount        { get; set; }
+    public string   Nature        { get; set; } = "HO";
+    public int?     CampId        { get; set; }
+    public string?  RecipientRole { get; set; }
+    public int?     RecipientId   { get; set; }
+    public string   RecipientName { get; set; } = string.Empty;
+    public string   Purpose       { get; set; } = string.Empty;
 }
 
 public class UpdateExpenseRequest
 {
-    public DateTime  Date          { get; set; }
-    [MaxLength(50)]  public string  Mode          { get; set; } = string.Empty;
-    [MaxLength(200)] public string  Head          { get; set; } = string.Empty;
-    public int?      FundPoolId    { get; set; }
-    public decimal   Amount        { get; set; }
-    [MaxLength(30)]  public string  Nature        { get; set; } = "HO";
-    public int?      CampId        { get; set; }
-    [MaxLength(30)]  public string? RecipientRole { get; set; }   // nullable — optional
-    public int?      RecipientId   { get; set; }
-    [MaxLength(200)] public string  RecipientName { get; set; } = string.Empty;
-    [MaxLength(500)] public string  Purpose       { get; set; } = string.Empty;
+    public DateTime Date          { get; set; }
+    public string   Mode          { get; set; } = string.Empty;
+    public string   Head          { get; set; } = string.Empty;
+    public int?     FundPoolId    { get; set; }
+    public decimal  Amount        { get; set; }
+    public string   Nature        { get; set; } = "HO";
+    public int?     CampId        { get; set; }
+    public string?  RecipientRole { get; set; }
+    public int?     RecipientId   { get; set; }
+    public string   RecipientName { get; set; } = string.Empty;
+    public string   Purpose       { get; set; } = string.Empty;
 }
 
 public class ExpenseListRequest : PagedRequest
@@ -44,8 +41,6 @@ public class ExpenseListRequest : PagedRequest
     public int?    CampId        { get; set; }
     public string? RecipientRole { get; set; }
 }
-
-// ── Response DTOs ─────────────────────────────────────────────────────────────
 
 public class ExpenseResponse
 {

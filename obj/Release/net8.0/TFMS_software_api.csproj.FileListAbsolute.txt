@@ -73,3 +73,11 @@ G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Relea
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Release\net8.0\TFMS_software_api.pdb
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Release\net8.0\TFMS_software_api.genruntimeconfig.cache
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Release\net8.0\ref\TFMS_software_api.dll
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\web.config
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\appsettings.Development.json
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\appsettings.json
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\appsettings.Production.json
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\TFMS_software_api.deps.json
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\TFMS_software_api.runtimeconfig.json
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\TFMS_software_api.staticwebassets.endpoints.json
+g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\Scripts\test_payment_body.json

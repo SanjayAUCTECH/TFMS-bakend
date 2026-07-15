@@ -1,0 +1,79 @@
+===== GET ALL =====
+OK   GET partners?PageNumber=1&PageSize=3
+OK   GET owners?PageNumber=1&PageSize=3
+OK   GET floors?PageNumber=1&PageSize=3
+OK   GET roomstatuses
+OK   GET paymentmodes
+OK   GET fundpools?PageNumber=1&PageSize=3
+OK   GET accountsheads?PageNumber=1&PageSize=3
+OK   GET designations?PageNumber=1&PageSize=3
+OK   GET otherpersons?PageNumber=1&PageSize=3
+OK   GET roles?PageNumber=1&PageSize=3
+OK   GET camps?PageNumber=1&PageSize=3
+OK   GET camps/active
+OK   GET rooms?PageNumber=1&PageSize=3
+OK   GET tenants?PageNumber=1&PageSize=3
+OK   GET contracts?PageNumber=1&PageSize=3
+OK   GET payments?PageNumber=1&PageSize=3
+OK   GET waivers?PageNumber=1&PageSize=3
+OK   GET incomes?PageNumber=1&PageSize=3
+OK   GET expenses?PageNumber=1&PageSize=3
+OK   GET staff?PageNumber=1&PageSize=3
+OK   GET users?PageNumber=1&PageSize=3
+OK   GET txnrecords?PageNumber=1&PageSize=3
+OK   GET ownercontracts
+OK   GET dashboard/stats
+OK   GET mis/stats
+OK   GET mis/owner-report?PageNumber=1&PageSize=3
+OK   GET reports/inventory?PageNumber=1&PageSize=3
+OK   GET reports/tenants?PageNumber=1&PageSize=3
+OK   GET reports/due?PageNumber=1&PageSize=3
+OK   GET reports/transactions?PageNumber=1&PageSize=3
+OK   GET reports/waivers?PageNumber=1&PageSize=3
+
+===== INSERT =====
+OK   POST partners | Partner created successfully.
+OK   POST owners | Owner created.
+OK   POST floors | Floor created.
+OK   POST fundpools | Fund Pool created.
+OK   POST accountsheads | Accounts Head created.
+OK   POST designations | Designation created.
+OK   POST roles | Role created.
+OK   POST camps | Camp created.
+OK   POST rooms | Room created.
+OK   POST tenants | Tenant created.
+OK   POST contracts | Contract created successfully.
+OK   POST payments/record | Payment recorded successfully.
+OK   POST incomes | Income created successfully.
+OK   POST expenses | Expense created successfully.
+OK   POST staff | Staff member created successfully.
+OK   POST ownercontracts | Owner contract created successfully.
+
+===== UPDATE =====
+OK   PUT partners/47 | Partner updated successfully.
+OK   PUT owners/37 | Owner updated.
+OK   PUT floors/27 | Floor updated.
+OK   PUT tenants/33 | Tenant updated.
+OK   PUT incomes/106 | Income updated successfully.
+OK   PUT expenses/45 | Expense updated successfully.
+OK   PUT staff/61 | Staff member updated successfully.
+OK   PATCH contracts/CNT-000098/status | Contract status updated.
+
+===== DELETE =====
+OK   DELETE ownercontracts/38 | Owner contract deleted successfully.
+OK   DELETE incomes/106 | Income deleted.
+OK   DELETE expenses/45 | Expense deleted.
+OK   DELETE staff/61 | Staff member deleted.
+OK   DELETE contracts/100 | Deleted.
+OK   DELETE tenants/33 | Tenant deleted.
+OK   DELETE rooms/377 | Deleted.
+OK   DELETE camps/57 | Deleted.
+OK   DELETE partners/47 | Partner deleted.
+OK   DELETE owners/37 | Owner deleted.
+OK   DELETE floors/27 | Floor deleted.
+OK   DELETE fundpools/11 | Deleted.
+OK   DELETE accountsheads/36 | Deleted.
+OK   DELETE designations/11 | Deleted.
+OK   DELETE roles/13 | Deleted.
+
+=== FINAL: OK=70  FAIL=0  TOTAL=70 ===

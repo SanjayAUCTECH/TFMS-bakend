@@ -1,16 +1,14 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace TFMS_software_api.DTOs;
 
 public class CreateDesignationRequest
 {
-    [MaxLength(100)] public string Name   { get; set; } = string.Empty;
+    public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 
 public class UpdateDesignationRequest
 {
-    [MaxLength(100)] public string Name   { get; set; } = string.Empty;
+    public string Name   { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 }
 

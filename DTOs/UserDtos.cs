@@ -3,18 +3,16 @@ using TFMS_software_api.Common;
 
 namespace TFMS_software_api.DTOs;
 
-// ── Request DTOs ──────────────────────────────────────────────────────────────
-
 public class CreateUserRequest
 {
-    [MaxLength(200)] public string  Name        { get; set; } = string.Empty;
-    [MaxLength(50)]  public string  Username    { get; set; } = string.Empty;
+    public string  Name        { get; set; } = string.Empty;
+    public string  Username    { get; set; } = string.Empty;
     public string  Password    { get; set; } = string.Empty;
-    [MaxLength(50)]  public string  Role        { get; set; } = string.Empty;
-    [MaxLength(50)]  public string  Source      { get; set; } = string.Empty;
+    public string  Role        { get; set; } = string.Empty;
+    public string  Source      { get; set; } = string.Empty;
     public int?    SourceId    { get; set; }
-    [MaxLength(20)]  public string  Contact     { get; set; } = string.Empty;
-    [MaxLength(150)] public string? Email       { get; set; }
+    public string  Contact     { get; set; } = string.Empty;
+    public string? Email       { get; set; }
     public bool    IsAdmin     { get; set; } = false;
     public string  MenuAccess  { get; set; } = "{}";
     public string  LoginAccess { get; set; } = "enabled";
@@ -23,12 +21,12 @@ public class CreateUserRequest
 
 public class UpdateUserRequest
 {
-    [MaxLength(200)] public string  Name        { get; set; } = string.Empty;
-    [MaxLength(50)]  public string  Role        { get; set; } = string.Empty;
-    [MaxLength(50)]  public string  Source      { get; set; } = string.Empty;
+    public string  Name        { get; set; } = string.Empty;
+    public string  Role        { get; set; } = string.Empty;
+    public string  Source      { get; set; } = string.Empty;
     public int?    SourceId    { get; set; }
-    [MaxLength(20)]  public string  Contact     { get; set; } = string.Empty;
-    [MaxLength(150)] public string? Email       { get; set; }
+    public string  Contact     { get; set; } = string.Empty;
+    public string? Email       { get; set; }
     public bool    IsAdmin     { get; set; } = false;
     public string  MenuAccess  { get; set; } = "{}";
     public string  LoginAccess { get; set; } = "enabled";
@@ -40,7 +38,6 @@ public class ResetPasswordRequest
     public string NewPassword { get; set; } = string.Empty;
 }
 
-// ── User Stats (for cards) ────────────────────────────────────────────────────
 public class UserStatsResponse
 {
     public int TotalUsers     { get; set; }
@@ -49,10 +46,9 @@ public class UserStatsResponse
     public int RolesAssigned  { get; set; }
 }
 
-// ── Login Access ──────────────────────────────────────────────────────────────
 public class UpdateLoginAccessRequest
 {
-    public string LoginAccess { get; set; } = "enabled";  // enabled | disabled
+    public string LoginAccess { get; set; } = "enabled";
 }
 
 public class UserListRequest : PagedRequest
@@ -60,8 +56,6 @@ public class UserListRequest : PagedRequest
     public string? Role   { get; set; }
     public string? Source { get; set; }
 }
-
-// ── Response DTOs ─────────────────────────────────────────────────────────────
 
 public class UserResponse
 {
