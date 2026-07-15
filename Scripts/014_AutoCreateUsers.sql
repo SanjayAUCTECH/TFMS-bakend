@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- TFMS — Auto-create AppUser when Master record is inserted
 -- Tables: Partners, Owners, OtherPersons, Tenants
 -- Password: Pass@123 (plain text as per system design)
@@ -7,22 +7,22 @@ USE TFMS_softwareDB;
 GO
 
 -- ── Helper Function: Clean username from name ─────────────────────────────────
-CREATE OR ALTER FUNCTION fn_MakeUsername(@Name NVARCHAR(200), @Id INT, @Suffix CHAR(1))
-RETURNS NVARCHAR(50)
+CREATE OR ALTER FUNCTION fn_MakeUsername(@Name NVARCHAR(MAX), @Id INT, @Suffix CHAR(1))
+RETURNS NVARCHAR(MAX)
 AS BEGIN
-    DECLARE @base NVARCHAR(50);
+    DECLARE @base NVARCHAR(MAX);
     -- lowercase, replace spaces with dots, remove non-alpha-dot chars, max 18 chars
     SET @base = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
         LEFT(@Name, 20),
         ' ', '.'), '-', ''), '''', ''), '/', ''), '(', ''), ')', ''));
-    SET @base = LEFT(@base, 18) + @Suffix + CAST(@Id AS NVARCHAR(6));
+    SET @base = LEFT(@base, 18) + @Suffix + CAST(@Id AS NVARCHAR(MAX));
     RETURN @base;
 END
 GO
 
 -- ── Helper Function: Next UserId ──────────────────────────────────────────────
 CREATE OR ALTER FUNCTION fn_NextUserId()
-RETURNS NVARCHAR(20)
+RETURNS NVARCHAR(MAX)
 AS BEGIN
     DECLARE @next INT;
     SELECT @next = ISNULL(MAX(CAST(RIGHT(UserId, 6) AS INT)), 0) + 1

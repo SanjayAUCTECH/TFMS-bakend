@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- TFMS Software - All Stored Procedures
 -- Database: TFMS_softwareDB
 -- ============================================================
@@ -34,10 +34,10 @@ GO
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetPartners
     @PageNumber    INT, @PageSize INT,
-    @SearchText    NVARCHAR(200) = NULL,
-    @SortBy        NVARCHAR(50)  = NULL,
-    @SortDirection NVARCHAR(4)   = 'ASC',
-    @Status        NVARCHAR(20)  = NULL,
+    @SearchText    NVARCHAR(MAX) = NULL,
+    @SortBy        NVARCHAR(MAX)  = NULL,
+    @SortDirection NVARCHAR(MAX)   = 'ASC',
+    @Status        NVARCHAR(MAX)  = NULL,
     @TotalRecords  INT OUTPUT
 AS
 BEGIN
@@ -78,12 +78,12 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_CreatePartner
-    @Name NVARCHAR(200), @Contact NVARCHAR(100), @Mobile NVARCHAR(20),
-    @Email NVARCHAR(150), @Status NVARCHAR(20), @NewId INT OUTPUT
+    @Name NVARCHAR(MAX), @Contact NVARCHAR(MAX), @Mobile NVARCHAR(MAX),
+    @Email NVARCHAR(MAX), @Status NVARCHAR(MAX), @NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20) = 'PRT-' + RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Partners) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX) = 'PRT-' + RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Partners) AS NVARCHAR),6);
     INSERT INTO Partners(Code,Name,Contact,Mobile,Email,Status,CreatedAt,UpdatedAt)
     VALUES(@Code,@Name,@Contact,@Mobile,@Email,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId = SCOPE_IDENTITY();
@@ -91,8 +91,8 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdatePartner
-    @Id INT, @Name NVARCHAR(200), @Contact NVARCHAR(100),
-    @Mobile NVARCHAR(20), @Email NVARCHAR(150), @Status NVARCHAR(20)
+    @Id INT, @Name NVARCHAR(MAX), @Contact NVARCHAR(MAX),
+    @Mobile NVARCHAR(MAX), @Email NVARCHAR(MAX), @Status NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -112,9 +112,9 @@ GO
 -- OWNERS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetOwners
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL, @SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL, @SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -132,15 +132,15 @@ END
 GO
 CREATE OR ALTER PROCEDURE sp_GetOwnerById @Id INT AS BEGIN SET NOCOUNT ON; SELECT Id,Code,Name,Contact,Email,Status,CreatedAt,UpdatedAt FROM Owners WHERE Id=@Id; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreateOwner @Name NVARCHAR(200),@Contact NVARCHAR(20),@Email NVARCHAR(150),@Status NVARCHAR(20),@NewId INT OUTPUT AS
+CREATE OR ALTER PROCEDURE sp_CreateOwner @Name NVARCHAR(MAX),@Contact NVARCHAR(MAX),@Email NVARCHAR(MAX),@Status NVARCHAR(MAX),@NewId INT OUTPUT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20)='OWN-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Owners) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX)='OWN-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Owners) AS NVARCHAR),6);
     INSERT INTO Owners(Code,Name,Contact,Email,Status,CreatedAt,UpdatedAt) VALUES(@Code,@Name,@Contact,@Email,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
 END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdateOwner @Id INT,@Name NVARCHAR(200),@Contact NVARCHAR(20),@Email NVARCHAR(150),@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdateOwner @Id INT,@Name NVARCHAR(MAX),@Contact NVARCHAR(MAX),@Email NVARCHAR(MAX),@Status NVARCHAR(MAX) AS
 BEGIN SET NOCOUNT ON; UPDATE Owners SET Name=@Name,Contact=@Contact,Email=@Email,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteOwner @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM Owners WHERE Id=@Id; END
@@ -150,9 +150,9 @@ GO
 -- FLOORS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetFloors
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -167,10 +167,10 @@ END
 GO
 CREATE OR ALTER PROCEDURE sp_GetFloorById @Id INT AS BEGIN SET NOCOUNT ON; SELECT Id,Name,Number,Status,CreatedAt,UpdatedAt FROM Floors WHERE Id=@Id; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreateFloor @Name NVARCHAR(100),@Number INT,@Status NVARCHAR(20),@NewId INT OUTPUT AS
+CREATE OR ALTER PROCEDURE sp_CreateFloor @Name NVARCHAR(MAX),@Number INT,@Status NVARCHAR(MAX),@NewId INT OUTPUT AS
 BEGIN SET NOCOUNT ON; INSERT INTO Floors(Name,Number,Status,CreatedAt,UpdatedAt) VALUES(@Name,@Number,@Status,GETUTCDATE(),GETUTCDATE()); SET @NewId=SCOPE_IDENTITY(); END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdateFloor @Id INT,@Name NVARCHAR(100),@Number INT,@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdateFloor @Id INT,@Name NVARCHAR(MAX),@Number INT,@Status NVARCHAR(MAX) AS
 BEGIN SET NOCOUNT ON; UPDATE Floors SET Name=@Name,Number=@Number,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteFloor @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM Floors WHERE Id=@Id; END
@@ -181,20 +181,20 @@ GO
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetRoomStatuses AS BEGIN SET NOCOUNT ON; SELECT Id,Name FROM RoomStatuses ORDER BY Name; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreateRoomStatus @Name NVARCHAR(50),@NewId INT OUTPUT AS BEGIN SET NOCOUNT ON; INSERT INTO RoomStatuses(Name) VALUES(@Name); SET @NewId=SCOPE_IDENTITY(); END
+CREATE OR ALTER PROCEDURE sp_CreateRoomStatus @Name NVARCHAR(MAX),@NewId INT OUTPUT AS BEGIN SET NOCOUNT ON; INSERT INTO RoomStatuses(Name) VALUES(@Name); SET @NewId=SCOPE_IDENTITY(); END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdateRoomStatus @Id INT,@Name NVARCHAR(50) AS BEGIN SET NOCOUNT ON; UPDATE RoomStatuses SET Name=@Name WHERE Id=@Id; END
+CREATE OR ALTER PROCEDURE sp_UpdateRoomStatus @Id INT,@Name NVARCHAR(MAX) AS BEGIN SET NOCOUNT ON; UPDATE RoomStatuses SET Name=@Name WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteRoomStatus @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM RoomStatuses WHERE Id=@Id; END
 GO
 
-CREATE OR ALTER PROCEDURE sp_GetPaymentModes @Status NVARCHAR(20)=NULL AS
+CREATE OR ALTER PROCEDURE sp_GetPaymentModes @Status NVARCHAR(MAX)=NULL AS
 BEGIN SET NOCOUNT ON; SELECT Id,Name,Status FROM PaymentModes WHERE (@Status IS NULL OR Status=@Status) ORDER BY Name; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreatePaymentMode @Name NVARCHAR(50),@Status NVARCHAR(20),@NewId INT OUTPUT AS
+CREATE OR ALTER PROCEDURE sp_CreatePaymentMode @Name NVARCHAR(MAX),@Status NVARCHAR(MAX),@NewId INT OUTPUT AS
 BEGIN SET NOCOUNT ON; INSERT INTO PaymentModes(Name,Status) VALUES(@Name,@Status); SET @NewId=SCOPE_IDENTITY(); END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdatePaymentMode @Id INT,@Name NVARCHAR(50),@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdatePaymentMode @Id INT,@Name NVARCHAR(MAX),@Status NVARCHAR(MAX) AS
 BEGIN SET NOCOUNT ON; UPDATE PaymentModes SET Name=@Name,Status=@Status WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeletePaymentMode @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM PaymentModes WHERE Id=@Id; END
@@ -204,9 +204,9 @@ GO
 -- FUND POOLS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetFundPools
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -221,15 +221,15 @@ END
 GO
 CREATE OR ALTER PROCEDURE sp_GetFundPoolById @Id INT AS BEGIN SET NOCOUNT ON; SELECT Id,Code,Name,Status,Balance,CreatedAt,UpdatedAt FROM FundPools WHERE Id=@Id; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreateFundPool @Name NVARCHAR(200),@Balance DECIMAL(18,2),@Status NVARCHAR(20),@NewId INT OUTPUT AS
+CREATE OR ALTER PROCEDURE sp_CreateFundPool @Name NVARCHAR(MAX),@Balance DECIMAL(18,2),@Status NVARCHAR(MAX),@NewId INT OUTPUT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20)='FP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM FundPools) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX)='FP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM FundPools) AS NVARCHAR),6);
     INSERT INTO FundPools(Code,Name,Balance,Status,CreatedAt,UpdatedAt) VALUES(@Code,@Name,@Balance,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
 END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdateFundPool @Id INT,@Name NVARCHAR(200),@Balance DECIMAL(18,2),@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdateFundPool @Id INT,@Name NVARCHAR(MAX),@Balance DECIMAL(18,2),@Status NVARCHAR(MAX) AS
 BEGIN SET NOCOUNT ON; UPDATE FundPools SET Name=@Name,Balance=@Balance,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteFundPool @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM FundPools WHERE Id=@Id; END
@@ -239,9 +239,9 @@ GO
 -- ACCOUNTS HEADS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetAccountsHeads
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@Type NVARCHAR(30)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@Type NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -259,15 +259,15 @@ END
 GO
 CREATE OR ALTER PROCEDURE sp_GetAccountsHeadById @Id INT AS BEGIN SET NOCOUNT ON; SELECT Id,Code,Name,Type,Status,CreatedAt,UpdatedAt FROM AccountsHeads WHERE Id=@Id; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreateAccountsHead @Name NVARCHAR(200),@Type NVARCHAR(30),@Status NVARCHAR(20),@NewId INT OUTPUT AS
+CREATE OR ALTER PROCEDURE sp_CreateAccountsHead @Name NVARCHAR(MAX),@Type NVARCHAR(MAX),@Status NVARCHAR(MAX),@NewId INT OUTPUT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20)='AH-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM AccountsHeads) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX)='AH-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM AccountsHeads) AS NVARCHAR),6);
     INSERT INTO AccountsHeads(Code,Name,Type,Status,CreatedAt,UpdatedAt) VALUES(@Code,@Name,@Type,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
 END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdateAccountsHead @Id INT,@Name NVARCHAR(200),@Type NVARCHAR(30),@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdateAccountsHead @Id INT,@Name NVARCHAR(MAX),@Type NVARCHAR(MAX),@Status NVARCHAR(MAX) AS
 BEGIN SET NOCOUNT ON; UPDATE AccountsHeads SET Name=@Name,Type=@Type,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteAccountsHead @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM AccountsHeads WHERE Id=@Id; END
@@ -277,9 +277,9 @@ GO
 -- DESIGNATIONS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetDesignations
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -292,15 +292,15 @@ END
 GO
 CREATE OR ALTER PROCEDURE sp_GetDesignationById @Id INT AS BEGIN SET NOCOUNT ON; SELECT Id,Code,Name,Status,CreatedAt,UpdatedAt FROM Designations WHERE Id=@Id; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreateDesignation @Name NVARCHAR(100),@Status NVARCHAR(20),@NewId INT OUTPUT AS
+CREATE OR ALTER PROCEDURE sp_CreateDesignation @Name NVARCHAR(MAX),@Status NVARCHAR(MAX),@NewId INT OUTPUT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20)='DES-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Designations) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX)='DES-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Designations) AS NVARCHAR),6);
     INSERT INTO Designations(Code,Name,Status,CreatedAt,UpdatedAt) VALUES(@Code,@Name,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
 END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdateDesignation @Id INT,@Name NVARCHAR(100),@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdateDesignation @Id INT,@Name NVARCHAR(MAX),@Status NVARCHAR(MAX) AS
 BEGIN SET NOCOUNT ON; UPDATE Designations SET Name=@Name,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteDesignation @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM Designations WHERE Id=@Id; END
@@ -310,9 +310,9 @@ GO
 -- OTHER PERSONS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetOtherPersons
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@Designation NVARCHAR(50)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@Designation NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -330,22 +330,22 @@ GO
 CREATE OR ALTER PROCEDURE sp_GetOtherPersonById @Id INT AS BEGIN SET NOCOUNT ON; SELECT Id,Code,Designation,Name,Mobile,Email,Address,City,State,Pincode,Remarks,Status,CreatedAt,UpdatedAt FROM OtherPersons WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_CreateOtherPerson
-    @Designation NVARCHAR(50),@Name NVARCHAR(200),@Mobile NVARCHAR(20),@Email NVARCHAR(150),
-    @Address NVARCHAR(300),@City NVARCHAR(100),@State NVARCHAR(100),@Pincode NVARCHAR(10),
-    @Remarks NVARCHAR(300),@Status NVARCHAR(20),@NewId INT OUTPUT
+    @Designation NVARCHAR(MAX),@Name NVARCHAR(MAX),@Mobile NVARCHAR(MAX),@Email NVARCHAR(MAX),
+    @Address NVARCHAR(MAX),@City NVARCHAR(MAX),@State NVARCHAR(MAX),@Pincode NVARCHAR(MAX),
+    @Remarks NVARCHAR(MAX),@Status NVARCHAR(MAX),@NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20)='OP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OtherPersons) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX)='OP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OtherPersons) AS NVARCHAR),6);
     INSERT INTO OtherPersons(Code,Designation,Name,Mobile,Email,Address,City,State,Pincode,Remarks,Status,CreatedAt,UpdatedAt)
     VALUES(@Code,@Designation,@Name,@Mobile,@Email,@Address,@City,@State,@Pincode,@Remarks,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
 END
 GO
 CREATE OR ALTER PROCEDURE sp_UpdateOtherPerson
-    @Id INT,@Designation NVARCHAR(50),@Name NVARCHAR(200),@Mobile NVARCHAR(20),@Email NVARCHAR(150),
-    @Address NVARCHAR(300),@City NVARCHAR(100),@State NVARCHAR(100),@Pincode NVARCHAR(10),
-    @Remarks NVARCHAR(300),@Status NVARCHAR(20)
+    @Id INT,@Designation NVARCHAR(MAX),@Name NVARCHAR(MAX),@Mobile NVARCHAR(MAX),@Email NVARCHAR(MAX),
+    @Address NVARCHAR(MAX),@City NVARCHAR(MAX),@State NVARCHAR(MAX),@Pincode NVARCHAR(MAX),
+    @Remarks NVARCHAR(MAX),@Status NVARCHAR(MAX)
 AS
 BEGIN SET NOCOUNT ON; UPDATE OtherPersons SET Designation=@Designation,Name=@Name,Mobile=@Mobile,Email=@Email,Address=@Address,City=@City,State=@State,Pincode=@Pincode,Remarks=@Remarks,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id; END
 GO
@@ -356,9 +356,9 @@ GO
 -- ROLES
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetRoles
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -371,15 +371,15 @@ END
 GO
 CREATE OR ALTER PROCEDURE sp_GetRoleById @Id INT AS BEGIN SET NOCOUNT ON; SELECT Id,RoleCode,RoleName,Status,CreatedAt,UpdatedAt FROM Roles WHERE Id=@Id; END
 GO
-CREATE OR ALTER PROCEDURE sp_CreateRole @RoleName NVARCHAR(100),@Status NVARCHAR(20),@NewId INT OUTPUT AS
+CREATE OR ALTER PROCEDURE sp_CreateRole @RoleName NVARCHAR(MAX),@Status NVARCHAR(MAX),@NewId INT OUTPUT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20)='ROL-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Roles) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX)='ROL-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Roles) AS NVARCHAR),6);
     INSERT INTO Roles(RoleCode,RoleName,Status,CreatedAt,UpdatedAt) VALUES(@Code,@RoleName,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
 END
 GO
-CREATE OR ALTER PROCEDURE sp_UpdateRole @Id INT,@RoleName NVARCHAR(100),@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdateRole @Id INT,@RoleName NVARCHAR(MAX),@Status NVARCHAR(MAX) AS
 BEGIN SET NOCOUNT ON; UPDATE Roles SET RoleName=@RoleName,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id; END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteRole @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM Roles WHERE Id=@Id; END
@@ -389,9 +389,9 @@ GO
 -- CAMPS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetCamps
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -419,22 +419,22 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_CreateCamp
-    @Name NVARCHAR(200),@Status NVARCHAR(20),
+    @Name NVARCHAR(MAX),@Status NVARCHAR(MAX),
     @PartnersJson NVARCHAR(MAX),@OwnersJson NVARCHAR(MAX),@NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Code NVARCHAR(20)='CMP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Camps) AS NVARCHAR),6);
+    DECLARE @Code NVARCHAR(MAX)='CMP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Camps) AS NVARCHAR),6);
     INSERT INTO Camps(Code,Name,Status,CreatedAt,UpdatedAt) VALUES(@Code,@Name,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
     -- Partners
     INSERT INTO CampPartners(CampId,PartnerId,ShareType,ShareValue)
     SELECT @NewId,PartnerId,ShareType,ShareValue FROM OPENJSON(@PartnersJson)
-    WITH(PartnerId INT,ShareType NVARCHAR(20),ShareValue DECIMAL(18,2));
+    WITH(PartnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
     -- Owners
     INSERT INTO CampOwners(CampId,OwnerId,ShareType,ShareValue)
     SELECT @NewId,OwnerId,ShareType,ShareValue FROM OPENJSON(@OwnersJson)
-    WITH(OwnerId INT,ShareType NVARCHAR(20),ShareValue DECIMAL(18,2));
+    WITH(OwnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
     -- Update counts
     UPDATE Camps SET Rooms=(SELECT COUNT(*) FROM Rooms WHERE CampId=@NewId),
                      Floors=(SELECT COUNT(DISTINCT FloorId) FROM Rooms WHERE CampId=@NewId)
@@ -443,7 +443,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateCamp
-    @Id INT,@Name NVARCHAR(200),@Status NVARCHAR(20),
+    @Id INT,@Name NVARCHAR(MAX),@Status NVARCHAR(MAX),
     @PartnersJson NVARCHAR(MAX),@OwnersJson NVARCHAR(MAX)
 AS
 BEGIN
@@ -453,10 +453,10 @@ BEGIN
     DELETE FROM CampOwners   WHERE CampId=@Id;
     INSERT INTO CampPartners(CampId,PartnerId,ShareType,ShareValue)
     SELECT @Id,PartnerId,ShareType,ShareValue FROM OPENJSON(@PartnersJson)
-    WITH(PartnerId INT,ShareType NVARCHAR(20),ShareValue DECIMAL(18,2));
+    WITH(PartnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
     INSERT INTO CampOwners(CampId,OwnerId,ShareType,ShareValue)
     SELECT @Id,OwnerId,ShareType,ShareValue FROM OPENJSON(@OwnersJson)
-    WITH(OwnerId INT,ShareType NVARCHAR(20),ShareValue DECIMAL(18,2));
+    WITH(OwnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
 END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteCamp @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM Camps WHERE Id=@Id; END
@@ -466,10 +466,10 @@ GO
 -- ROOMS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetRooms
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@CampId INT=NULL,@FloorId INT=NULL,
-    @RoomStatus NVARCHAR(30)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@CampId INT=NULL,@FloorId INT=NULL,
+    @RoomStatus NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -500,8 +500,8 @@ BEGIN
 END
 GO
 CREATE OR ALTER PROCEDURE sp_CreateRoom
-    @RoomNo NVARCHAR(20),@CampId INT,@FloorId INT,@MonthlyPrice DECIMAL(18,2),
-    @Status NVARCHAR(30),@OtherDetails NVARCHAR(200),@NewId INT OUTPUT
+    @RoomNo NVARCHAR(MAX),@CampId INT,@FloorId INT,@MonthlyPrice DECIMAL(18,2),
+    @Status NVARCHAR(MAX),@OtherDetails NVARCHAR(MAX),@NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -513,8 +513,8 @@ BEGIN
 END
 GO
 CREATE OR ALTER PROCEDURE sp_UpdateRoom
-    @Id INT,@RoomNo NVARCHAR(20),@CampId INT,@FloorId INT,@MonthlyPrice DECIMAL(18,2),
-    @Status NVARCHAR(30),@OtherDetails NVARCHAR(200)
+    @Id INT,@RoomNo NVARCHAR(MAX),@CampId INT,@FloorId INT,@MonthlyPrice DECIMAL(18,2),
+    @Status NVARCHAR(MAX),@OtherDetails NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -537,9 +537,9 @@ GO
 -- TENANTS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetTenants
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@Type NVARCHAR(20)=NULL,@CampId INT=NULL,
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@Type NVARCHAR(MAX)=NULL,@CampId INT=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -575,13 +575,13 @@ BEGIN
 END
 GO
 CREATE OR ALTER PROCEDURE sp_CreateTenant
-    @Type NVARCHAR(20),@Name NVARCHAR(200),@Passport NVARCHAR(50),@Nationality NVARCHAR(50),
-    @EmiratesId NVARCHAR(30),@Contact NVARCHAR(20),@Whatsapp NVARCHAR(20),@Email NVARCHAR(150),
-    @Address NVARCHAR(500),@Status NVARCHAR(20),@Company NVARCHAR(200),@TradeLicense NVARCHAR(100),
-    @LicensingAuthority NVARCHAR(100),@NumberOfCoOccupants NVARCHAR(10),@PlotNo NVARCHAR(30),
-    @MakaniNo NVARCHAR(30),@PropertyArea NVARCHAR(20),@PremisesNo NVARCHAR(30),
-    @LessorName NVARCHAR(200),@LessorEid NVARCHAR(30),@LessorLicense NVARCHAR(100),
-    @LessorLicAuthority NVARCHAR(100),@LessorEmail NVARCHAR(150),@LessorPhone NVARCHAR(20),@NewId INT OUTPUT
+    @Type NVARCHAR(MAX),@Name NVARCHAR(MAX),@Passport NVARCHAR(MAX),@Nationality NVARCHAR(MAX),
+    @EmiratesId NVARCHAR(MAX),@Contact NVARCHAR(MAX),@Whatsapp NVARCHAR(MAX),@Email NVARCHAR(MAX),
+    @Address NVARCHAR(MAX),@Status NVARCHAR(MAX),@Company NVARCHAR(MAX),@TradeLicense NVARCHAR(MAX),
+    @LicensingAuthority NVARCHAR(MAX),@NumberOfCoOccupants NVARCHAR(MAX),@PlotNo NVARCHAR(MAX),
+    @MakaniNo NVARCHAR(MAX),@PropertyArea NVARCHAR(MAX),@PremisesNo NVARCHAR(MAX),
+    @LessorName NVARCHAR(MAX),@LessorEid NVARCHAR(MAX),@LessorLicense NVARCHAR(MAX),
+    @LessorLicAuthority NVARCHAR(MAX),@LessorEmail NVARCHAR(MAX),@LessorPhone NVARCHAR(MAX),@NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -595,13 +595,13 @@ BEGIN
 END
 GO
 CREATE OR ALTER PROCEDURE sp_UpdateTenant
-    @Id INT,@Type NVARCHAR(20),@Name NVARCHAR(200),@Passport NVARCHAR(50),@Nationality NVARCHAR(50),
-    @EmiratesId NVARCHAR(30),@Contact NVARCHAR(20),@Whatsapp NVARCHAR(20),@Email NVARCHAR(150),
-    @Address NVARCHAR(500),@Status NVARCHAR(20),@Company NVARCHAR(200),@TradeLicense NVARCHAR(100),
-    @LicensingAuthority NVARCHAR(100),@NumberOfCoOccupants NVARCHAR(10),@PlotNo NVARCHAR(30),
-    @MakaniNo NVARCHAR(30),@PropertyArea NVARCHAR(20),@PremisesNo NVARCHAR(30),
-    @LessorName NVARCHAR(200),@LessorEid NVARCHAR(30),@LessorLicense NVARCHAR(100),
-    @LessorLicAuthority NVARCHAR(100),@LessorEmail NVARCHAR(150),@LessorPhone NVARCHAR(20)
+    @Id INT,@Type NVARCHAR(MAX),@Name NVARCHAR(MAX),@Passport NVARCHAR(MAX),@Nationality NVARCHAR(MAX),
+    @EmiratesId NVARCHAR(MAX),@Contact NVARCHAR(MAX),@Whatsapp NVARCHAR(MAX),@Email NVARCHAR(MAX),
+    @Address NVARCHAR(MAX),@Status NVARCHAR(MAX),@Company NVARCHAR(MAX),@TradeLicense NVARCHAR(MAX),
+    @LicensingAuthority NVARCHAR(MAX),@NumberOfCoOccupants NVARCHAR(MAX),@PlotNo NVARCHAR(MAX),
+    @MakaniNo NVARCHAR(MAX),@PropertyArea NVARCHAR(MAX),@PremisesNo NVARCHAR(MAX),
+    @LessorName NVARCHAR(MAX),@LessorEid NVARCHAR(MAX),@LessorLicense NVARCHAR(MAX),
+    @LessorLicAuthority NVARCHAR(MAX),@LessorEmail NVARCHAR(MAX),@LessorPhone NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -621,10 +621,10 @@ GO
 -- CONTRACTS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetContracts
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @Status NVARCHAR(20)=NULL,@TenantId INT=NULL,@CampId INT=NULL,
-    @DateFrom NVARCHAR(20)=NULL,@DateTo NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @Status NVARCHAR(MAX)=NULL,@TenantId INT=NULL,@CampId INT=NULL,
+    @DateFrom NVARCHAR(MAX)=NULL,@DateTo NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -659,7 +659,7 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE sp_GetContractByContractId @ContractId NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_GetContractByContractId @ContractId NVARCHAR(MAX) AS
 BEGIN
     SET NOCOUNT ON;
     SELECT c.Id,c.ContractId,c.TenantId,t.Name TenantName,c.CampId,ca.Name CampName,
@@ -670,7 +670,7 @@ GO
 
 CREATE OR ALTER PROCEDURE sp_CreateContract
     @TenantId INT,@CampId INT,@StartDate DATE,@Months INT,
-    @RoomIdsJson NVARCHAR(MAX),@NewContractId NVARCHAR(20) OUTPUT
+    @RoomIdsJson NVARCHAR(MAX),@NewContractId NVARCHAR(MAX) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -698,7 +698,7 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE sp_UpdateContractStatus @ContractId NVARCHAR(20),@Status NVARCHAR(20) AS
+CREATE OR ALTER PROCEDURE sp_UpdateContractStatus @ContractId NVARCHAR(MAX),@Status NVARCHAR(MAX) AS
 BEGIN
     SET NOCOUNT ON;
     UPDATE Contracts SET Status=@Status,UpdatedAt=GETUTCDATE() WHERE ContractId=@ContractId;
@@ -710,7 +710,7 @@ GO
 CREATE OR ALTER PROCEDURE sp_DeleteContract @Id INT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @CID NVARCHAR(20)=(SELECT ContractId FROM Contracts WHERE Id=@Id);
+    DECLARE @CID NVARCHAR(MAX)=(SELECT ContractId FROM Contracts WHERE Id=@Id);
     DELETE FROM Payments WHERE ContractId=@CID;
     DELETE FROM ContractRooms WHERE ContractId=@CID;
     DELETE FROM Contracts WHERE Id=@Id;
@@ -721,12 +721,12 @@ GO
 -- PAYMENTS (Monthly Due)
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetPayments
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @ContractId NVARCHAR(20)=NULL,@TenantId INT=NULL,@CampId INT=NULL,
-    @Month NVARCHAR(20)=NULL,@Year NVARCHAR(6)=NULL,
-    @PaymentStatus NVARCHAR(20)=NULL,@PaymentModeId INT=NULL,
-    @DateFrom NVARCHAR(20)=NULL,@DateTo NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @ContractId NVARCHAR(MAX)=NULL,@TenantId INT=NULL,@CampId INT=NULL,
+    @Month NVARCHAR(MAX)=NULL,@Year NVARCHAR(MAX)=NULL,
+    @PaymentStatus NVARCHAR(MAX)=NULL,@PaymentModeId INT=NULL,
+    @DateFrom NVARCHAR(MAX)=NULL,@DateTo NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -792,17 +792,17 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_RecordPayment
-    @ContractId NVARCHAR(20),@InstallmentNo INT,@PaidAmount DECIMAL(18,2),@PaidDate DATE,
-    @PaymentModeId INT=NULL,@PaymentMode NVARCHAR(50),@ChequeNumber NVARCHAR(50),
-    @ClearanceDate NVARCHAR(50),@Description NVARCHAR(500),@ReceivedBy NVARCHAR(200),
-    @ReceivedContact NVARCHAR(20),@FundPoolId INT=NULL,@FundPoolName NVARCHAR(200),@IssuedBy NVARCHAR(100)
+    @ContractId NVARCHAR(MAX),@InstallmentNo INT,@PaidAmount DECIMAL(18,2),@PaidDate DATE,
+    @PaymentModeId INT=NULL,@PaymentMode NVARCHAR(MAX),@ChequeNumber NVARCHAR(MAX),
+    @ClearanceDate NVARCHAR(MAX),@Description NVARCHAR(MAX),@ReceivedBy NVARCHAR(MAX),
+    @ReceivedContact NVARCHAR(MAX),@FundPoolId INT=NULL,@FundPoolName NVARCHAR(MAX),@IssuedBy NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
     DECLARE @Amount DECIMAL(18,2)=(SELECT Amount FROM Payments WHERE ContractId=@ContractId AND InstallmentNo=@InstallmentNo);
     IF @Amount IS NULL BEGIN RAISERROR('Installment not found.',16,1); RETURN; END
     DECLARE @NewPaid DECIMAL(18,2)=@PaidAmount;
-    DECLARE @NewStatus NVARCHAR(20)=CASE WHEN @NewPaid>=@Amount THEN 'Paid' WHEN @NewPaid>0 THEN 'Partial' ELSE 'Pending' END;
+    DECLARE @NewStatus NVARCHAR(MAX)=CASE WHEN @NewPaid>=@Amount THEN 'Paid' WHEN @NewPaid>0 THEN 'Partial' ELSE 'Pending' END;
     UPDATE Payments SET PaidAmount=@NewPaid,PaidDate=@PaidDate,Status=@NewStatus,
         PaymentModeId=@PaymentModeId,PaymentMode=@PaymentMode,ChequeNumber=@ChequeNumber,
         ClearanceDate=@ClearanceDate,Description=@Description,ReceivedBy=@ReceivedBy,
@@ -818,10 +818,10 @@ GO
 -- WAIVERS
 -- ══════════════════════════════════════════════════════════════
 CREATE OR ALTER PROCEDURE sp_GetWaivers
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @TenantId INT=NULL,@ContractId NVARCHAR(20)=NULL,
-    @DateFrom NVARCHAR(20)=NULL,@DateTo NVARCHAR(20)=NULL,@TotalRecords INT OUTPUT
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @TenantId INT=NULL,@ContractId NVARCHAR(MAX)=NULL,
+    @DateFrom NVARCHAR(MAX)=NULL,@DateTo NVARCHAR(MAX)=NULL,@TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -857,8 +857,8 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_CreateWaiver
-    @TenantId INT,@ContractId NVARCHAR(20),@InstallmentNo INT,
-    @WaiverAmount DECIMAL(18,2),@Remark NVARCHAR(300),@WaiverDate DATE,@NewId INT OUTPUT
+    @TenantId INT,@ContractId NVARCHAR(MAX),@InstallmentNo INT,
+    @WaiverAmount DECIMAL(18,2),@Remark NVARCHAR(MAX),@WaiverDate DATE,@NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -878,7 +878,7 @@ CREATE OR ALTER PROCEDURE sp_DeleteWaiver @Id INT AS
 BEGIN
     SET NOCOUNT ON;
     -- Restore original payment amount before deleting waiver
-    DECLARE @ContractId NVARCHAR(20),@InstallmentNo INT,@OriginalAmount DECIMAL(18,2);
+    DECLARE @ContractId NVARCHAR(MAX),@InstallmentNo INT,@OriginalAmount DECIMAL(18,2);
     SELECT @ContractId=ContractId,@InstallmentNo=InstallmentNo,@OriginalAmount=OriginalAmount FROM Waivers WHERE Id=@Id;
     UPDATE Payments SET Amount=@OriginalAmount WHERE ContractId=@ContractId AND InstallmentNo=@InstallmentNo;
     DELETE FROM Waivers WHERE Id=@Id;

@@ -1,18 +1,18 @@
-USE TFMS_softwareDB;
+﻿USE TFMS_softwareDB;
 GO
 
 CREATE OR ALTER PROCEDURE sp_GetTransactionStatement
     @PageNumber  INT,
     @PageSize    INT,
-    @SearchText  NVARCHAR(200) = NULL,
-    @ContractId  NVARCHAR(50)  = NULL,
+    @SearchText  NVARCHAR(MAX) = NULL,
+    @ContractId  NVARCHAR(MAX)  = NULL,
     @TenantId    INT           = NULL,
     @CampId      INT           = NULL,
-    @Status      NVARCHAR(20)  = NULL,
+    @Status      NVARCHAR(MAX)  = NULL,
     @DateFrom    DATE          = NULL,
     @DateTo      DATE          = NULL,
-    @Month       NVARCHAR(7)   = NULL,
-    @Year        NVARCHAR(4)   = NULL,
+    @Month       NVARCHAR(MAX)   = NULL,
+    @Year        NVARCHAR(MAX)   = NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -24,18 +24,18 @@ BEGIN
     CREATE TABLE #AllTxns (
         Id            INT,
         TxnDate       DATE,
-        AccountHead   NVARCHAR(200),
-        Particular    NVARCHAR(200),
-        CampName      NVARCHAR(200),
+        AccountHead   NVARCHAR(MAX),
+        Particular    NVARCHAR(MAX),
+        CampName      NVARCHAR(MAX),
         CampId        INT,
-        FundPoolName  NVARCHAR(200),
-        TxnType       NVARCHAR(5),
-        Source        NVARCHAR(100),
-        Mode          NVARCHAR(50),
+        FundPoolName  NVARCHAR(MAX),
+        TxnType       NVARCHAR(MAX),
+        Source        NVARCHAR(MAX),
+        Mode          NVARCHAR(MAX),
         Amount        DECIMAL(18,2),
-        Status        NVARCHAR(20),
-        ContractId    NVARCHAR(20),
-        TenantName    NVARCHAR(200)
+        Status        NVARCHAR(MAX),
+        ContractId    NVARCHAR(MAX),
+        TenantName    NVARCHAR(MAX)
     );
 
     -- DR rows: paid installments from ContractInstallments
@@ -49,7 +49,7 @@ BEGIN
         ISNULL(ca.Id, 0)                                 CampId,
         ISNULL(ci.FundPoolName,'—')                      FundPoolName,
         'DR'                                             TxnType,
-        'Inst #'+CAST(ci.InstallmentNo AS NVARCHAR(10))  Source,
+        'Inst #'+CAST(ci.InstallmentNo AS NVARCHAR(MAX))  Source,
         ISNULL(ci.PaymentMode,'—')                       Mode,
         ci.PaidAmount                                    Amount,
         ci.Status,

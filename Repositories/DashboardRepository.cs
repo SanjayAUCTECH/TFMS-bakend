@@ -76,7 +76,7 @@ public class DashboardRepository : IDashboardRepository
         // ── 3. Monthly Collections Chart (filtered by campId, tenantId, month/year) ──
         var collYear  = filterYear  ?? DateTime.UtcNow.Year;
         var collWhere = new List<string> { "ci.Status='Paid'", "YEAR(ci.PaidDate)=@Year" };
-        if (campId.HasValue)   collWhere.Add("ct.CampId=@CampId");
+        if (campId.HasValue)   collWhere.Add("ct.Id IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
         if (tenantId.HasValue) collWhere.Add("ct.TenantId=@TenantId");
         var collSql = $@"
             SELECT MONTH(ci.PaidDate) MonthNum, SUM(ci.PaidAmount) Collected
@@ -120,10 +120,10 @@ public class DashboardRepository : IDashboardRepository
 
         // ── 5. Payment Doughnut (filtered by campId, tenantId, month) ────
         var payWhere = new List<string>();
-        if (campId.HasValue)   payWhere.Add("ct2.CampId=@CampId");
+        if (campId.HasValue)   payWhere.Add("ci2.ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
         if (tenantId.HasValue) payWhere.Add("ct2.TenantId=@TenantId");
         if (filterMonth.HasValue) payWhere.Add("MONTH(ci2.PaidDate)=@Month AND YEAR(ci2.PaidDate)=@Year2");
-        var payJoin = (campId.HasValue || tenantId.HasValue) ? "JOIN Contracts ct2 ON ct2.ContractId=ci2.ContractId" : "";
+        var payJoin   = tenantId.HasValue ? "JOIN Contracts ct2 ON ct2.ContractId=ci2.ContractId" : "";
         var payFilter = payWhere.Count > 0 ? "WHERE " + string.Join(" AND ", payWhere) : "";
         await using (var cmd5 = new SqlCommand($@"
             SELECT
@@ -146,7 +146,7 @@ public class DashboardRepository : IDashboardRepository
 
         // ── 6. Contract Status Pie (filtered by campId, tenantId) ─────────
         var ctWhere = new List<string>();
-        if (campId.HasValue)   ctWhere.Add("CampId=@CampId");
+        if (campId.HasValue)   ctWhere.Add("Id IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
         if (tenantId.HasValue) ctWhere.Add("TenantId=@TenantId");
         var ctFilter = ctWhere.Count > 0 ? "WHERE " + string.Join(" AND ", ctWhere) : "";
         await using (var cmd6 = new SqlCommand($@"

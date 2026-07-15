@@ -6,14 +6,15 @@ public class Contract
     public string        ContractId      { get; set; } = string.Empty;
     public int           TenantId        { get; set; }
     public string        TenantName      { get; set; } = string.Empty;
-    public int           CampId          { get; set; }
-    public string        CampName        { get; set; } = string.Empty;
+    public int           CampId          { get; set; }   // primary camp (fallback only)
+    public List<int>     CampIds         { get; set; } = new();  // all associated camps (ContractCamps)
     public DateTime      StartDate       { get; set; }
     public int           Months          { get; set; }
     public DateTime      EndDate         { get; set; }
     public decimal       MonthlyTotal    { get; set; }
     public decimal       ContractTotal   { get; set; }
     public decimal       SecurityDeposit { get; set; }
+    public string        ContractType    { get; set; } = "Monthly";  // Monthly | Scheduled
     public string        InstallmentType { get; set; } = "monthly";
     public string        IssuedBy        { get; set; } = string.Empty;
     public string        Notes           { get; set; } = string.Empty;
@@ -46,4 +47,10 @@ public class ContractRoom
     public int    Id         { get; set; }
     public string ContractId { get; set; } = string.Empty;
     public int    RoomId     { get; set; }
+}
+public class ContractCamps
+{
+    public int    Id         { get; set; }
+    public string ContractId { get; set; } = string.Empty;
+    public int    campsId     { get; set; }
 }

@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- Script 025: All NVARCHAR columns → NVARCHAR(MAX)
 -- Database: TFMS_TestSoftwareDB
 -- Run on  : SQL Server 2016+
@@ -44,7 +44,7 @@ GO
 -- RoomStatuses
 -- ============================================================
 -- NOTE: NVARCHAR(MAX) cannot be UNIQUE — drop old unique constraint first
-DECLARE @uc NVARCHAR(200) = (
+DECLARE @uc NVARCHAR(MAX) = (
     SELECT name FROM sys.indexes
     WHERE object_id = OBJECT_ID('RoomStatuses') AND is_unique = 1 AND type_desc = 'NONCLUSTERED'
 );
@@ -57,7 +57,7 @@ GO
 -- ============================================================
 -- PaymentModes
 -- ============================================================
-DECLARE @uc2 NVARCHAR(200) = (
+DECLARE @uc2 NVARCHAR(MAX) = (
     SELECT name FROM sys.indexes
     WHERE object_id = OBJECT_ID('PaymentModes') AND is_unique = 1 AND type_desc = 'NONCLUSTERED'
 );

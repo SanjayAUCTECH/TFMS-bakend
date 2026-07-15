@@ -1,4 +1,4 @@
-USE TFMS_softwareDB;
+﻿USE TFMS_softwareDB;
 GO
 
 -- Fix sp_UpdateUser:
@@ -8,15 +8,15 @@ GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateUser
     @Id          INT,
-    @Name        NVARCHAR(200),
-    @Role        NVARCHAR(50),
-    @Source      NVARCHAR(50)      = '',
+    @Name        NVARCHAR(MAX),
+    @Role        NVARCHAR(MAX),
+    @Source      NVARCHAR(MAX)      = '',
     @SourceId    INT               = NULL,
-    @Contact     NVARCHAR(20)      = '',
-    @Email       NVARCHAR(150)     = '',
+    @Contact     NVARCHAR(MAX)      = '',
+    @Email       NVARCHAR(MAX)     = '',
     @IsAdmin     BIT               = 0,
-    @LoginAccess NVARCHAR(20)      = 'enabled',
-    @Status      NVARCHAR(20)      = 'Active',
+    @LoginAccess NVARCHAR(MAX)      = 'enabled',
+    @Status      NVARCHAR(MAX)      = 'Active',
     @MenuAccess  NVARCHAR(MAX)     = '{}'
 AS
 BEGIN

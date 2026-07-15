@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- TFMS Software - Staff Table + MIS + Owner Report SPs
 -- Run on: DESKTOP-01\SQLEXPRESS  |  Database: TFMS_softwareDB
 -- ============================================================
@@ -9,17 +9,17 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name='Staff')
 CREATE TABLE Staff (
     Id          INT IDENTITY(1,1) PRIMARY KEY,
-    StaffId     NVARCHAR(20)  NOT NULL UNIQUE,
-    Name        NVARCHAR(200) NOT NULL,
-    Role        NVARCHAR(50)  NOT NULL DEFAULT 'Staff',
-    Contact     NVARCHAR(20)  NOT NULL DEFAULT '',
-    Email       NVARCHAR(150) NOT NULL DEFAULT '',
-    Address     NVARCHAR(300) NOT NULL DEFAULT '',
-    Username    NVARCHAR(50)  NOT NULL UNIQUE,
-    Password    NVARCHAR(300) NOT NULL DEFAULT '',
-    LoginAccess NVARCHAR(20)  NOT NULL DEFAULT 'enabled',
-    Status      NVARCHAR(20)  NOT NULL DEFAULT 'Active',
-    Remarks     NVARCHAR(300) NOT NULL DEFAULT '',
+    StaffId     NVARCHAR(MAX)  NOT NULL UNIQUE,
+    Name        NVARCHAR(MAX) NOT NULL,
+    Role        NVARCHAR(MAX)  NOT NULL DEFAULT 'Staff',
+    Contact     NVARCHAR(MAX)  NOT NULL DEFAULT '',
+    Email       NVARCHAR(MAX) NOT NULL DEFAULT '',
+    Address     NVARCHAR(MAX) NOT NULL DEFAULT '',
+    Username    NVARCHAR(MAX)  NOT NULL UNIQUE,
+    Password    NVARCHAR(MAX) NOT NULL DEFAULT '',
+    LoginAccess NVARCHAR(MAX)  NOT NULL DEFAULT 'enabled',
+    Status      NVARCHAR(MAX)  NOT NULL DEFAULT 'Active',
+    Remarks     NVARCHAR(MAX) NOT NULL DEFAULT '',
     CreatedAt   DATETIME2     NOT NULL DEFAULT GETUTCDATE(),
     UpdatedAt   DATETIME2     NOT NULL DEFAULT GETUTCDATE()
 );
@@ -28,8 +28,8 @@ GO
 -- ── STAFF STORED PROCEDURES ───────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetStaff
     @PageNumber INT, @PageSize INT,
-    @SearchText NVARCHAR(200)=NULL, @SortBy NVARCHAR(50)=NULL,
-    @SortDirection NVARCHAR(4)='ASC', @Status NVARCHAR(20)=NULL,
+    @SearchText NVARCHAR(MAX)=NULL, @SortBy NVARCHAR(MAX)=NULL,
+    @SortDirection NVARCHAR(MAX)='ASC', @Status NVARCHAR(MAX)=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -61,21 +61,21 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_CreateStaff
-    @Name NVARCHAR(200), @Contact NVARCHAR(20), @Email NVARCHAR(150),
-    @Address NVARCHAR(300), @Username NVARCHAR(50), @Password NVARCHAR(300),
-    @LoginAccess NVARCHAR(20), @Status NVARCHAR(20), @Remarks NVARCHAR(300),
+    @Name NVARCHAR(MAX), @Contact NVARCHAR(MAX), @Email NVARCHAR(MAX),
+    @Address NVARCHAR(MAX), @Username NVARCHAR(MAX), @Password NVARCHAR(MAX),
+    @LoginAccess NVARCHAR(MAX), @Status NVARCHAR(MAX), @Remarks NVARCHAR(MAX),
     @NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @StaffId NVARCHAR(20)='STF-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Staff) AS NVARCHAR),6);
+    DECLARE @StaffId NVARCHAR(MAX)='STF-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Staff) AS NVARCHAR),6);
     INSERT INTO Staff(StaffId,Name,Role,Contact,Email,Address,Username,Password,LoginAccess,Status,Remarks,CreatedAt,UpdatedAt)
     VALUES(@StaffId,'Staff',@Name,@Contact,@Email,@Address,@Username,@Password,@LoginAccess,@Status,@Remarks,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
     -- Also create AppUser login for this staff
     IF NOT EXISTS(SELECT 1 FROM AppUsers WHERE Username=@Username)
     BEGIN
-        DECLARE @UserId NVARCHAR(20)='USR-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM AppUsers) AS NVARCHAR),6);
+        DECLARE @UserId NVARCHAR(MAX)='USR-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM AppUsers) AS NVARCHAR),6);
         INSERT INTO AppUsers(UserId,Name,Username,PasswordHash,Role,Source,SourceId,Contact,Email,LoginAccess,Status,MenuAccess,IsAdmin,CreatedAt,UpdatedAt)
         VALUES(@UserId,@Name,@Username,@Password,'Staff','Staff Master',@NewId,@Contact,@Email,@LoginAccess,@Status,'{}',0,GETUTCDATE(),GETUTCDATE());
     END
@@ -83,9 +83,9 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateStaff
-    @Id INT, @Name NVARCHAR(200), @Contact NVARCHAR(20), @Email NVARCHAR(150),
-    @Address NVARCHAR(300), @Username NVARCHAR(50), @Password NVARCHAR(300)=NULL,
-    @LoginAccess NVARCHAR(20), @Status NVARCHAR(20), @Remarks NVARCHAR(300)
+    @Id INT, @Name NVARCHAR(MAX), @Contact NVARCHAR(MAX), @Email NVARCHAR(MAX),
+    @Address NVARCHAR(MAX), @Username NVARCHAR(MAX), @Password NVARCHAR(MAX)=NULL,
+    @LoginAccess NVARCHAR(MAX), @Status NVARCHAR(MAX), @Remarks NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -114,10 +114,10 @@ GO
 
 -- ── USER MANAGEMENT STORED PROCEDURES ────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetUsers
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL, @SortDirection NVARCHAR(4)='ASC',
-    @Role NVARCHAR(50)=NULL, @Source NVARCHAR(50)=NULL,
-    @Status NVARCHAR(20)=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL, @SortDirection NVARCHAR(MAX)='ASC',
+    @Role NVARCHAR(MAX)=NULL, @Source NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -152,15 +152,15 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_CreateUser
-    @Name NVARCHAR(200), @Username NVARCHAR(50), @PasswordHash NVARCHAR(300),
-    @Role NVARCHAR(50), @Source NVARCHAR(50), @SourceId INT=NULL,
-    @Contact NVARCHAR(20), @Email NVARCHAR(150), @IsAdmin BIT,
-    @LoginAccess NVARCHAR(20), @Status NVARCHAR(20), @MenuAccess NVARCHAR(MAX),
+    @Name NVARCHAR(MAX), @Username NVARCHAR(MAX), @PasswordHash NVARCHAR(MAX),
+    @Role NVARCHAR(MAX), @Source NVARCHAR(MAX), @SourceId INT=NULL,
+    @Contact NVARCHAR(MAX), @Email NVARCHAR(MAX), @IsAdmin BIT,
+    @LoginAccess NVARCHAR(MAX), @Status NVARCHAR(MAX), @MenuAccess NVARCHAR(MAX),
     @NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @UserId NVARCHAR(20)='USR-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM AppUsers) AS NVARCHAR),6);
+    DECLARE @UserId NVARCHAR(MAX)='USR-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM AppUsers) AS NVARCHAR),6);
     INSERT INTO AppUsers(UserId,Name,Username,PasswordHash,Role,Source,SourceId,Contact,Email,IsAdmin,LoginAccess,Status,MenuAccess,CreatedAt,UpdatedAt)
     VALUES(@UserId,@Name,@Username,@PasswordHash,@Role,@Source,@SourceId,@Contact,@Email,@IsAdmin,@LoginAccess,@Status,@MenuAccess,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
@@ -168,9 +168,9 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateUser
-    @Id INT, @Name NVARCHAR(200), @Role NVARCHAR(50), @Source NVARCHAR(50),
-    @SourceId INT=NULL, @Contact NVARCHAR(20), @Email NVARCHAR(150),
-    @IsAdmin BIT, @LoginAccess NVARCHAR(20), @Status NVARCHAR(20), @MenuAccess NVARCHAR(MAX)
+    @Id INT, @Name NVARCHAR(MAX), @Role NVARCHAR(MAX), @Source NVARCHAR(MAX),
+    @SourceId INT=NULL, @Contact NVARCHAR(MAX), @Email NVARCHAR(MAX),
+    @IsAdmin BIT, @LoginAccess NVARCHAR(MAX), @Status NVARCHAR(MAX), @MenuAccess NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -191,7 +191,7 @@ GO
 -- ── MIS DASHBOARD STORED PROCEDURE ───────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetMisStats
     @CampId    INT          = NULL,
-    @Month     NVARCHAR(10) = NULL,   -- format: '2026-06'
+    @Month     NVARCHAR(MAX) = NULL,   -- format: '2026-06'
     @PartnerId INT          = NULL
 AS
 BEGIN
@@ -265,7 +265,7 @@ GO
 -- ── OWNER REPORT ─────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetOwnerReport
     @PageNumber INT, @PageSize INT,
-    @SearchText NVARCHAR(200)=NULL, @Status NVARCHAR(20)=NULL,
+    @SearchText NVARCHAR(MAX)=NULL, @Status NVARCHAR(MAX)=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -293,10 +293,10 @@ GO
 
 -- ── INCOME STORED PROCEDURES ──────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetIncomes
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL, @SortDirection NVARCHAR(4)='ASC',
-    @DateFrom NVARCHAR(20)=NULL, @DateTo NVARCHAR(20)=NULL,
-    @Head NVARCHAR(200)=NULL, @FundPool NVARCHAR(20)=NULL,
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL, @SortDirection NVARCHAR(MAX)='ASC',
+    @DateFrom NVARCHAR(MAX)=NULL, @DateTo NVARCHAR(MAX)=NULL,
+    @Head NVARCHAR(MAX)=NULL, @FundPool NVARCHAR(MAX)=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -329,13 +329,13 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_CreateIncome
-    @Date DATE,@Mode NVARCHAR(50),@Head NVARCHAR(200),@FundPool NVARCHAR(20),
-    @Amount DECIMAL(18,2),@Purpose NVARCHAR(500),@Source NVARCHAR(50),@SourceRef NVARCHAR(50),
+    @Date DATE,@Mode NVARCHAR(MAX),@Head NVARCHAR(MAX),@FundPool NVARCHAR(MAX),
+    @Amount DECIMAL(18,2),@Purpose NVARCHAR(MAX),@Source NVARCHAR(MAX),@SourceRef NVARCHAR(MAX),
     @NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @IncomeId NVARCHAR(20)='INC-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Incomes) AS NVARCHAR),6);
+    DECLARE @IncomeId NVARCHAR(MAX)='INC-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Incomes) AS NVARCHAR),6);
     INSERT INTO Incomes(IncomeId,Date,Mode,Head,FundPool,FundPoolName,Amount,Purpose,Source,SourceRef,CreatedAt,UpdatedAt)
     SELECT @IncomeId,@Date,@Mode,@Head,@FundPool,fp.Name,@Amount,@Purpose,@Source,@SourceRef,GETUTCDATE(),GETUTCDATE()
     FROM FundPools fp WHERE fp.Code=@FundPool;
@@ -345,12 +345,12 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateIncome
-    @Id INT,@Date DATE,@Mode NVARCHAR(50),@Head NVARCHAR(200),@FundPool NVARCHAR(20),
-    @Amount DECIMAL(18,2),@Purpose NVARCHAR(500),@Source NVARCHAR(50),@SourceRef NVARCHAR(50)
+    @Id INT,@Date DATE,@Mode NVARCHAR(MAX),@Head NVARCHAR(MAX),@FundPool NVARCHAR(MAX),
+    @Amount DECIMAL(18,2),@Purpose NVARCHAR(MAX),@Source NVARCHAR(MAX),@SourceRef NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @OldAmount DECIMAL(18,2), @OldPool NVARCHAR(20);
+    DECLARE @OldAmount DECIMAL(18,2), @OldPool NVARCHAR(MAX);
     SELECT @OldAmount=Amount, @OldPool=FundPool FROM Incomes WHERE Id=@Id;
     UPDATE Incomes SET Date=@Date,Mode=@Mode,Head=@Head,FundPool=@FundPool,
         FundPoolName=(SELECT Name FROM FundPools WHERE Code=@FundPool),
@@ -364,7 +364,7 @@ GO
 CREATE OR ALTER PROCEDURE sp_DeleteIncome @Id INT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Amount DECIMAL(18,2), @FundPool NVARCHAR(20);
+    DECLARE @Amount DECIMAL(18,2), @FundPool NVARCHAR(MAX);
     SELECT @Amount=Amount, @FundPool=FundPool FROM Incomes WHERE Id=@Id;
     DELETE FROM Incomes WHERE Id=@Id;
     UPDATE FundPools SET Balance=Balance-@Amount,UpdatedAt=GETUTCDATE() WHERE Code=@FundPool;
@@ -373,11 +373,11 @@ GO
 
 -- ── EXPENSE STORED PROCEDURES ─────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetExpenses
-    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(200)=NULL,
-    @SortBy NVARCHAR(50)=NULL,@SortDirection NVARCHAR(4)='ASC',
-    @DateFrom NVARCHAR(20)=NULL,@DateTo NVARCHAR(20)=NULL,
-    @Head NVARCHAR(200)=NULL,@Nature NVARCHAR(30)=NULL,
-    @CampId INT=NULL,@RecipientRole NVARCHAR(30)=NULL,
+    @PageNumber INT,@PageSize INT,@SearchText NVARCHAR(MAX)=NULL,
+    @SortBy NVARCHAR(MAX)=NULL,@SortDirection NVARCHAR(MAX)='ASC',
+    @DateFrom NVARCHAR(MAX)=NULL,@DateTo NVARCHAR(MAX)=NULL,
+    @Head NVARCHAR(MAX)=NULL,@Nature NVARCHAR(MAX)=NULL,
+    @CampId INT=NULL,@RecipientRole NVARCHAR(MAX)=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -417,16 +417,16 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_CreateExpense
-    @Date DATE,@Mode NVARCHAR(50),@Head NVARCHAR(200),@FundPool NVARCHAR(20),
-    @Amount DECIMAL(18,2),@Nature NVARCHAR(30),@CampId INT=NULL,
-    @RecipientRole NVARCHAR(30),@RecipientName NVARCHAR(200),@Purpose NVARCHAR(500),
+    @Date DATE,@Mode NVARCHAR(MAX),@Head NVARCHAR(MAX),@FundPool NVARCHAR(MAX),
+    @Amount DECIMAL(18,2),@Nature NVARCHAR(MAX),@CampId INT=NULL,
+    @RecipientRole NVARCHAR(MAX),@RecipientName NVARCHAR(MAX),@Purpose NVARCHAR(MAX),
     @NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @ExpenseId NVARCHAR(20)='EXP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Expenses) AS NVARCHAR),6);
-    DECLARE @FundPoolName NVARCHAR(200)=(SELECT Name FROM FundPools WHERE Code=@FundPool);
-    DECLARE @CampName NVARCHAR(200)=ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
+    DECLARE @ExpenseId NVARCHAR(MAX)='EXP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Expenses) AS NVARCHAR),6);
+    DECLARE @FundPoolName NVARCHAR(MAX)=(SELECT Name FROM FundPools WHERE Code=@FundPool);
+    DECLARE @CampName NVARCHAR(MAX)=ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
     INSERT INTO Expenses(ExpenseId,Date,Mode,Head,FundPool,FundPoolName,Amount,Nature,CampId,CampName,RecipientRole,RecipientName,Purpose,CreatedAt,UpdatedAt)
     VALUES(@ExpenseId,@Date,@Mode,@Head,@FundPool,@FundPoolName,@Amount,@Nature,@CampId,@CampName,@RecipientRole,@RecipientName,@Purpose,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
@@ -435,15 +435,15 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateExpense
-    @Id INT,@Date DATE,@Mode NVARCHAR(50),@Head NVARCHAR(200),@FundPool NVARCHAR(20),
-    @Amount DECIMAL(18,2),@Nature NVARCHAR(30),@CampId INT=NULL,
-    @RecipientRole NVARCHAR(30),@RecipientName NVARCHAR(200),@Purpose NVARCHAR(500)
+    @Id INT,@Date DATE,@Mode NVARCHAR(MAX),@Head NVARCHAR(MAX),@FundPool NVARCHAR(MAX),
+    @Amount DECIMAL(18,2),@Nature NVARCHAR(MAX),@CampId INT=NULL,
+    @RecipientRole NVARCHAR(MAX),@RecipientName NVARCHAR(MAX),@Purpose NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @OldAmount DECIMAL(18,2),@OldPool NVARCHAR(20);
+    DECLARE @OldAmount DECIMAL(18,2),@OldPool NVARCHAR(MAX);
     SELECT @OldAmount=Amount,@OldPool=FundPool FROM Expenses WHERE Id=@Id;
-    DECLARE @CampName NVARCHAR(200)=ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
+    DECLARE @CampName NVARCHAR(MAX)=ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
     UPDATE Expenses SET Date=@Date,Mode=@Mode,Head=@Head,FundPool=@FundPool,
         FundPoolName=(SELECT Name FROM FundPools WHERE Code=@FundPool),
         Amount=@Amount,Nature=@Nature,CampId=@CampId,CampName=@CampName,
@@ -457,7 +457,7 @@ GO
 CREATE OR ALTER PROCEDURE sp_DeleteExpense @Id INT AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Amount DECIMAL(18,2),@FundPool NVARCHAR(20);
+    DECLARE @Amount DECIMAL(18,2),@FundPool NVARCHAR(MAX);
     SELECT @Amount=Amount,@FundPool=FundPool FROM Expenses WHERE Id=@Id;
     DELETE FROM Expenses WHERE Id=@Id;
     UPDATE FundPools SET Balance=Balance+@Amount,UpdatedAt=GETUTCDATE() WHERE Code=@FundPool;

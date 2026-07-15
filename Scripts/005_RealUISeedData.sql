@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- TFMS Real UI Seed Data — Extracted from tfms-app.js
 -- initSampleData() + _generateDemoFinancials()
 -- ============================================================
@@ -416,10 +416,10 @@ GO
 PRINT '>>> Generating Payments (installments for all 10 contracts)';
 -- Match UI logic: even installments = Paid, ci<8 means contract 1-8 mostly paid
 DECLARE @ci INT = 0;
-DECLARE @contractIds TABLE(cid NVARCHAR(20), months INT, startDate DATE, monthly DECIMAL(18,2), rn INT);
+DECLARE @contractIds TABLE(cid NVARCHAR(MAX), months INT, startDate DATE, monthly DECIMAL(18,2), rn INT);
 INSERT INTO @contractIds SELECT ContractId, Months, StartDate, MonthlyTotal, ROW_NUMBER() OVER(ORDER BY Id)-1 FROM Contracts;
 
-DECLARE @cid NVARCHAR(20), @months INT, @sd DATE, @monthly DECIMAL(18,2), @rn INT;
+DECLARE @cid NVARCHAR(MAX), @months INT, @sd DATE, @monthly DECIMAL(18,2), @rn INT;
 DECLARE cc CURSOR FOR SELECT cid,months,startDate,monthly,rn FROM @contractIds;
 OPEN cc; FETCH NEXT FROM cc INTO @cid,@months,@sd,@monthly,@rn;
 WHILE @@FETCH_STATUS=0
@@ -430,9 +430,9 @@ BEGIN
         DECLARE @dd DATE = DATEADD(MONTH,@inst-1,@sd);
         DECLARE @paid BIT = CASE WHEN (@inst%2=0 OR @rn<8 OR @inst%3=1) THEN 1 ELSE 0 END;
         DECLARE @pmId INT = ((@inst-1) % 6) + 1;
-        DECLARE @pmName NVARCHAR(50) = (SELECT Name FROM PaymentModes WHERE Id=@pmId);
+        DECLARE @pmName NVARCHAR(MAX) = (SELECT Name FROM PaymentModes WHERE Id=@pmId);
         DECLARE @fpId INT = ((@inst-1) % 3) + 1;
-        DECLARE @fpName NVARCHAR(200) = (SELECT Name FROM FundPools WHERE Id=@fpId);
+        DECLARE @fpName NVARCHAR(MAX) = (SELECT Name FROM FundPools WHERE Id=@fpId);
         INSERT INTO Payments(ContractId,InstallmentNo,Amount,DueDate,PaidAmount,PaidDate,Status,
             PaymentMode,PaymentModeId,ChequeNumber,ClearanceDate,Description,
             ReceivedBy,ReceivedContact,FundPoolId,FundPoolName,IssuedBy)
@@ -462,7 +462,7 @@ GO
 
 PRINT '>>> Waivers (8 sample waivers on pending installments)';
 DECLARE @wid INT=1;
-DECLARE @pid INT, @pcid NVARCHAR(20), @pinst INT, @pamt DECIMAL(18,2), @ptid INT;
+DECLARE @pid INT, @pcid NVARCHAR(MAX), @pinst INT, @pamt DECIMAL(18,2), @ptid INT;
 DECLARE wc CURSOR FOR
     SELECT TOP 8 p.Id, p.ContractId, p.InstallmentNo, p.Amount, c.TenantId
     FROM Payments p JOIN Contracts c ON c.ContractId=p.ContractId

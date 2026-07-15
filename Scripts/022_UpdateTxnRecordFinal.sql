@@ -1,17 +1,17 @@
-USE TFMS_softwareDB;
+﻿USE TFMS_softwareDB;
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateTxnRecord
     @Id             INT,
     @Amount         DECIMAL(18,2),
     @TxnDate        DATE,
-    @PaymentMode    NVARCHAR(50)  = '',
+    @PaymentMode    NVARCHAR(MAX)  = '',
     @PaymentModeId  INT           = NULL,
     @FundPoolId     INT           = NULL,
-    @FundPoolName   NVARCHAR(200) = '',
-    @Description    NVARCHAR(500) = '',
-    @ReceivedBy     NVARCHAR(200) = '',
-    @ChequeNumber   NVARCHAR(50)  = ''
+    @FundPoolName   NVARCHAR(MAX) = '',
+    @Description    NVARCHAR(MAX) = '',
+    @ReceivedBy     NVARCHAR(MAX) = '',
+    @ChequeNumber   NVARCHAR(MAX)  = ''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -19,10 +19,10 @@ BEGIN
         BEGIN TRANSACTION;
 
         -- Get existing record
-        DECLARE @ContractId          NVARCHAR(20);
+        DECLARE @ContractId          NVARCHAR(MAX);
         DECLARE @OldAmount           DECIMAL(18,2);
         DECLARE @OldFundPoolId       INT;
-        DECLARE @AppliedInstallments NVARCHAR(200);
+        DECLARE @AppliedInstallments NVARCHAR(MAX);
 
         SELECT @ContractId          = ContractId,
                @OldAmount           = Amount,
@@ -85,7 +85,7 @@ BEGIN
             DECLARE @IDue  DECIMAL(18,2);
             DECLARE @IApply DECIMAL(18,2);
             DECLARE @INewPaid DECIMAL(18,2);
-            DECLARE @IStatus NVARCHAR(20);
+            DECLARE @IStatus NVARCHAR(MAX);
 
             DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
                 SELECT ci.InstallmentNo, ci.Amount, ci.PaidAmount

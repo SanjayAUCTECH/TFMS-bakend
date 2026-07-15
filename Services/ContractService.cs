@@ -47,20 +47,21 @@ public class ContractService : IContractService
             if (!await _tenantRepo.ExistsAsync(request.TenantId.Value))
                 return ApiResponse<ContractResponse>.Fail("Tenant not found.");
         }
-        if (request.CampId.HasValue && request.CampId > 0)
-        {
-            if (await _campRepo.GetByIdAsync(request.CampId.Value) == null)
-                return ApiResponse<ContractResponse>.Fail("Camp not found.");
-        }
+
+        // Derive primary CampId from CampIds array (first element)
+        var primaryCampId = (request.CampIds != null && request.CampIds.Count > 0)
+            ? request.CampIds[0]
+            : 0;
 
         var contractId = await _repo.CreateAsync(new Contract
         {
             TenantId               = request.TenantId      ?? 0,
-            CampId                 = request.CampId        ?? 0,
+            CampIds                = request.CampIds?.Count > 0 ? request.CampIds : new(),
             StartDate              = request.StartDate     ?? DateTime.Today,
             Months                 = request.Months        ?? 12,
             RoomIds                = request.RoomIds       ?? new(),
             SecurityDeposit        = request.SecurityDeposit   ?? 0,
+            ContractType           = request.ContractType  ?? "Monthly",
             InstallmentType        = request.InstallmentType   ?? "monthly",
             IssuedBy               = request.IssuedBy          ?? "",
             Notes                  = request.Notes             ?? "",
@@ -92,7 +93,7 @@ public class ContractService : IContractService
                     ContractId   = created.ContractId,
                     ContractCode = created.ContractId,
                     TenantId     = created.TenantId,
-                    CampId       = created.CampId,
+                    CampId       = created.CampIds?.Count > 0 ? created.CampIds[0] : 0,
                     TotalAmount  = created.ContractTotal,
                     Amount       = created.ContractTotal,
                     TxnDate      = created.StartDate,
@@ -159,9 +160,10 @@ public class ContractService : IContractService
     private static ContractResponse ToResponse(Contract c) => new()
     {
         Id = c.Id, ContractId = c.ContractId, TenantId = c.TenantId, TenantName = c.TenantName,
-        CampId = c.CampId, CampName = c.CampName, StartDate = c.StartDate, Months = c.Months,
+        CampIds = c.CampIds?.Count > 0 ? c.CampIds : new List<int>(),
+        StartDate = c.StartDate, Months = c.Months,
         EndDate = c.EndDate, MonthlyTotal = c.MonthlyTotal, ContractTotal = c.ContractTotal,
-        SecurityDeposit = c.SecurityDeposit, InstallmentType = c.InstallmentType,
+        SecurityDeposit = c.SecurityDeposit, ContractType = c.ContractType, InstallmentType = c.InstallmentType,
         IssuedBy = c.IssuedBy, Notes = c.Notes, LessorAmount = c.LessorAmount,
         Status = c.Status, RoomIds = c.RoomIds, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
         ContractPropertyUsage = c.ContractPropertyUsage,

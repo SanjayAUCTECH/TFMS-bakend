@@ -3,18 +3,19 @@ namespace TFMS_software_api.DTOs;
 public class CreateContractRequest
 {
     public int?          TenantId          { get; set; }
-    public int?          CampId            { get; set; }
+    // CampId removed — use CampIds array only
+    public List<int>     CampIds           { get; set; } = new();  // all selected camps
     public DateTime?     StartDate         { get; set; }
     public int?          Months            { get; set; } = 12;
     public List<int>     RoomIds           { get; set; } = new();
     public decimal?      SecurityDeposit   { get; set; } = 0;
+    public string?       ContractType      { get; set; } = "Monthly";
     public string?       InstallmentType   { get; set; } = "monthly";
     public string?       IssuedBy          { get; set; } = string.Empty;
     public string?       Notes             { get; set; } = string.Empty;
     public decimal?      LessorAmount      { get; set; } = 0;
-    public decimal?      MonthlyTotal      { get; set; }   // override room-calculated value
-    public decimal?      ContractTotal     { get; set; }   // override calculated total
-    // ── Property Information ──────────────────────────────────────────────
+    public decimal?      MonthlyTotal      { get; set; }
+    public decimal?      ContractTotal     { get; set; }
     public string?  ContractPropertyUsage  { get; set; } = string.Empty;
     public string?  ContractBuildingName   { get; set; } = string.Empty;
     public string?  ContractPropertyType   { get; set; } = string.Empty;
@@ -40,16 +41,19 @@ public class UpdateContractScheduleRequest
 
 public class UpdateContractRequest
 {
-    public string?   ContractId    { get; set; } = string.Empty;
-    public int?      TenantId      { get; set; }
-    public DateTime? StartDate     { get; set; }
-    public int?      Months        { get; set; } = 12;
-    public List<int>?  RoomIds     { get; set; } = new();
-    public decimal?  LessorAmount  { get; set; } = 0;
-    public string?   Notes         { get; set; } = string.Empty;
-    public decimal?  MonthlyTotal  { get; set; }   // override room-calculated value
-    public decimal?  ContractTotal { get; set; }   // override calculated total
-    // ── Property Information ──────────────────────────────────────────────
+    public string?   ContractId      { get; set; } = string.Empty;
+    public int?      TenantId        { get; set; }
+    // CampId removed — use CampIds array only
+    public List<int> CampIds         { get; set; } = new();
+    public DateTime? StartDate       { get; set; }
+    public int?      Months          { get; set; } = 12;
+    public List<int>?  RoomIds       { get; set; } = new();
+    public decimal?  SecurityDeposit { get; set; } = 0;
+    public string?   ContractType    { get; set; }
+    public decimal?  LessorAmount    { get; set; } = 0;
+    public string?   Notes           { get; set; } = string.Empty;
+    public decimal?  MonthlyTotal    { get; set; }
+    public decimal?  ContractTotal   { get; set; }
     public string?  ContractPropertyUsage  { get; set; } = string.Empty;
     public string?  ContractBuildingName   { get; set; } = string.Empty;
     public string?  ContractPropertyType   { get; set; } = string.Empty;
@@ -100,14 +104,14 @@ public class ContractResponse
     public string   ContractId      { get; set; } = string.Empty;
     public int      TenantId        { get; set; }
     public string   TenantName      { get; set; } = string.Empty;
-    public int      CampId          { get; set; }
-    public string   CampName        { get; set; } = string.Empty;
+    public List<int> CampIds        { get; set; } = new();  // all associated camps
     public DateTime StartDate       { get; set; }
     public int      Months          { get; set; }
     public DateTime EndDate         { get; set; }
     public decimal  MonthlyTotal    { get; set; }
     public decimal  ContractTotal   { get; set; }
     public decimal  SecurityDeposit { get; set; }
+    public string   ContractType    { get; set; } = "Monthly";   // Monthly | Scheduled
     public string   InstallmentType { get; set; } = string.Empty;
     public string   IssuedBy        { get; set; } = string.Empty;
     public string   Notes           { get; set; } = string.Empty;

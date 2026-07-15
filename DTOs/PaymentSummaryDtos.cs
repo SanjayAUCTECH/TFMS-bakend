@@ -7,7 +7,8 @@ public class PaymentSummaryResponse
     public int      TenantId            { get; set; }
     public string   TenantName          { get; set; } = string.Empty;
     public string   TenantContact       { get; set; } = string.Empty;
-    public int      CampId              { get; set; }
+    public List<int> CampIds            { get; set; } = new();   // all camps (array)
+    public int      CampId              { get; set; }             // primary camp
     public string   CampName            { get; set; } = string.Empty;
     public string   StartDate           { get; set; } = string.Empty;
     public string   EndDate             { get; set; } = string.Empty;

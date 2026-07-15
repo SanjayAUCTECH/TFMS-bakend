@@ -29,9 +29,9 @@ public class MisRepository : IMisRepository
             result.TotalOutstanding = rd.IsDBNull(rd.GetOrdinal("TotalOutstanding")) ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalOutstanding"));
             result.TotalExpenses    = rd.IsDBNull(rd.GetOrdinal("TotalExpenses"))    ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalExpenses"));
             result.NetProfit        = rd.IsDBNull(rd.GetOrdinal("NetProfit"))        ? 0 : rd.GetDecimal(rd.GetOrdinal("NetProfit"));
-            result.TotalUnits       = rd.IsDBNull(rd.GetOrdinal("TotalUnits"))       ? 0 : rd.GetInt32(rd.GetOrdinal("TotalUnits"));
-            result.OccupiedUnits    = rd.IsDBNull(rd.GetOrdinal("OccupiedUnits"))    ? 0 : rd.GetInt32(rd.GetOrdinal("OccupiedUnits"));
-            result.VacantUnits      = rd.IsDBNull(rd.GetOrdinal("VacantUnits"))      ? 0 : rd.GetInt32(rd.GetOrdinal("VacantUnits"));
+            result.TotalUnits       = rd.IsDBNull(rd.GetOrdinal("TotalUnits"))       ? 0 : Convert.ToInt32(rd.GetValue(rd.GetOrdinal("TotalUnits")));
+            result.OccupiedUnits    = rd.IsDBNull(rd.GetOrdinal("OccupiedUnits"))    ? 0 : Convert.ToInt32(rd.GetValue(rd.GetOrdinal("OccupiedUnits")));
+            result.VacantUnits      = rd.IsDBNull(rd.GetOrdinal("VacantUnits"))      ? 0 : Convert.ToInt32(rd.GetValue(rd.GetOrdinal("VacantUnits")));
             result.OccupancyPct     = rd.IsDBNull(rd.GetOrdinal("OccupancyPct"))     ? 0 : rd.GetDecimal(rd.GetOrdinal("OccupancyPct"));
         }
 

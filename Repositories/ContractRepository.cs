@@ -12,42 +12,76 @@ public class ContractRepository : IContractRepository
 
     public async Task<(IEnumerable<Contract> Data, int TotalRecords)> GetAllAsync(ContractListRequest request)
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
-        await using var cmd = new SqlCommand("sp_GetContracts", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@PageNumber", request.ResolvedPageNumber);
-        cmd.Parameters.AddWithValue("@PageSize", request.ResolvedPageSize);
-        cmd.Parameters.AddWithValue("@SearchText",    (object?)request.SearchText ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@SortBy",        (object?)request.SortBy    ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@SortDirection", request.ResolvedSortDir);
-        cmd.Parameters.AddWithValue("@Status",        (object?)request.Status    ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@TenantId",      (object?)request.TenantId  ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@CampId",        (object?)request.CampId    ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@DateFrom",      (object?)request.DateFrom  ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@DateTo",        (object?)request.DateTo    ?? DBNull.Value);
-        var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
-        cmd.Parameters.Add(total);
-        var list = new List<Contract>();
-        await using var r = await cmd.ExecuteReaderAsync();
-        while (await r.ReadAsync()) list.Add(MapContract(r));
-        await r.CloseAsync();
-        int totalCount = (int)(total.Value == DBNull.Value ? 0 : total.Value);
+        var list       = new List<Contract>();
+        int totalCount = 0;
 
-        // Load RoomIds for each contract
-        if (list.Count > 0) {
+        // ── 1. Fetch contracts (own connection — fully closed before secondaries) ──
+        await using (var conn1 = _factory.CreateConnection())
+        {
+            await conn1.OpenAsync();
+            await using var cmd = new SqlCommand("sp_GetContracts", conn1) { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@PageNumber",    request.ResolvedPageNumber);
+            cmd.Parameters.AddWithValue("@PageSize",      request.ResolvedPageSize);
+            cmd.Parameters.AddWithValue("@SearchText",    (object?)request.SearchText ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@SortBy",        (object?)request.SortBy    ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@SortDirection", request.ResolvedSortDir);
+            cmd.Parameters.AddWithValue("@Status",        (object?)request.Status    ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@TenantId",      (object?)request.TenantId  ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@CampId",        (object?)request.CampId    ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@DateFrom",      (object?)request.DateFrom  ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@DateTo",        (object?)request.DateTo    ?? DBNull.Value);
+            var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(total);
+
+            await using (var r = await cmd.ExecuteReaderAsync())
+            {
+                while (await r.ReadAsync()) list.Add(MapContract(r));
+            }   // reader closed here
+
+            totalCount = (int)(total.Value == DBNull.Value ? 0 : total.Value);
+        }   // conn1 fully closed here
+
+        // ── 2. Load RoomIds + CampIds in a second connection ─────────────────────
+        if (list.Count > 0)
+        {
             var contractIds = string.Join(",", list.Select(c => $"'{c.ContractId}'"));
-            await using var cmd2 = new SqlCommand(
-                $"SELECT ContractId, RoomId FROM ContractRooms WHERE ContractId IN ({contractIds})", conn);
-            await using var r2 = await cmd2.ExecuteReaderAsync();
+
+            await using var conn2 = _factory.CreateConnection();
+            await conn2.OpenAsync();
+
+            // RoomIds
+            await using var cmdR = new SqlCommand(
+                $"SELECT ContractId, RoomId FROM ContractRooms WHERE ContractId IN ({contractIds})", conn2);
+            await using var rdrR = await cmdR.ExecuteReaderAsync();
             var roomMap = new Dictionary<string, List<int>>();
-            while (await r2.ReadAsync()) {
-                var cid = r2.GetString(0);
-                var rid = r2.GetInt32(1);
+            while (await rdrR.ReadAsync())
+            {
+                var cid = rdrR.GetString(0);
+                var rid = rdrR.GetInt32(1);
                 if (!roomMap.ContainsKey(cid)) roomMap[cid] = new();
                 roomMap[cid].Add(rid);
             }
+            await rdrR.CloseAsync();
+
+            // CampIds
+            await using var cmdC = new SqlCommand(
+                $"SELECT ContractId, CampId FROM ContractCamps WHERE ContractId IN ({contractIds})", conn2);
+            await using var rdrC = await cmdC.ExecuteReaderAsync();
+            var campMap = new Dictionary<string, List<int>>();
+            while (await rdrC.ReadAsync())
+            {
+                var cid = rdrC.GetString(0);
+                var cmp = rdrC.GetInt32(1);
+                if (!campMap.ContainsKey(cid)) campMap[cid] = new();
+                campMap[cid].Add(cmp);
+            }
+            await rdrC.CloseAsync();
+
             foreach (var c in list)
-                c.RoomIds = roomMap.TryGetValue(c.ContractId, out var ids) ? ids : new();
+            {
+                c.RoomIds = roomMap.TryGetValue(c.ContractId, out var rids) ? rids : new();
+                c.CampIds = campMap.TryGetValue(c.ContractId, out var cids) ? cids : new();
+            }
         }
 
         return (list, totalCount);
@@ -77,11 +111,16 @@ public class ContractRepository : IContractRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateContract", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@TenantId",              contract.TenantId);
-        cmd.Parameters.AddWithValue("@CampId",                contract.CampId);
+        // CampId column removed — use CampIdsJson only
+        var campIdsJson = contract.CampIds != null && contract.CampIds.Count > 0
+            ? System.Text.Json.JsonSerializer.Serialize(contract.CampIds)
+            : "[]";
+        cmd.Parameters.AddWithValue("@CampIdsJson",           campIdsJson);
         cmd.Parameters.AddWithValue("@StartDate",             contract.StartDate);
         cmd.Parameters.AddWithValue("@Months",                contract.Months);
         var roomIdsJson = System.Text.Json.JsonSerializer.Serialize(contract.RoomIds);
         cmd.Parameters.AddWithValue("@RoomIdsJson",           roomIdsJson);
+        cmd.Parameters.AddWithValue("@ContractType",          contract.ContractType);
         cmd.Parameters.AddWithValue("@SecurityDeposit",       contract.SecurityDeposit);
         cmd.Parameters.AddWithValue("@InstallmentType",       contract.InstallmentType);
         cmd.Parameters.AddWithValue("@IssuedBy",              contract.IssuedBy);
@@ -99,7 +138,7 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@ContractPaymentMode",   contract.ContractPaymentMode);
         cmd.Parameters.AddWithValue("@ContractPlotNo",        contract.ContractPlotNo);
         cmd.Parameters.AddWithValue("@ContractMakaniNo",      contract.ContractMakaniNo);
-        var newContractId = new SqlParameter("@NewContractId", SqlDbType.NVarChar, 450) { Direction = ParameterDirection.Output };
+        var newContractId = new SqlParameter("@NewContractId", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newContractId);
         await cmd.ExecuteNonQueryAsync();
         return (string)newContractId.Value;
@@ -141,15 +180,22 @@ public class ContractRepository : IContractRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateContract", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@ContractId",    request.ContractId ?? "");
-        // Only send fields that were actually provided — null = keep existing value in SP
         cmd.Parameters.AddWithValue("@TenantId",      (object?)request.TenantId    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@StartDate",     (object?)request.StartDate   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Months",        (object?)request.Months      ?? DBNull.Value);
-        // Only send RoomIdsJson if rooms were actually provided (non-empty list)
+        // CampIds JSON (CampId column removed from table — array only)
+        var campIdsJson = (request.CampIds != null && request.CampIds.Count > 0)
+            ? System.Text.Json.JsonSerializer.Serialize(request.CampIds)
+            : null;
+        cmd.Parameters.AddWithValue("@CampIdsJson",   (object?)campIdsJson         ?? DBNull.Value);
+        // ContractType
+        cmd.Parameters.AddWithValue("@ContractType",  (object?)request.ContractType ?? DBNull.Value);
         var roomJson = (request.RoomIds != null && request.RoomIds.Count > 0)
             ? System.Text.Json.JsonSerializer.Serialize(request.RoomIds)
             : null;
         cmd.Parameters.AddWithValue("@RoomIdsJson",   (object?)roomJson            ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SecurityDeposit", request.SecurityDeposit.HasValue
+            ? (object)request.SecurityDeposit.Value : DBNull.Value);
         cmd.Parameters.AddWithValue("@LessorAmount",  (object?)request.LessorAmount ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Notes",         (object?)request.Notes       ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@MonthlyTotal",  request.MonthlyTotal  > 0 ? (object)request.MonthlyTotal  : DBNull.Value);
@@ -185,47 +231,63 @@ public class ContractRepository : IContractRepository
         var roomIds  = new HashSet<int>();
         var payments = new List<Payment>();
 
-        await using var r = await cmd.ExecuteReaderAsync();
-        while (await r.ReadAsync())
+        // ── 1. Read main result (keep reader open only for this block) ────────
+        await using (var r = await cmd.ExecuteReaderAsync())
         {
-            // Map contract once
-            if (contract == null) contract = MapContract(r);
+            while (await r.ReadAsync())
+            {
+                if (contract == null) contract = MapContract(r);
 
-            // RoomId column
-            try {
-                var roomIdOrd = r.GetOrdinal("RoomId");
-                if (!r.IsDBNull(roomIdOrd))
-                    roomIds.Add(r.GetInt32(roomIdOrd));
-            } catch { /* column may not exist */ }
+                try {
+                    var roomIdOrd = r.GetOrdinal("RoomId");
+                    if (!r.IsDBNull(roomIdOrd))
+                        roomIds.Add(r.GetInt32(roomIdOrd));
+                } catch { /* column may not exist */ }
 
-            // Payment columns
-            try {
-                var payIdOrd = r.GetOrdinal("PayId");
-                if (!r.IsDBNull(payIdOrd)) {
-                    var payId = r.GetInt32(payIdOrd);
-                    if (!payments.Any(p => p.Id == payId)) {
-                        payments.Add(new Payment {
-                            Id            = payId,
-                            ContractId    = r.GetString(r.GetOrdinal("ContractId")),
-                            InstallmentNo = r.GetInt32(r.GetOrdinal("InstallmentNo")),
-                            Amount        = r.GetDecimal(r.GetOrdinal("PayAmount")),
-                            DueDate       = r.GetDateTime(r.GetOrdinal("DueDate")),
-                            PaidAmount    = r.GetDecimal(r.GetOrdinal("PaidAmount")),
-                            PaidDate      = r.IsDBNull(r.GetOrdinal("PaidDate")) ? null : r.GetDateTime(r.GetOrdinal("PaidDate")),
-                            Status        = r.GetString(r.GetOrdinal("PayStatus")),
-                            PaymentMode   = r.IsDBNull(r.GetOrdinal("PaymentMode"))   ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
-                            ChequeNumber  = r.IsDBNull(r.GetOrdinal("ChequeNumber"))  ? "" : r.GetString(r.GetOrdinal("ChequeNumber")),
-                            ClearanceDate = r.IsDBNull(r.GetOrdinal("ClearanceDate")) ? "" : r.GetString(r.GetOrdinal("ClearanceDate")),
-                        });
+                try {
+                    var payIdOrd = r.GetOrdinal("PayId");
+                    if (!r.IsDBNull(payIdOrd)) {
+                        var payId = r.GetInt32(payIdOrd);
+                        if (!payments.Any(p => p.Id == payId)) {
+                            payments.Add(new Payment {
+                                Id            = payId,
+                                ContractId    = r.GetString(r.GetOrdinal("ContractId")),
+                                InstallmentNo = r.GetInt32(r.GetOrdinal("InstallmentNo")),
+                                Amount        = r.GetDecimal(r.GetOrdinal("PayAmount")),
+                                DueDate       = r.GetDateTime(r.GetOrdinal("DueDate")),
+                                PaidAmount    = r.GetDecimal(r.GetOrdinal("PaidAmount")),
+                                PaidDate      = r.IsDBNull(r.GetOrdinal("PaidDate")) ? null : r.GetDateTime(r.GetOrdinal("PaidDate")),
+                                Status        = r.GetString(r.GetOrdinal("PayStatus")),
+                                PaymentMode   = r.IsDBNull(r.GetOrdinal("PaymentMode"))   ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
+                                ChequeNumber  = r.IsDBNull(r.GetOrdinal("ChequeNumber"))  ? "" : r.GetString(r.GetOrdinal("ChequeNumber")),
+                                ClearanceDate = r.IsDBNull(r.GetOrdinal("ClearanceDate")) ? "" : r.GetString(r.GetOrdinal("ClearanceDate")),
+                            });
+                        }
                     }
-                }
-            } catch { /* column may not exist */ }
+                } catch { /* column may not exist */ }
+            }
+        }   // ← reader fully closed here
+
+        if (contract == null) return null;
+
+        contract.RoomIds  = roomIds.ToList();
+        contract.Payments = payments;
+
+        // ── 2. Load CampIds — reader is closed, safe to reuse connection ─────
+        try {
+            await using var campCmd = new SqlCommand(
+                "SELECT CampId FROM ContractCamps WHERE ContractId = @ContractId",
+                cmd.Connection);
+            campCmd.Parameters.AddWithValue("@ContractId", contract.ContractId);
+            await using var campReader = await campCmd.ExecuteReaderAsync();
+            var campIds = new List<int>();
+            while (await campReader.ReadAsync())
+                campIds.Add(campReader.GetInt32(0));
+            contract.CampIds = campIds;
+        } catch {
+            contract.CampIds = new List<int>();
         }
 
-        if (contract != null) {
-            contract.RoomIds  = roomIds.ToList();
-            contract.Payments = payments;
-        }
         return contract;
     }
 
@@ -235,14 +297,13 @@ public class ContractRepository : IContractRepository
         ContractId      = r.GetString(r.GetOrdinal("ContractId")),
         TenantId        = r.GetInt32(r.GetOrdinal("TenantId")),
         TenantName      = r.IsDBNull(r.GetOrdinal("TenantName"))    ? "" : r.GetString(r.GetOrdinal("TenantName")),
-        CampId          = r.GetInt32(r.GetOrdinal("CampId")),
-        CampName        = r.IsDBNull(r.GetOrdinal("CampName"))      ? "" : r.GetString(r.GetOrdinal("CampName")),
-        StartDate       = r.GetDateTime(r.GetOrdinal("StartDate")),
+         StartDate       = r.GetDateTime(r.GetOrdinal("StartDate")),
         Months          = r.GetInt32(r.GetOrdinal("Months")),
         EndDate         = r.GetDateTime(r.GetOrdinal("EndDate")),
         MonthlyTotal    = r.GetDecimal(r.GetOrdinal("MonthlyTotal")),
         ContractTotal   = r.GetDecimal(r.GetOrdinal("ContractTotal")),
         SecurityDeposit = HasColumn(r,"SecurityDeposit") && !r.IsDBNull(r.GetOrdinal("SecurityDeposit")) ? r.GetDecimal(r.GetOrdinal("SecurityDeposit")) : 0,
+        ContractType    = HasColumn(r,"ContractType")    && !r.IsDBNull(r.GetOrdinal("ContractType"))    ? r.GetString(r.GetOrdinal("ContractType"))    : "Monthly",
         InstallmentType = HasColumn(r,"InstallmentType") && !r.IsDBNull(r.GetOrdinal("InstallmentType")) ? r.GetString(r.GetOrdinal("InstallmentType")) : "monthly",
         IssuedBy        = HasColumn(r,"IssuedBy")        && !r.IsDBNull(r.GetOrdinal("IssuedBy"))        ? r.GetString(r.GetOrdinal("IssuedBy"))        : "",
         Notes           = HasColumn(r,"Notes")           && !r.IsDBNull(r.GetOrdinal("Notes"))           ? r.GetString(r.GetOrdinal("Notes"))           : "",
@@ -312,8 +373,10 @@ public class ContractRepository : IContractRepository
                 ISNULL(c.ContractPaymentMode,'')   ContractPaymentMode,
                 ISNULL(c.ContractPlotNo,'')        ContractPlotNo,
                 ISNULL(c.ContractMakaniNo,'')      ContractMakaniNo,
-                -- Camp
-                c.CampId, ca.Name CampName, ca.Code CampCode,
+                -- Camp (from ContractCamps)
+                ISNULL((SELECT TOP 1 cc_doc.CampId FROM ContractCamps cc_doc WHERE cc_doc.ContractId=c.ContractId ORDER BY cc_doc.Id),0) CampId,
+                ISNULL((SELECT TOP 1 ca_doc.Name FROM ContractCamps cc_doc2 JOIN Camps ca_doc ON ca_doc.Id=cc_doc2.CampId WHERE cc_doc2.ContractId=c.ContractId ORDER BY cc_doc2.Id),'') CampName,
+                ISNULL((SELECT TOP 1 ca_doc2.Code FROM ContractCamps cc_doc3 JOIN Camps ca_doc2 ON ca_doc2.Id=cc_doc3.CampId WHERE cc_doc3.ContractId=c.ContractId ORDER BY cc_doc3.Id),'') CampCode,
                 -- Tenant
                 t.Id TenantId, t.Name TenantName, t.Type TenantType,
                 ISNULL(t.EmiratesId,'')          TenantEmiratesId,
@@ -350,7 +413,6 @@ public class ContractRepository : IContractRepository
                 (SELECT TOP 1 PaidDate FROM TxnRecords WHERE ContractId=c.ContractId AND TxnType='CR' ORDER BY PaidDate DESC, Id DESC) LastPaymentDate
             FROM Contracts c
             JOIN Tenants t  ON t.Id  = c.TenantId
-            JOIN Camps   ca ON ca.Id = c.CampId
             WHERE c.ContractId = @ContractId", conn))
         {
             cmd.Parameters.AddWithValue("@ContractId", contractId);
@@ -384,9 +446,8 @@ public class ContractRepository : IContractRepository
                     ContractPaymentMode   = r.GetString(r.GetOrdinal("ContractPaymentMode")),
                     ContractPlotNo        = r.GetString(r.GetOrdinal("ContractPlotNo")),
                     ContractMakaniNo      = r.GetString(r.GetOrdinal("ContractMakaniNo")),
-                    CampId          = r.GetInt32(r.GetOrdinal("CampId")),
-                    CampName        = r.GetString(r.GetOrdinal("CampName")),
-                    CampCode        = r.GetString(r.GetOrdinal("CampCode")),
+                    
+                   
                     TenantId          = r.GetInt32(r.GetOrdinal("TenantId")),
                     TenantName        = r.GetString(r.GetOrdinal("TenantName")),
                     TenantType        = r.GetString(r.GetOrdinal("TenantType")),
@@ -424,7 +485,19 @@ public class ContractRepository : IContractRepository
         }
         if (doc == null) return null;
 
-        // ── 2. Rooms ─────────────────────────────────────────────────────
+        // ── 2. Load all CampIds from ContractCamps (array) ───────────────
+        await using (var cmdCamps = new SqlCommand(
+            "SELECT cc.CampId FROM ContractCamps cc WHERE cc.ContractId = @ContractId ORDER BY cc.Id", conn))
+        {
+            cmdCamps.Parameters.AddWithValue("@ContractId", contractId);
+            await using var rdrCamps = await cmdCamps.ExecuteReaderAsync();
+            var campIds = new List<int>();
+            while (await rdrCamps.ReadAsync())
+                campIds.Add(rdrCamps.GetInt32(0));
+            doc.CampIds = campIds;
+        }
+
+        // ── 3. Rooms ─────────────────────────────────────────────────────
         await using (var cmd2 = new SqlCommand(@"
             SELECT r.Id, r.RoomNo, ISNULL(f.Name,'') FloorName, r.MonthlyPrice
             FROM ContractRooms cr
@@ -445,7 +518,7 @@ public class ContractRepository : IContractRepository
                 });
         }
 
-        // ── 3. Installments (payment schedule) ───────────────────────────
+        // ── 4. Installments (payment schedule) ───────────────────────────
         await using (var cmd3 = new SqlCommand(@"
             SELECT Id, InstallmentNo, Amount, DueDate, PaidAmount, PaidDate, Status,
                    ISNULL(PaymentMode,'')   PaymentMode,

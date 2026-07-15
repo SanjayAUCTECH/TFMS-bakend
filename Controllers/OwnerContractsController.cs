@@ -72,6 +72,49 @@ public class OwnerContractsController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(true, "Owner contract deleted successfully."));
     }
 
+    /// <summary>GET api/ownercontracts/{id}/ledger — ledger entries (DR/CR) for an owner contract</summary>
+    [HttpGet("{id:int}/ledger")]
+    public async Task<IActionResult> GetLedger(int id)
+    {
+        var contract = await _repo.GetByIdAsync(id);
+        if (contract == null)
+            return NotFound(ApiResponse<IEnumerable<object>>.Fail("Owner contract not found."));
+
+        // Build ledger: DR row (total payable) + CR rows (each payment made)
+        var ledger = new List<object>();
+
+        // Opening DR — contract total
+        ledger.Add(new {
+            date          = contract.StartDate.ToString("yyyy-MM-dd"),
+            description   = $"Owner Contract {contract.OcCode} — Total Payable",
+            installmentNo = (string?)null,
+            dr            = contract.TotalAmount,
+            cr            = 0m,
+            balance       = contract.TotalAmount,
+        });
+
+        decimal runningBalance = contract.TotalAmount;
+
+        // CR rows from transactions
+        foreach (var txn in contract.Transactions.OrderBy(t => t.Date).ThenBy(t => t.Id))
+        {
+            if (txn.Type == "CR")
+            {
+                runningBalance -= txn.Amount;
+                ledger.Add(new {
+                    date          = txn.Date.ToString("yyyy-MM-dd"),
+                    description   = txn.Description,
+                    installmentNo = txn.InstallmentNos,
+                    dr            = 0m,
+                    cr            = txn.Amount,
+                    balance       = runningBalance,
+                });
+            }
+        }
+
+        return Ok(ApiResponse<IEnumerable<object>>.Ok(ledger, "Ledger retrieved."));
+    }
+
     private static OwnerContractResponse ToResponse(OwnerContract c) => new()
     {
         Id          = c.Id,

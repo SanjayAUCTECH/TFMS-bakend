@@ -36,8 +36,9 @@ public class ContractDocResponse
     public string   ContractMakaniNo       { get; set; } = string.Empty;
 
     // ── Camp / Property ────────────────────────────────────────────────────
-    public int      CampId          { get; set; }
-    public string   CampName        { get; set; } = string.Empty;
+    public List<int> CampIds        { get; set; } = new();   // all camps (array)
+    public int      CampId          { get; set; }             // primary camp id
+    public string   CampName        { get; set; } = string.Empty;   // primary camp name
     public string   CampCode        { get; set; } = string.Empty;
 
     // ── Rooms ──────────────────────────────────────────────────────────────

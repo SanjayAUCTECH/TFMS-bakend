@@ -10,7 +10,7 @@ GO
 
 -- â”€â”€ 1. Fix TxnRecords table â€” ensure all needed columns exist â”€â”€
 IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('TxnRecords') AND name='TxnType')
-    ALTER TABLE TxnRecords ADD TxnType NVARCHAR(5) NOT NULL DEFAULT 'CR';
+    ALTER TABLE TxnRecords ADD TxnType NVARCHAR(MAX) NOT NULL DEFAULT 'CR';
 GO
 IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('TxnRecords') AND name='TenantId')
     ALTER TABLE TxnRecords ADD TenantId INT NULL;
@@ -22,7 +22,7 @@ IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('TxnRecords') 
     ALTER TABLE TxnRecords ADD TotalAmount DECIMAL(18,2) NOT NULL DEFAULT 0;
 GO
 IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('TxnRecords') AND name='ContractCode')
-    ALTER TABLE TxnRecords ADD ContractCode NVARCHAR(20) NOT NULL DEFAULT '';
+    ALTER TABLE TxnRecords ADD ContractCode NVARCHAR(MAX) NOT NULL DEFAULT '';
 GO
 IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('TxnRecords') AND name='FromDate')
     ALTER TABLE TxnRecords ADD FromDate DATE NULL;
@@ -39,20 +39,20 @@ GO
 
 -- â”€â”€ 2. sp_RecordPayment â€” Updates ContractInstallments + creates TxnRecord â”€
 CREATE OR ALTER PROCEDURE sp_RecordPayment
-    @ContractId     NVARCHAR(20),
+    @ContractId     NVARCHAR(MAX),
     @InstallmentNo  INT,
     @PaidAmount     DECIMAL(18,2),
     @PaidDate       DATE,
     @PaymentModeId  INT          = NULL,
-    @PaymentMode    NVARCHAR(50) = '',
-    @ChequeNumber   NVARCHAR(50) = '',
-    @ClearanceDate  NVARCHAR(50) = '',
-    @Description    NVARCHAR(500)= '',
-    @ReceivedBy     NVARCHAR(200)= '',
-    @ReceivedContact NVARCHAR(20)= '',
+    @PaymentMode    NVARCHAR(MAX) = '',
+    @ChequeNumber   NVARCHAR(MAX) = '',
+    @ClearanceDate  NVARCHAR(MAX) = '',
+    @Description    NVARCHAR(MAX)= '',
+    @ReceivedBy     NVARCHAR(MAX)= '',
+    @ReceivedContact NVARCHAR(MAX)= '',
     @FundPoolId     INT          = NULL,
-    @FundPoolName   NVARCHAR(200)= '',
-    @IssuedBy       NVARCHAR(100)= ''
+    @FundPoolName   NVARCHAR(MAX)= '',
+    @IssuedBy       NVARCHAR(MAX)= ''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -72,7 +72,7 @@ BEGIN
         END
 
         -- â”€â”€ B. Determine new status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        DECLARE @NewStatus NVARCHAR(20) =
+        DECLARE @NewStatus NVARCHAR(MAX) =
             CASE
                 WHEN @PaidAmount >= @Amount THEN 'Paid'
                 WHEN @PaidAmount  > 0       THEN 'Partial'
@@ -105,8 +105,8 @@ BEGIN
 
         -- â”€â”€ E. Create TxnRecord entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         -- Generate TxnId: TXN-YYYYMMDD-XXXXXX
-        DECLARE @TxnId NVARCHAR(20) =
-            'TXN-' + CONVERT(NVARCHAR(8), @PaidDate, 112) + '-' +
+        DECLARE @TxnId NVARCHAR(MAX) =
+            'TXN-' + CONVERT(NVARCHAR(MAX), @PaidDate, 112) + '-' +
             RIGHT('000000' + CAST((SELECT ISNULL(MAX(Id),0)+1 FROM TxnRecords) AS NVARCHAR), 6);
 
         -- Get TenantId, CampId from Contract
@@ -115,7 +115,7 @@ BEGIN
         FROM Contracts WHERE ContractId = @ContractId;
 
         -- AppliedInstallments = the installment number(s) this txn covers
-        DECLARE @AppliedInstallments NVARCHAR(200) = CAST(@InstallmentNo AS NVARCHAR);
+        DECLARE @AppliedInstallments NVARCHAR(MAX) = CAST(@InstallmentNo AS NVARCHAR);
 
         INSERT INTO TxnRecords (
             TxnId, TxnType, ContractId, ContractCode,
@@ -155,7 +155,7 @@ GO
 
 -- â”€â”€ 3. sp_GetPaymentSummary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE OR ALTER PROCEDURE sp_GetPaymentSummary
-    @ContractId NVARCHAR(20)
+    @ContractId NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -166,8 +166,8 @@ BEGIN
         t.Contact                                           AS TenantContact,
         c.CampId,
         ca.Name                                             AS CampName,
-        CONVERT(NVARCHAR(10), c.StartDate, 23)             AS StartDate,
-        CONVERT(NVARCHAR(10), c.EndDate,   23)             AS EndDate,
+        CONVERT(NVARCHAR(MAX), c.StartDate, 23)             AS StartDate,
+        CONVERT(NVARCHAR(MAX), c.EndDate,   23)             AS EndDate,
         c.Months,
         c.ContractTotal,
         c.MonthlyTotal,
@@ -204,7 +204,7 @@ GO
 
 -- â”€â”€ 4. sp_GetPaymentHistory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE OR ALTER PROCEDURE sp_GetPaymentHistory
-    @ContractId NVARCHAR(20)
+    @ContractId NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -242,10 +242,10 @@ GO
 CREATE OR ALTER PROCEDURE sp_GetTxnRecords
     @PageNumber  INT,
     @PageSize    INT,
-    @ContractId  NVARCHAR(20) = NULL,
+    @ContractId  NVARCHAR(MAX) = NULL,
     @TenantId    INT          = NULL,
     @CampId      INT          = NULL,
-    @TxnType     NVARCHAR(5)  = NULL,
+    @TxnType     NVARCHAR(MAX)  = NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -303,9 +303,9 @@ GO
 
 -- â”€â”€ 6. sp_CreateTxnRecord â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE OR ALTER PROCEDURE sp_CreateTxnRecord
-    @TxnType        NVARCHAR(5)   = 'CR',
-    @ContractId     NVARCHAR(20),
-    @ContractCode   NVARCHAR(20)  = '',
+    @TxnType        NVARCHAR(MAX)   = 'CR',
+    @ContractId     NVARCHAR(MAX),
+    @ContractCode   NVARCHAR(MAX)  = '',
     @TenantId       INT           = 0,
     @CampId         INT           = 0,
     @TotalAmount    DECIMAL(18,2) = 0,
@@ -313,19 +313,19 @@ CREATE OR ALTER PROCEDURE sp_CreateTxnRecord
     @TxnDate        DATE,
     @FromDate       DATE          = NULL,
     @ToDate         DATE          = NULL,
-    @PaymentMode    NVARCHAR(50)  = '',
+    @PaymentMode    NVARCHAR(MAX)  = '',
     @PaymentModeId  INT           = NULL,
     @FundPoolId     INT           = NULL,
-    @FundPoolName   NVARCHAR(200) = '',
-    @Description    NVARCHAR(500) = '',
-    @ReceivedBy     NVARCHAR(200) = '',
+    @FundPoolName   NVARCHAR(MAX) = '',
+    @Description    NVARCHAR(MAX) = '',
+    @ReceivedBy     NVARCHAR(MAX) = '',
     @InstallmentNo  INT           = NULL,
     @NewId          INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @TxnId NVARCHAR(20) =
-        'TXN-' + CONVERT(NVARCHAR(8), @TxnDate, 112) + '-' +
+    DECLARE @TxnId NVARCHAR(MAX) =
+        'TXN-' + CONVERT(NVARCHAR(MAX), @TxnDate, 112) + '-' +
         RIGHT('000000' + CAST((SELECT ISNULL(MAX(Id),0)+1 FROM TxnRecords) AS NVARCHAR), 6);
 
     INSERT INTO TxnRecords (
@@ -361,12 +361,12 @@ CREATE OR ALTER PROCEDURE sp_UpdateTxnRecord
     @Id             INT,
     @Amount         DECIMAL(18,2),
     @TxnDate        DATE,
-    @PaymentMode    NVARCHAR(50)  = '',
+    @PaymentMode    NVARCHAR(MAX)  = '',
     @PaymentModeId  INT           = NULL,
     @FundPoolId     INT           = NULL,
-    @FundPoolName   NVARCHAR(200) = '',
-    @Description    NVARCHAR(500) = '',
-    @ReceivedBy     NVARCHAR(200) = ''
+    @FundPoolName   NVARCHAR(MAX) = '',
+    @Description    NVARCHAR(MAX) = '',
+    @ReceivedBy     NVARCHAR(MAX) = ''
 AS
 BEGIN
     SET NOCOUNT ON;

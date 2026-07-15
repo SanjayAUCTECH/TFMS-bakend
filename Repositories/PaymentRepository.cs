@@ -94,38 +94,54 @@ public class PaymentRepository : IPaymentRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_GetPaymentSummary", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@ContractId", contractId);
-        await using var r = await cmd.ExecuteReaderAsync();
-        if (!await r.ReadAsync()) return null;
-        var total = r.IsDBNull(r.GetOrdinal("ContractTotal")) ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("ContractTotal")));
-        var paid  = r.IsDBNull(r.GetOrdinal("TotalPaid"))     ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalPaid")));
-        return new PaymentSummaryResponse
+
+        PaymentSummaryResponse? summary = null;
+
+        await using (var r = await cmd.ExecuteReaderAsync())
         {
-            ContractId        = r.GetString(r.GetOrdinal("ContractId")),
-            TenantId          = r.GetInt32(r.GetOrdinal("TenantId")),
-            TenantName        = r.IsDBNull(r.GetOrdinal("TenantName"))    ? "" : r.GetString(r.GetOrdinal("TenantName")),
-            TenantContact     = r.IsDBNull(r.GetOrdinal("TenantContact")) ? "" : r.GetString(r.GetOrdinal("TenantContact")),
-            CampId            = r.GetInt32(r.GetOrdinal("CampId")),
-            CampName          = r.IsDBNull(r.GetOrdinal("CampName"))      ? "" : r.GetString(r.GetOrdinal("CampName")),
-            StartDate         = r.IsDBNull(r.GetOrdinal("StartDate")) ? "" : r.GetString(r.GetOrdinal("StartDate")),
-            EndDate           = r.IsDBNull(r.GetOrdinal("EndDate"))   ? "" : r.GetString(r.GetOrdinal("EndDate")),
-            Months            = r.GetInt32(r.GetOrdinal("Months")),
-            ContractTotal     = total,
-            MonthlyTotal      = r.IsDBNull(r.GetOrdinal("MonthlyTotal"))     ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("MonthlyTotal"))),
-            LessorAmount      = r.IsDBNull(r.GetOrdinal("LessorAmount"))     ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("LessorAmount"))),
-            Status            = r.GetString(r.GetOrdinal("Status")),
-            TotalInstallments = r.IsDBNull(r.GetOrdinal("TotalInstallments")) ? 0 : r.GetInt32(r.GetOrdinal("TotalInstallments")),
-            PaidCount         = r.IsDBNull(r.GetOrdinal("PaidCount"))         ? 0 : r.GetInt32(r.GetOrdinal("PaidCount")),
-            PendingCount      = r.IsDBNull(r.GetOrdinal("PendingCount"))      ? 0 : r.GetInt32(r.GetOrdinal("PendingCount")),
-            PartialCount      = r.IsDBNull(r.GetOrdinal("PartialCount"))      ? 0 : r.GetInt32(r.GetOrdinal("PartialCount")),
-            TotalPaid         = paid,
-            TotalDue          = r.IsDBNull(r.GetOrdinal("TotalDue"))          ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalDue"))),
-            TotalScheduled    = r.IsDBNull(r.GetOrdinal("TotalScheduled"))    ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalScheduled"))),
-            NextInstallmentDue= r.IsDBNull(r.GetOrdinal("NextInstallmentDue"))? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("NextInstallmentDue"))),
-            NextInstallmentNo = r.IsDBNull(r.GetOrdinal("NextInstallmentNo")) ? null : r.GetInt32(r.GetOrdinal("NextInstallmentNo")),
-            RoomNos           = r.IsDBNull(r.GetOrdinal("RoomNos"))           ? "" : r.GetString(r.GetOrdinal("RoomNos")),
-            RoomCount         = r.IsDBNull(r.GetOrdinal("RoomCount"))         ? 0  : r.GetInt32(r.GetOrdinal("RoomCount")),
-            CollectionPct     = total > 0 ? Math.Round(paid / total * 100, 1) : 0,
-        };
+            if (!await r.ReadAsync()) return null;
+            var total = r.IsDBNull(r.GetOrdinal("ContractTotal")) ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("ContractTotal")));
+            var paid  = r.IsDBNull(r.GetOrdinal("TotalPaid"))     ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalPaid")));
+            summary = new PaymentSummaryResponse
+            {
+                ContractId        = r.GetString(r.GetOrdinal("ContractId")),
+                TenantId          = r.GetInt32(r.GetOrdinal("TenantId")),
+                TenantName        = r.IsDBNull(r.GetOrdinal("TenantName"))    ? "" : r.GetString(r.GetOrdinal("TenantName")),
+                TenantContact     = r.IsDBNull(r.GetOrdinal("TenantContact")) ? "" : r.GetString(r.GetOrdinal("TenantContact")),
+                CampId            = r.GetInt32(r.GetOrdinal("CampId")),
+                CampName          = r.IsDBNull(r.GetOrdinal("CampName"))      ? "" : r.GetString(r.GetOrdinal("CampName")),
+                StartDate         = r.IsDBNull(r.GetOrdinal("StartDate")) ? "" : r.GetString(r.GetOrdinal("StartDate")),
+                EndDate           = r.IsDBNull(r.GetOrdinal("EndDate"))   ? "" : r.GetString(r.GetOrdinal("EndDate")),
+                Months            = r.GetInt32(r.GetOrdinal("Months")),
+                ContractTotal     = total,
+                MonthlyTotal      = r.IsDBNull(r.GetOrdinal("MonthlyTotal"))     ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("MonthlyTotal"))),
+                LessorAmount      = r.IsDBNull(r.GetOrdinal("LessorAmount"))     ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("LessorAmount"))),
+                Status            = r.GetString(r.GetOrdinal("Status")),
+                TotalInstallments = r.IsDBNull(r.GetOrdinal("TotalInstallments")) ? 0 : r.GetInt32(r.GetOrdinal("TotalInstallments")),
+                PaidCount         = r.IsDBNull(r.GetOrdinal("PaidCount"))         ? 0 : r.GetInt32(r.GetOrdinal("PaidCount")),
+                PendingCount      = r.IsDBNull(r.GetOrdinal("PendingCount"))      ? 0 : r.GetInt32(r.GetOrdinal("PendingCount")),
+                PartialCount      = r.IsDBNull(r.GetOrdinal("PartialCount"))      ? 0 : r.GetInt32(r.GetOrdinal("PartialCount")),
+                TotalPaid         = paid,
+                TotalDue          = r.IsDBNull(r.GetOrdinal("TotalDue"))          ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalDue"))),
+                TotalScheduled    = r.IsDBNull(r.GetOrdinal("TotalScheduled"))    ? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("TotalScheduled"))),
+                NextInstallmentDue= r.IsDBNull(r.GetOrdinal("NextInstallmentDue"))? 0 : Convert.ToDecimal(r.GetValue(r.GetOrdinal("NextInstallmentDue"))),
+                NextInstallmentNo = r.IsDBNull(r.GetOrdinal("NextInstallmentNo")) ? null : r.GetInt32(r.GetOrdinal("NextInstallmentNo")),
+                RoomNos           = r.IsDBNull(r.GetOrdinal("RoomNos"))           ? "" : r.GetString(r.GetOrdinal("RoomNos")),
+                RoomCount         = r.IsDBNull(r.GetOrdinal("RoomCount"))         ? 0  : r.GetInt32(r.GetOrdinal("RoomCount")),
+                CollectionPct     = total > 0 ? Math.Round(paid / total * 100, 1) : 0,
+            };
+        }   // reader closed here
+
+        // Load CampIds array from ContractCamps
+        await using var campCmd = new SqlCommand(
+            "SELECT CampId FROM ContractCamps WHERE ContractId = @ContractId ORDER BY Id", conn);
+        campCmd.Parameters.AddWithValue("@ContractId", contractId);
+        await using var campRdr = await campCmd.ExecuteReaderAsync();
+        var campIds = new List<int>();
+        while (await campRdr.ReadAsync()) campIds.Add(campRdr.GetInt32(0));
+        summary.CampIds = campIds;
+
+        return summary;
     }
 
     public async Task<IEnumerable<PaymentHistoryResponse>> GetHistoryAsync(string contractId)

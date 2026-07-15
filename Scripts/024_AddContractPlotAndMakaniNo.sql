@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- Script 024: Add ContractPlotNo & ContractMakaniNo columns
 --             + Fix all 3 GET SPs + Update CREATE/UPDATE SPs
 -- ============================================================
@@ -11,7 +11,7 @@ IF NOT EXISTS (
     WHERE TABLE_NAME = 'Contracts' AND COLUMN_NAME = 'ContractPlotNo'
 )
 BEGIN
-    ALTER TABLE Contracts ADD ContractPlotNo NVARCHAR(100) NOT NULL DEFAULT '';
+    ALTER TABLE Contracts ADD ContractPlotNo NVARCHAR(MAX) NOT NULL DEFAULT '';
     PRINT 'Column ContractPlotNo added.';
 END
 ELSE
@@ -22,7 +22,7 @@ IF NOT EXISTS (
     WHERE TABLE_NAME = 'Contracts' AND COLUMN_NAME = 'ContractMakaniNo'
 )
 BEGIN
-    ALTER TABLE Contracts ADD ContractMakaniNo NVARCHAR(100) NOT NULL DEFAULT '';
+    ALTER TABLE Contracts ADD ContractMakaniNo NVARCHAR(MAX) NOT NULL DEFAULT '';
     PRINT 'Column ContractMakaniNo added.';
 END
 ELSE
@@ -33,14 +33,14 @@ GO
 CREATE OR ALTER PROCEDURE sp_GetContracts
     @PageNumber    INT,
     @PageSize      INT,
-    @SearchText    NVARCHAR(200) = NULL,
-    @SortBy        NVARCHAR(50)  = NULL,
-    @SortDirection NVARCHAR(4)   = 'ASC',
-    @Status        NVARCHAR(20)  = NULL,
+    @SearchText    NVARCHAR(MAX) = NULL,
+    @SortBy        NVARCHAR(MAX)  = NULL,
+    @SortDirection NVARCHAR(MAX)   = 'ASC',
+    @Status        NVARCHAR(MAX)  = NULL,
     @TenantId      INT           = NULL,
     @CampId        INT           = NULL,
-    @DateFrom      NVARCHAR(20)  = NULL,
-    @DateTo        NVARCHAR(20)  = NULL,
+    @DateFrom      NVARCHAR(MAX)  = NULL,
+    @DateTo        NVARCHAR(MAX)  = NULL,
     @TotalRecords  INT OUTPUT
 AS
 BEGIN
@@ -165,7 +165,7 @@ GO
 
 -- ── Step 4: Fix sp_GetContractByContractId ────────────────────
 CREATE OR ALTER PROCEDURE sp_GetContractByContractId
-    @ContractId NVARCHAR(20)
+    @ContractId NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -229,23 +229,23 @@ CREATE OR ALTER PROCEDURE sp_CreateContract
     @Months                INT,
     @RoomIdsJson           NVARCHAR(MAX),
     @SecurityDeposit       DECIMAL(18,2) = 0,
-    @InstallmentType       NVARCHAR(20)  = 'monthly',
-    @IssuedBy              NVARCHAR(100) = '',
+    @InstallmentType       NVARCHAR(MAX)  = 'monthly',
+    @IssuedBy              NVARCHAR(MAX) = '',
     @Notes                 NVARCHAR(MAX) = '',
     @LessorAmount          DECIMAL(18,2) = 0,
     @MonthlyTotal          DECIMAL(18,2) = NULL,
     @ContractTotal         DECIMAL(18,2) = NULL,
-    @ContractPropertyUsage NVARCHAR(200) = '',
-    @ContractBuildingName  NVARCHAR(200) = '',
-    @ContractPropertyType  NVARCHAR(100) = '',
-    @ContractLocation      NVARCHAR(200) = '',
-    @ContractPropertyNo    NVARCHAR(100) = '',
-    @ContractPropertyArea  NVARCHAR(100) = '',
-    @ContractPremisesNo    NVARCHAR(100) = '',
-    @ContractPaymentMode   NVARCHAR(100) = '',
-    @ContractPlotNo        NVARCHAR(100) = '',
-    @ContractMakaniNo      NVARCHAR(100) = '',
-    @NewContractId         NVARCHAR(20)  OUTPUT
+    @ContractPropertyUsage NVARCHAR(MAX) = '',
+    @ContractBuildingName  NVARCHAR(MAX) = '',
+    @ContractPropertyType  NVARCHAR(MAX) = '',
+    @ContractLocation      NVARCHAR(MAX) = '',
+    @ContractPropertyNo    NVARCHAR(MAX) = '',
+    @ContractPropertyArea  NVARCHAR(MAX) = '',
+    @ContractPremisesNo    NVARCHAR(MAX) = '',
+    @ContractPaymentMode   NVARCHAR(MAX) = '',
+    @ContractPlotNo        NVARCHAR(MAX) = '',
+    @ContractMakaniNo      NVARCHAR(MAX) = '',
+    @NewContractId         NVARCHAR(MAX)  OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -305,7 +305,7 @@ GO
 
 -- ── Step 6: Recreate sp_UpdateContract with all columns ───────
 CREATE OR ALTER PROCEDURE sp_UpdateContract
-    @ContractId            NVARCHAR(20),
+    @ContractId            NVARCHAR(MAX),
     @TenantId              INT           = NULL,
     @StartDate             DATE          = NULL,
     @Months                INT           = NULL,
@@ -314,16 +314,16 @@ CREATE OR ALTER PROCEDURE sp_UpdateContract
     @Notes                 NVARCHAR(MAX) = NULL,
     @MonthlyTotal          DECIMAL(18,2) = NULL,
     @ContractTotal         DECIMAL(18,2) = NULL,
-    @ContractPropertyUsage NVARCHAR(200) = NULL,
-    @ContractBuildingName  NVARCHAR(200) = NULL,
-    @ContractPropertyType  NVARCHAR(100) = NULL,
-    @ContractLocation      NVARCHAR(200) = NULL,
-    @ContractPropertyNo    NVARCHAR(100) = NULL,
-    @ContractPropertyArea  NVARCHAR(100) = NULL,
-    @ContractPremisesNo    NVARCHAR(100) = NULL,
-    @ContractPaymentMode   NVARCHAR(100) = NULL,
-    @ContractPlotNo        NVARCHAR(100) = NULL,
-    @ContractMakaniNo      NVARCHAR(100) = NULL
+    @ContractPropertyUsage NVARCHAR(MAX) = NULL,
+    @ContractBuildingName  NVARCHAR(MAX) = NULL,
+    @ContractPropertyType  NVARCHAR(MAX) = NULL,
+    @ContractLocation      NVARCHAR(MAX) = NULL,
+    @ContractPropertyNo    NVARCHAR(MAX) = NULL,
+    @ContractPropertyArea  NVARCHAR(MAX) = NULL,
+    @ContractPremisesNo    NVARCHAR(MAX) = NULL,
+    @ContractPaymentMode   NVARCHAR(MAX) = NULL,
+    @ContractPlotNo        NVARCHAR(MAX) = NULL,
+    @ContractMakaniNo      NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;

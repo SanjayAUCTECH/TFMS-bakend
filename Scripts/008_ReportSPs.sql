@@ -1,10 +1,10 @@
-USE TFMS_softwareDB;
+﻿USE TFMS_softwareDB;
 GO
 
 -- ── INVENTORY REPORT ─────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetInventoryReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @Status NVARCHAR(30)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -32,8 +32,8 @@ GO
 
 -- ── TENANT REPORT ────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetTenantReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @Status NVARCHAR(20)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -65,8 +65,8 @@ GO
 
 -- ── PARTNER REPORT ────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetPartnerReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @Status NVARCHAR(20)=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -93,8 +93,8 @@ GO
 
 -- ── CAMP REPORT ───────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetCampReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @Status NVARCHAR(20)=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -123,8 +123,8 @@ GO
 
 -- ── WAIVER REPORT ─────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetWaiverReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @TenantId INT=NULL, @DateFrom NVARCHAR(20)=NULL, @DateTo NVARCHAR(20)=NULL,
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @TenantId INT=NULL, @DateFrom NVARCHAR(MAX)=NULL, @DateTo NVARCHAR(MAX)=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -150,8 +150,8 @@ GO
 
 -- ── TENANT LEDGER ─────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetTenantLedger
-    @TenantId INT, @ContractId NVARCHAR(20)=NULL,
-    @DateFrom NVARCHAR(20)=NULL, @DateTo NVARCHAR(20)=NULL
+    @TenantId INT, @ContractId NVARCHAR(MAX)=NULL,
+    @DateFrom NVARCHAR(MAX)=NULL, @DateTo NVARCHAR(MAX)=NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -188,10 +188,10 @@ GO
 
 -- ── TRANSACTION STATEMENT ─────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetTransactionStatement
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @ContractId NVARCHAR(20)=NULL, @TenantId INT=NULL, @CampId INT=NULL,
-    @Status NVARCHAR(20)=NULL, @DateFrom NVARCHAR(20)=NULL, @DateTo NVARCHAR(20)=NULL,
-    @Month NVARCHAR(20)=NULL, @Year NVARCHAR(6)=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @ContractId NVARCHAR(MAX)=NULL, @TenantId INT=NULL, @CampId INT=NULL,
+    @Status NVARCHAR(MAX)=NULL, @DateFrom NVARCHAR(MAX)=NULL, @DateTo NVARCHAR(MAX)=NULL,
+    @Month NVARCHAR(MAX)=NULL, @Year NVARCHAR(MAX)=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -250,37 +250,37 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name='OutgoingPayments')
 CREATE TABLE OutgoingPayments (
     Id            INT IDENTITY(1,1) PRIMARY KEY,
-    PaymentCode   NVARCHAR(20)  NOT NULL UNIQUE,
-    PaymentType   NVARCHAR(30)  NOT NULL DEFAULT '',
+    PaymentCode   NVARCHAR(MAX)  NOT NULL UNIQUE,
+    PaymentType   NVARCHAR(MAX)  NOT NULL DEFAULT '',
     RecipientId   INT           NULL,
-    RecipientName NVARCHAR(200) NOT NULL DEFAULT '',
+    RecipientName NVARCHAR(MAX) NOT NULL DEFAULT '',
     Amount        DECIMAL(18,2) NOT NULL DEFAULT 0,
     PaymentDate   DATE          NOT NULL,
     PaymentModeId INT           NULL,
-    PaymentMode   NVARCHAR(50)  NOT NULL DEFAULT '',
-    Description   NVARCHAR(500) NOT NULL DEFAULT '',
+    PaymentMode   NVARCHAR(MAX)  NOT NULL DEFAULT '',
+    Description   NVARCHAR(MAX) NOT NULL DEFAULT '',
     FundPoolId    INT           NULL,
-    FundPoolName  NVARCHAR(200) NOT NULL DEFAULT '',
-    Reference     NVARCHAR(100) NOT NULL DEFAULT '',
+    FundPoolName  NVARCHAR(MAX) NOT NULL DEFAULT '',
+    Reference     NVARCHAR(MAX) NOT NULL DEFAULT '',
     CampId        INT           NULL,
-    AccountHeadId NVARCHAR(20)  NOT NULL DEFAULT '',
+    AccountHeadId NVARCHAR(MAX)  NOT NULL DEFAULT '',
     CreatedAt     DATETIME2     NOT NULL DEFAULT GETUTCDATE(),
     UpdatedAt     DATETIME2     NOT NULL DEFAULT GETUTCDATE()
 );
 GO
 
 CREATE OR ALTER PROCEDURE sp_MakePayment
-    @PaymentType NVARCHAR(30), @RecipientId INT=NULL, @RecipientName NVARCHAR(200),
+    @PaymentType NVARCHAR(MAX), @RecipientId INT=NULL, @RecipientName NVARCHAR(MAX),
     @Amount DECIMAL(18,2), @PaymentDate DATE,
-    @PaymentModeId INT=NULL, @PaymentMode NVARCHAR(50),
-    @Description NVARCHAR(500), @FundPoolId INT=NULL,
-    @Reference NVARCHAR(100), @CampId INT=NULL, @AccountHeadId NVARCHAR(20)=NULL,
+    @PaymentModeId INT=NULL, @PaymentMode NVARCHAR(MAX),
+    @Description NVARCHAR(MAX), @FundPoolId INT=NULL,
+    @Reference NVARCHAR(MAX), @CampId INT=NULL, @AccountHeadId NVARCHAR(MAX)=NULL,
     @NewId INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @PaymentCode NVARCHAR(20)='OUT-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OutgoingPayments) AS NVARCHAR),6);
-    DECLARE @FundPoolName NVARCHAR(200)=ISNULL((SELECT Name FROM FundPools WHERE Id=@FundPoolId),'');
+    DECLARE @PaymentCode NVARCHAR(MAX)='OUT-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OutgoingPayments) AS NVARCHAR),6);
+    DECLARE @FundPoolName NVARCHAR(MAX)=ISNULL((SELECT Name FROM FundPools WHERE Id=@FundPoolId),'');
     INSERT INTO OutgoingPayments(PaymentCode,PaymentType,RecipientId,RecipientName,Amount,PaymentDate,PaymentModeId,PaymentMode,Description,FundPoolId,FundPoolName,Reference,CampId,AccountHeadId,CreatedAt,UpdatedAt)
     VALUES(@PaymentCode,@PaymentType,@RecipientId,@RecipientName,@Amount,@PaymentDate,@PaymentModeId,@PaymentMode,@Description,@FundPoolId,@FundPoolName,@Reference,@CampId,ISNULL(@AccountHeadId,''),GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
@@ -290,8 +290,8 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_GetOutgoingPayments
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @DateFrom NVARCHAR(20)=NULL, @DateTo NVARCHAR(20)=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @DateFrom NVARCHAR(MAX)=NULL, @DateTo NVARCHAR(MAX)=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;

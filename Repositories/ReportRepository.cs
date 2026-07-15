@@ -327,14 +327,12 @@ public class ReportRepository : IReportRepository
         // Build WHERE conditions
         var where = new List<string> { "ci.Status IN ('Pending','Partial')" };
         if (r.TenantId.HasValue) where.Add("ct.TenantId=@TenantId");
-        if (r.CampId.HasValue)   where.Add("ct.CampId=@CampId");
+        if (r.CampId.HasValue)   where.Add("ct.Id IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
         if (!string.IsNullOrEmpty(r.Month))
         {
             var parts = r.Month.Split('-');
             if (parts.Length == 2)
-            {
                 where.Add("FORMAT(ci.DueDate,'yyyy-MM')=@Month");
-            }
         }
         var whereClause = "WHERE " + string.Join(" AND ", where);
 
@@ -347,13 +345,12 @@ public class ReportRepository : IReportRepository
                 ISNULL(ci.PaymentMode,'')  PaymentMode,
                 ISNULL(t.Name,'')          TenantName,
                 ct.TenantId,
-                ISNULL(ca.Name,'')         CampName,
+                ISNULL((SELECT TOP 1 ca2.Name FROM ContractCamps cc2 JOIN Camps ca2 ON ca2.Id=cc2.CampId WHERE cc2.ContractId=ct.ContractId ORDER BY cc2.Id),'') CampName,
                 ISNULL(rm.RoomNo,'')       RoomNo,
                 CASE WHEN ci.DueDate < GETDATE() THEN 'Overdue' ELSE 'Pending' END DueStatus
             FROM ContractInstallments ci
             JOIN Contracts ct ON ct.ContractId=ci.ContractId
             LEFT JOIN Tenants t  ON t.Id=ct.TenantId
-            LEFT JOIN Camps ca   ON ca.Id=ct.CampId
             LEFT JOIN ContractRooms cr ON cr.ContractId=ci.ContractId
             LEFT JOIN Rooms rm   ON rm.Id=cr.RoomId
             {whereClause}

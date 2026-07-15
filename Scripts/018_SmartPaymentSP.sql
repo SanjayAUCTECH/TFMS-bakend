@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- TFMS — Script 018: Smart sp_RecordPayment
 -- Auto-distributes payment across pending installments in order.
 -- InstallmentNo = 0  → auto-distribute
@@ -9,20 +9,20 @@ USE TFMS_softwareDB;
 GO
 
 CREATE OR ALTER PROCEDURE sp_RecordPayment
-    @ContractId      NVARCHAR(20),
+    @ContractId      NVARCHAR(MAX),
     @InstallmentNo   INT           = 0,      -- 0 = auto (start from first pending)
     @PaidAmount      DECIMAL(18,2),
     @PaidDate        DATE,
     @PaymentModeId   INT           = NULL,
-    @PaymentMode     NVARCHAR(50)  = '',
-    @ChequeNumber    NVARCHAR(50)  = '',
-    @ClearanceDate   NVARCHAR(50)  = '',
-    @Description     NVARCHAR(500) = '',
-    @ReceivedBy      NVARCHAR(200) = '',
-    @ReceivedContact NVARCHAR(20)  = '',
+    @PaymentMode     NVARCHAR(MAX)  = '',
+    @ChequeNumber    NVARCHAR(MAX)  = '',
+    @ClearanceDate   NVARCHAR(MAX)  = '',
+    @Description     NVARCHAR(MAX) = '',
+    @ReceivedBy      NVARCHAR(MAX) = '',
+    @ReceivedContact NVARCHAR(MAX)  = '',
     @FundPoolId      INT           = NULL,
-    @FundPoolName    NVARCHAR(200) = '',
-    @IssuedBy        NVARCHAR(100) = ''
+    @FundPoolName    NVARCHAR(MAX) = '',
+    @IssuedBy        NVARCHAR(MAX) = ''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -68,14 +68,14 @@ BEGIN
 
         -- ── Distribute payment across installments ───────────────────
         DECLARE @Remaining       DECIMAL(18,2) = @PaidAmount;
-        DECLARE @AppliedList     NVARCHAR(200) = '';
+        DECLARE @AppliedList     NVARCHAR(MAX) = '';
         DECLARE @CurrentInstNo   INT;
         DECLARE @CurrentAmount   DECIMAL(18,2);
         DECLARE @CurrentPaid     DECIMAL(18,2);
         DECLARE @CurrentDue      DECIMAL(18,2);
         DECLARE @ToApply         DECIMAL(18,2);
         DECLARE @NewPaid         DECIMAL(18,2);
-        DECLARE @NewStatus       NVARCHAR(20);
+        DECLARE @NewStatus       NVARCHAR(MAX);
 
         DECLARE inst_cursor CURSOR LOCAL FAST_FORWARD FOR
             SELECT InstallmentNo, Amount, PaidAmount, Due
@@ -136,8 +136,8 @@ BEGIN
             WHERE Id = @FundPoolId;
 
         -- ── Create ONE TxnRecord for entire payment ───────────────────
-        DECLARE @TxnId NVARCHAR(20) =
-            'TXN-' + CONVERT(NVARCHAR(8), @PaidDate, 112) + '-' +
+        DECLARE @TxnId NVARCHAR(MAX) =
+            'TXN-' + CONVERT(NVARCHAR(MAX), @PaidDate, 112) + '-' +
             RIGHT('000000' + CAST((SELECT ISNULL(MAX(Id), 0) + 1 FROM TxnRecords) AS NVARCHAR), 6);
 
         -- Unallocated = excess payment beyond all installments

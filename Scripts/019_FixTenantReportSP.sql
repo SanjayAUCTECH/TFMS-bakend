@@ -1,9 +1,9 @@
-USE TFMS_softwareDB;
+﻿USE TFMS_softwareDB;
 GO
 
 CREATE OR ALTER PROCEDURE sp_GetTenantReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @Status NVARCHAR(20)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;

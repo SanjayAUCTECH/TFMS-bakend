@@ -1,11 +1,11 @@
--- ============================================================
+﻿-- ============================================================
 -- 016_UpdateReportSPs.sql — Update all report SPs for full UI column support
 -- ============================================================
 
 -- ── TENANT REPORT ──────────────────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetTenantReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @Status NVARCHAR(20)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @CampId INT=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -48,8 +48,8 @@ GO
 
 -- ── PARTNER REPORT ─────────────────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetPartnerReport
-    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(200)=NULL,
-    @Status NVARCHAR(20)=NULL, @TotalRecords INT OUTPUT
+    @PageNumber INT, @PageSize INT, @SearchText NVARCHAR(MAX)=NULL,
+    @Status NVARCHAR(MAX)=NULL, @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -93,10 +93,10 @@ GO
 -- ── TRANSACTION STATEMENT ─────────────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_GetTransactionStatement
     @PageNumber INT, @PageSize INT,
-    @SearchText NVARCHAR(200)=NULL, @ContractId NVARCHAR(50)=NULL,
-    @TenantId INT=NULL, @CampId INT=NULL, @Status NVARCHAR(20)=NULL,
+    @SearchText NVARCHAR(MAX)=NULL, @ContractId NVARCHAR(MAX)=NULL,
+    @TenantId INT=NULL, @CampId INT=NULL, @Status NVARCHAR(MAX)=NULL,
     @DateFrom DATE=NULL, @DateTo DATE=NULL,
-    @Month NVARCHAR(7)=NULL, @Year NVARCHAR(4)=NULL,
+    @Month NVARCHAR(MAX)=NULL, @Year NVARCHAR(MAX)=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
@@ -159,7 +159,7 @@ GO
 CREATE OR ALTER PROCEDURE sp_GetDueReport
     @PageNumber INT=1, @PageSize INT=2147483647,
     @TenantId INT=NULL, @CampId INT=NULL,
-    @Month NVARCHAR(7)=NULL, @Status NVARCHAR(20)=NULL,
+    @Month NVARCHAR(MAX)=NULL, @Status NVARCHAR(MAX)=NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN

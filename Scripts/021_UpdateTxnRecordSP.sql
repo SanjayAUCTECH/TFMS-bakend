@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- TFMS Script 021 — sp_UpdateTxnRecord (smart edit)
 -- On edit: reverts old installment payments, re-distributes
 -- new amount across same installments, updates FundPool balance
@@ -10,12 +10,12 @@ CREATE OR ALTER PROCEDURE sp_UpdateTxnRecord
     @Id             INT,
     @Amount         DECIMAL(18,2),
     @TxnDate        DATE,
-    @PaymentMode    NVARCHAR(50)  = '',
+    @PaymentMode    NVARCHAR(MAX)  = '',
     @PaymentModeId  INT           = NULL,
     @FundPoolId     INT           = NULL,
-    @FundPoolName   NVARCHAR(200) = '',
-    @Description    NVARCHAR(500) = '',
-    @ReceivedBy     NVARCHAR(200) = ''
+    @FundPoolName   NVARCHAR(MAX) = '',
+    @Description    NVARCHAR(MAX) = '',
+    @ReceivedBy     NVARCHAR(MAX) = ''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -23,10 +23,10 @@ BEGIN
         BEGIN TRANSACTION;
 
         -- ── 1. Get existing TxnRecord ────────────────────────────────────
-        DECLARE @ContractId         NVARCHAR(20),
+        DECLARE @ContractId         NVARCHAR(MAX),
                 @OldAmount          DECIMAL(18,2),
                 @OldFundPoolId      INT,
-                @AppliedInstallments NVARCHAR(200);
+                @AppliedInstallments NVARCHAR(MAX);
 
         SELECT  @ContractId          = ContractId,
                 @OldAmount           = Amount,
@@ -95,7 +95,7 @@ BEGIN
             -- ── 6. Re-distribute new amount across same installments ─────
             DECLARE @Remaining DECIMAL(18,2) = @Amount;
             DECLARE @InstNo    INT, @InstAmt DECIMAL(18,2), @InstPaid DECIMAL(18,2), @InstDue DECIMAL(18,2);
-            DECLARE @ToApply   DECIMAL(18,2), @NewPaid DECIMAL(18,2), @NewStatus NVARCHAR(20);
+            DECLARE @ToApply   DECIMAL(18,2), @NewPaid DECIMAL(18,2), @NewStatus NVARCHAR(MAX);
 
             DECLARE inst_cur CURSOR LOCAL FAST_FORWARD FOR
                 SELECT ci.InstallmentNo, ci.Amount, ci.PaidAmount

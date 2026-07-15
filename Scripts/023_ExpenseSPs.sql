@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- TFMS Script 023 — Expense SPs: Create / Update / Delete
 -- Rules:
 --   RecipientRole = 'Owner'  → OwnerTransactions CR entry
@@ -11,15 +11,15 @@ GO
 -- ── sp_CreateExpense ─────────────────────────────────────────
 CREATE OR ALTER PROCEDURE sp_CreateExpense
     @Date          DATE,
-    @Mode          NVARCHAR(50),
-    @Head          NVARCHAR(200),
-    @FundPool      NVARCHAR(20),
+    @Mode          NVARCHAR(MAX),
+    @Head          NVARCHAR(MAX),
+    @FundPool      NVARCHAR(MAX),
     @Amount        DECIMAL(18,2),
-    @Nature        NVARCHAR(30),
+    @Nature        NVARCHAR(MAX),
     @CampId        INT           = NULL,
-    @RecipientRole NVARCHAR(30),
-    @RecipientName NVARCHAR(200),
-    @Purpose       NVARCHAR(500),
+    @RecipientRole NVARCHAR(MAX),
+    @RecipientName NVARCHAR(MAX),
+    @Purpose       NVARCHAR(MAX),
     @NewId         INT OUTPUT
 AS
 BEGIN
@@ -27,9 +27,9 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        DECLARE @ExpenseId   NVARCHAR(20) = 'EXP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Expenses) AS NVARCHAR),6);
-        DECLARE @FundPoolName NVARCHAR(200) = (SELECT Name FROM FundPools WHERE Code=@FundPool);
-        DECLARE @CampName    NVARCHAR(200) = ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
+        DECLARE @ExpenseId   NVARCHAR(MAX) = 'EXP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Expenses) AS NVARCHAR),6);
+        DECLARE @FundPoolName NVARCHAR(MAX) = (SELECT Name FROM FundPools WHERE Code=@FundPool);
+        DECLARE @CampName    NVARCHAR(MAX) = ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
 
         INSERT INTO Expenses(ExpenseId,Date,Mode,Head,FundPool,FundPoolName,Amount,Nature,
             CampId,CampName,RecipientRole,RecipientName,Purpose,CreatedAt,UpdatedAt)
@@ -48,8 +48,8 @@ BEGIN
             IF @OwnerId IS NOT NULL
             BEGIN
                 DECLARE @OcId   INT          = (SELECT TOP 1 Id   FROM OwnerContracts WHERE OwnerId=@OwnerId AND (@CampId IS NULL OR CampId=@CampId) ORDER BY CreatedAt DESC);
-                DECLARE @OcCode NVARCHAR(20) = (SELECT OcCode FROM OwnerContracts WHERE Id=@OcId);
-                DECLARE @OtCode NVARCHAR(20) = 'OT-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OwnerTransactions) AS NVARCHAR),6);
+                DECLARE @OcCode NVARCHAR(MAX) = (SELECT OcCode FROM OwnerContracts WHERE Id=@OcId);
+                DECLARE @OtCode NVARCHAR(MAX) = 'OT-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OwnerTransactions) AS NVARCHAR),6);
 
                 INSERT INTO OwnerTransactions(TxnCode,OwnerContractId,OcCode,CampId,CampName,OwnerId,OwnerName,Type,Amount,Date,Description,ExpenseId,CreatedAt)
                 VALUES(@OtCode,@OcId,@OcCode,@CampId,@CampName,@OwnerId,@RecipientName,'CR',@Amount,@Date,'Payment via expense - '+@ExpenseId,@NewId,GETUTCDATE());
@@ -67,14 +67,14 @@ BEGIN
         IF @RecipientRole = 'Tenant'
         BEGIN
             DECLARE @TenantId  INT = (SELECT TOP 1 Id FROM Tenants WHERE Name=@RecipientName);
-            DECLARE @ContractId NVARCHAR(20) = NULL;
+            DECLARE @ContractId NVARCHAR(MAX) = NULL;
             IF @TenantId IS NOT NULL
                 SELECT TOP 1 @ContractId=ContractId FROM Contracts
                 WHERE TenantId=@TenantId AND Status='Active'
                   AND (@CampId IS NULL OR CampId=@CampId)
                 ORDER BY CreatedAt DESC;
 
-            DECLARE @TxnId NVARCHAR(20) = 'TXN-'+CONVERT(NVARCHAR(8),@Date,112)+'-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM TxnRecords) AS NVARCHAR),6);
+            DECLARE @TxnId NVARCHAR(MAX) = 'TXN-'+CONVERT(NVARCHAR(MAX),@Date,112)+'-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM TxnRecords) AS NVARCHAR),6);
             DECLARE @TcId INT = ISNULL(@CampId, 0);
 
             INSERT INTO TxnRecords(TxnId,TxnType,ContractId,ContractCode,TenantId,CampId,
@@ -102,15 +102,15 @@ GO
 CREATE OR ALTER PROCEDURE sp_UpdateExpense
     @Id            INT,
     @Date          DATE,
-    @Mode          NVARCHAR(50),
-    @Head          NVARCHAR(200),
-    @FundPool      NVARCHAR(20),
+    @Mode          NVARCHAR(MAX),
+    @Head          NVARCHAR(MAX),
+    @FundPool      NVARCHAR(MAX),
     @Amount        DECIMAL(18,2),
-    @Nature        NVARCHAR(30),
+    @Nature        NVARCHAR(MAX),
     @CampId        INT           = NULL,
-    @RecipientRole NVARCHAR(30),
-    @RecipientName NVARCHAR(200),
-    @Purpose       NVARCHAR(500)
+    @RecipientRole NVARCHAR(MAX),
+    @RecipientName NVARCHAR(MAX),
+    @Purpose       NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -119,16 +119,16 @@ BEGIN
 
         -- Get old values
         DECLARE @OldAmount        DECIMAL(18,2);
-        DECLARE @OldFundPool      NVARCHAR(20);
-        DECLARE @OldRecipientRole NVARCHAR(30);
-        DECLARE @OldExpenseId     NVARCHAR(20);
+        DECLARE @OldFundPool      NVARCHAR(MAX);
+        DECLARE @OldRecipientRole NVARCHAR(MAX);
+        DECLARE @OldExpenseId     NVARCHAR(MAX);
 
         SELECT @OldAmount=Amount, @OldFundPool=FundPool,
                @OldRecipientRole=RecipientRole, @OldExpenseId=ExpenseId
         FROM Expenses WHERE Id=@Id;
 
-        DECLARE @NewFundPoolName NVARCHAR(200) = (SELECT Name FROM FundPools WHERE Code=@FundPool);
-        DECLARE @CampName        NVARCHAR(200) = ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
+        DECLARE @NewFundPoolName NVARCHAR(MAX) = (SELECT Name FROM FundPools WHERE Code=@FundPool);
+        DECLARE @CampName        NVARCHAR(MAX) = ISNULL((SELECT Name FROM Camps WHERE Id=@CampId),'');
 
         -- Update Expenses row
         UPDATE Expenses
@@ -176,8 +176,8 @@ BEGIN
         BEGIN TRANSACTION;
 
         DECLARE @Amount      DECIMAL(18,2);
-        DECLARE @FundPool    NVARCHAR(20);
-        DECLARE @ExpenseId   NVARCHAR(20);
+        DECLARE @FundPool    NVARCHAR(MAX);
+        DECLARE @ExpenseId   NVARCHAR(MAX);
 
         SELECT @Amount=Amount, @FundPool=FundPool, @ExpenseId=ExpenseId
         FROM Expenses WHERE Id=@Id;

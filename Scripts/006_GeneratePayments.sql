@@ -1,8 +1,8 @@
-USE TFMS_softwareDB;
+﻿USE TFMS_softwareDB;
 GO
 
 -- Generate installment payments for all contracts
-DECLARE @cid NVARCHAR(20), @months INT, @sd DATE, @monthly DECIMAL(18,2), @rn INT;
+DECLARE @cid NVARCHAR(MAX), @months INT, @sd DATE, @monthly DECIMAL(18,2), @rn INT;
 
 DECLARE cc CURSOR FOR
     SELECT ContractId, Months, StartDate, MonthlyTotal,
@@ -21,9 +21,9 @@ BEGIN
         -- UI logic: paid if (inst%2==0) OR (ci<8) OR (inst%3==1)
         DECLARE @paid   BIT           = CASE WHEN (@inst%2=0 OR @rn<8 OR @inst%3=1) THEN 1 ELSE 0 END;
         DECLARE @pmId   INT           = ((@inst - 1) % 6) + 1;
-        DECLARE @pmName NVARCHAR(50)  = (SELECT Name FROM PaymentModes WHERE Id = @pmId);
+        DECLARE @pmName NVARCHAR(MAX)  = (SELECT Name FROM PaymentModes WHERE Id = @pmId);
         DECLARE @fpId   INT           = ((@inst - 1) % 3) + 1;
-        DECLARE @fpName NVARCHAR(200) = (SELECT Name FROM FundPools WHERE Id = @fpId);
+        DECLARE @fpName NVARCHAR(MAX) = (SELECT Name FROM FundPools WHERE Id = @fpId);
 
         INSERT INTO Payments(
             ContractId, InstallmentNo, Amount, DueDate,
@@ -38,7 +38,7 @@ BEGIN
             CASE WHEN @paid=1 THEN 'Paid'   ELSE 'Pending' END,
             @pmName, @pmId,
             CASE WHEN @paid=1 AND @pmName='Cheque' THEN 'CHQ'+CAST(1000+@inst AS NVARCHAR) ELSE '' END,
-            CASE WHEN @paid=1 THEN CAST(@dd AS NVARCHAR(20)) ELSE '' END,
+            CASE WHEN @paid=1 THEN CAST(@dd AS NVARCHAR(MAX)) ELSE '' END,
             CASE WHEN @paid=1 THEN 'Monthly rent payment' ELSE 'Due rent' END,
             '', '',
             CASE WHEN @paid=1 THEN @fpId   ELSE NULL END,
@@ -69,7 +69,7 @@ SET @wCursor = CURSOR FOR
     WHERE p.Status IN ('Pending','Overdue')
     ORDER BY p.Id;
 
-DECLARE @pid INT, @pcid NVARCHAR(20), @pinst INT, @pamt DECIMAL(18,2), @ptid INT;
+DECLARE @pid INT, @pcid NVARCHAR(MAX), @pinst INT, @pamt DECIMAL(18,2), @ptid INT;
 OPEN @wCursor;
 FETCH NEXT FROM @wCursor INTO @pid, @pcid, @pinst, @pamt, @ptid;
 WHILE @@FETCH_STATUS = 0
