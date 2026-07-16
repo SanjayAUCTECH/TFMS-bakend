@@ -24,15 +24,15 @@ public class MisRepository : IMisRepository
         // Result set 1: KPI totals
         if (await rd.ReadAsync())
         {
-            result.TotalRental      = rd.IsDBNull(rd.GetOrdinal("TotalRental"))      ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalRental"));
-            result.TotalCollected   = rd.IsDBNull(rd.GetOrdinal("TotalCollected"))   ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalCollected"));
-            result.TotalOutstanding = rd.IsDBNull(rd.GetOrdinal("TotalOutstanding")) ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalOutstanding"));
-            result.TotalExpenses    = rd.IsDBNull(rd.GetOrdinal("TotalExpenses"))    ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalExpenses"));
-            result.NetProfit        = rd.IsDBNull(rd.GetOrdinal("NetProfit"))        ? 0 : rd.GetDecimal(rd.GetOrdinal("NetProfit"));
+            result.TotalRental      = rd.IsDBNull(rd.GetOrdinal("TotalRental"))      ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("TotalRental")));
+            result.TotalCollected   = rd.IsDBNull(rd.GetOrdinal("TotalCollected"))   ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("TotalCollected")));
+            result.TotalOutstanding = rd.IsDBNull(rd.GetOrdinal("TotalOutstanding")) ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("TotalOutstanding")));
+            result.TotalExpenses    = rd.IsDBNull(rd.GetOrdinal("TotalExpenses"))    ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("TotalExpenses")));
+            result.NetProfit        = rd.IsDBNull(rd.GetOrdinal("NetProfit"))        ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("NetProfit")));
             result.TotalUnits       = rd.IsDBNull(rd.GetOrdinal("TotalUnits"))       ? 0 : Convert.ToInt32(rd.GetValue(rd.GetOrdinal("TotalUnits")));
             result.OccupiedUnits    = rd.IsDBNull(rd.GetOrdinal("OccupiedUnits"))    ? 0 : Convert.ToInt32(rd.GetValue(rd.GetOrdinal("OccupiedUnits")));
             result.VacantUnits      = rd.IsDBNull(rd.GetOrdinal("VacantUnits"))      ? 0 : Convert.ToInt32(rd.GetValue(rd.GetOrdinal("VacantUnits")));
-            result.OccupancyPct     = rd.IsDBNull(rd.GetOrdinal("OccupancyPct"))     ? 0 : rd.GetDecimal(rd.GetOrdinal("OccupancyPct"));
+            result.OccupancyPct     = rd.IsDBNull(rd.GetOrdinal("OccupancyPct"))     ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("OccupancyPct")));
         }
 
         // Result set 2: Camp breakdown
@@ -45,9 +45,9 @@ public class MisRepository : IMisRepository
                 CampName         = rd.GetString(rd.GetOrdinal("CampName")),
                 TotalRooms       = rd.IsDBNull(rd.GetOrdinal("TotalRooms"))       ? 0 : rd.GetInt32(rd.GetOrdinal("TotalRooms")),
                 OccupiedRooms    = rd.IsDBNull(rd.GetOrdinal("OccupiedRooms"))    ? 0 : rd.GetInt32(rd.GetOrdinal("OccupiedRooms")),
-                MonthlyRevenue   = rd.IsDBNull(rd.GetOrdinal("MonthlyRevenue"))   ? 0 : rd.GetDecimal(rd.GetOrdinal("MonthlyRevenue")),
-                TotalCollected   = rd.IsDBNull(rd.GetOrdinal("TotalCollected"))   ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
-                TotalOutstanding = rd.IsDBNull(rd.GetOrdinal("TotalOutstanding")) ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalOutstanding")),
+                MonthlyRevenue   = rd.IsDBNull(rd.GetOrdinal("MonthlyRevenue"))   ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("MonthlyRevenue"))),
+                TotalCollected   = rd.IsDBNull(rd.GetOrdinal("TotalCollected"))   ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("TotalCollected"))),
+                TotalOutstanding = rd.IsDBNull(rd.GetOrdinal("TotalOutstanding")) ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("TotalOutstanding"))),
             });
         }
 
@@ -58,10 +58,10 @@ public class MisRepository : IMisRepository
             result.MonthlyCollection.Add(new MisMonthlyRow
             {
                 Month      = rd.IsDBNull(rd.GetOrdinal("Month"))     ? "" : rd.GetString(rd.GetOrdinal("Month")),
-                Collected  = rd.IsDBNull(rd.GetOrdinal("Collected")) ? 0 : rd.GetDecimal(rd.GetOrdinal("Collected")),
-                Due        = rd.IsDBNull(rd.GetOrdinal("Due"))       ? 0 : rd.GetDecimal(rd.GetOrdinal("Due")),
-                Expenses   = rd.IsDBNull(rd.GetOrdinal("Expenses"))  ? 0 : rd.GetDecimal(rd.GetOrdinal("Expenses")),
-                NetProfit  = rd.IsDBNull(rd.GetOrdinal("NetProfit")) ? 0 : rd.GetDecimal(rd.GetOrdinal("NetProfit")),
+                Collected  = rd.IsDBNull(rd.GetOrdinal("Collected")) ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("Collected"))),
+                Due        = rd.IsDBNull(rd.GetOrdinal("Due"))       ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("Due"))),
+                Expenses   = rd.IsDBNull(rd.GetOrdinal("Expenses"))  ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("Expenses"))),
+                NetProfit  = rd.IsDBNull(rd.GetOrdinal("NetProfit")) ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("NetProfit"))),
             });
         }
 
@@ -72,7 +72,7 @@ public class MisRepository : IMisRepository
             result.ExpenseByHead.Add(new MisExpenseHeadRow
             {
                 Head   = rd.IsDBNull(rd.GetOrdinal("Head"))   ? "" : rd.GetString(rd.GetOrdinal("Head")),
-                Amount = rd.IsDBNull(rd.GetOrdinal("Amount")) ? 0 : rd.GetDecimal(rd.GetOrdinal("Amount")),
+                Amount = rd.IsDBNull(rd.GetOrdinal("Amount")) ? 0 : Convert.ToDecimal(rd.GetValue(rd.GetOrdinal("Amount"))),
             });
         }
 

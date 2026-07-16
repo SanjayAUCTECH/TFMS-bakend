@@ -125,6 +125,8 @@ public class CampRepository : ICampRepository
         await using var cmd = new SqlCommand("sp_CreateCamp", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Name",               camp.Name);
         cmd.Parameters.AddWithValue("@Status",             camp.Status);
+        cmd.Parameters.AddWithValue("@StartDate",          (object?)camp.StartDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@EndDate",            (object?)camp.EndDate   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CampPropertyUsage",  camp.CampPropertyUsage);
         cmd.Parameters.AddWithValue("@CampBuildingName",   camp.CampBuildingName);
         cmd.Parameters.AddWithValue("@CampPropertyType",   camp.CampPropertyType);
@@ -152,6 +154,8 @@ public class CampRepository : ICampRepository
         cmd.Parameters.AddWithValue("@Id",                 camp.Id);
         cmd.Parameters.AddWithValue("@Name",               camp.Name);
         cmd.Parameters.AddWithValue("@Status",             camp.Status);
+        cmd.Parameters.AddWithValue("@StartDate",          (object?)camp.StartDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@EndDate",            (object?)camp.EndDate   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CampPropertyUsage",  camp.CampPropertyUsage);
         cmd.Parameters.AddWithValue("@CampBuildingName",   camp.CampBuildingName);
         cmd.Parameters.AddWithValue("@CampPropertyType",   camp.CampPropertyType);
@@ -215,6 +219,8 @@ public class CampRepository : ICampRepository
         CampPremisesNo    = SafeStr(r, "CampPremisesNo"),
         CampPlotNo        = SafeStr(r, "CampPlotNo"),
         CampMakaniNo      = SafeStr(r, "CampMakaniNo"),
+        StartDate         = SafeDate(r, "StartDate"),
+        EndDate           = SafeDate(r, "EndDate"),
         CreatedAt         = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt         = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
@@ -223,5 +229,11 @@ public class CampRepository : ICampRepository
     {
         try { var ord = r.GetOrdinal(col); return r.IsDBNull(ord) ? "" : r.GetString(ord); }
         catch { return ""; }
+    }
+
+    private static DateTime? SafeDate(SqlDataReader r, string col)
+    {
+        try { var ord = r.GetOrdinal(col); return r.IsDBNull(ord) ? null : r.GetDateTime(ord); }
+        catch { return null; }
     }
 }

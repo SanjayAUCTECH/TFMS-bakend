@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "cmJ46C1QZjs=",
+  "dgSpecHash": "0u4pn3/msSA=",
   "success": true,
-  "projectFilePath": "g:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\TFMS_software_api.csproj",
+  "projectFilePath": "G:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\TFMS_software_api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Sanjay\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\Sanjay\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

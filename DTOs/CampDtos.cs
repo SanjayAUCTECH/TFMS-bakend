@@ -16,34 +16,38 @@ public class CampOwnerRequest
 
 public class CreateCampRequest
 {
-    public string Name               { get; set; } = string.Empty;
-    public string Status             { get; set; } = "Active";
-    public string CampPropertyUsage  { get; set; } = string.Empty;
-    public string CampBuildingName   { get; set; } = string.Empty;
-    public string CampPropertyType   { get; set; } = string.Empty;
-    public string CampLocation       { get; set; } = string.Empty;
-    public string CampPropertyNo     { get; set; } = string.Empty;
-    public string CampPropertyArea   { get; set; } = string.Empty;
-    public string CampPremisesNo     { get; set; } = string.Empty;
-    public string CampPlotNo         { get; set; } = string.Empty;
-    public string CampMakaniNo       { get; set; } = string.Empty;
+    public string  Name               { get; set; } = string.Empty;
+    public string  Status             { get; set; } = "Active";
+    public string? StartDate          { get; set; }
+    public string? EndDate            { get; set; }
+    public string  CampPropertyUsage  { get; set; } = string.Empty;
+    public string  CampBuildingName   { get; set; } = string.Empty;
+    public string  CampPropertyType   { get; set; } = string.Empty;
+    public string  CampLocation       { get; set; } = string.Empty;
+    public string  CampPropertyNo     { get; set; } = string.Empty;
+    public string  CampPropertyArea   { get; set; } = string.Empty;
+    public string  CampPremisesNo     { get; set; } = string.Empty;
+    public string  CampPlotNo         { get; set; } = string.Empty;
+    public string  CampMakaniNo       { get; set; } = string.Empty;
     public List<CampPartnerRequest> Partners { get; set; } = new();
     public List<CampOwnerRequest>   Owners   { get; set; } = new();
 }
 
 public class UpdateCampRequest
 {
-    public string Name               { get; set; } = string.Empty;
-    public string Status             { get; set; } = "Active";
-    public string CampPropertyUsage  { get; set; } = string.Empty;
-    public string CampBuildingName   { get; set; } = string.Empty;
-    public string CampPropertyType   { get; set; } = string.Empty;
-    public string CampLocation       { get; set; } = string.Empty;
-    public string CampPropertyNo     { get; set; } = string.Empty;
-    public string CampPropertyArea   { get; set; } = string.Empty;
-    public string CampPremisesNo     { get; set; } = string.Empty;
-    public string CampPlotNo         { get; set; } = string.Empty;
-    public string CampMakaniNo       { get; set; } = string.Empty;
+    public string  Name               { get; set; } = string.Empty;
+    public string  Status             { get; set; } = "Active";
+    public string? StartDate          { get; set; }
+    public string? EndDate            { get; set; }
+    public string  CampPropertyUsage  { get; set; } = string.Empty;
+    public string  CampBuildingName   { get; set; } = string.Empty;
+    public string  CampPropertyType   { get; set; } = string.Empty;
+    public string  CampLocation       { get; set; } = string.Empty;
+    public string  CampPropertyNo     { get; set; } = string.Empty;
+    public string  CampPropertyArea   { get; set; } = string.Empty;
+    public string  CampPremisesNo     { get; set; } = string.Empty;
+    public string  CampPlotNo         { get; set; } = string.Empty;
+    public string  CampMakaniNo       { get; set; } = string.Empty;
     public List<CampPartnerRequest> Partners { get; set; } = new();
     public List<CampOwnerRequest>   Owners   { get; set; } = new();
 }
@@ -76,6 +80,8 @@ public class CampResponse
     public int      Rooms              { get; set; }
     public int      Floors             { get; set; }
     public string   Status             { get; set; } = string.Empty;
+    public string?  StartDate          { get; set; }
+    public string?  EndDate            { get; set; }
     public string   CampPropertyUsage  { get; set; } = string.Empty;
     public string   CampBuildingName   { get; set; } = string.Empty;
     public string   CampPropertyType   { get; set; } = string.Empty;

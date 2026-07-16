@@ -18,6 +18,8 @@ public class Camp
     public string           CampPremisesNo     { get; set; } = string.Empty;
     public string           CampPlotNo         { get; set; } = string.Empty;
     public string           CampMakaniNo       { get; set; } = string.Empty;
+    public DateTime?        StartDate          { get; set; }
+    public DateTime?        EndDate            { get; set; }
     public DateTime         CreatedAt          { get; set; }
     public DateTime         UpdatedAt          { get; set; }
     public List<CampPartner> Partners          { get; set; } = new();
