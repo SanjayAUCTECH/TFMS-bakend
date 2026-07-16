@@ -52,7 +52,11 @@ public class UpdateCampRequest
     public List<CampOwnerRequest>   Owners   { get; set; } = new();
 }
 
-public class CampListRequest : Common.PagedRequest { }
+public class CampListRequest : Common.PagedRequest
+{
+    public int? PartnerId { get; set; }
+    public int? OwnerId   { get; set; }
+}
 
 public class CampPartnerResponse
 {
