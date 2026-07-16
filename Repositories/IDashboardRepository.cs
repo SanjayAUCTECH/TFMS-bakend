@@ -11,6 +11,7 @@ public interface IDashboardRepository
     Task<OwnerMonthSummaryResponse>  GetOwnerMonthSummaryAsync(string? month = null);
     Task<TenantPaymentAlertResponse> GetTenantPaymentAlertsAsync(int daysAhead = 2);
     Task<TenantMonthSummaryResponse> GetTenantMonthSummaryAsync(string? month = null);
+    Task<CompanyAssetAlertResponse>  GetCompanyAssetAlertsAsync(int daysAhead = 30);
     Task<AppUser?> GetUserByUsernameAsync(string username);
     Task UpdateLastLoginAsync(int userId);
 }

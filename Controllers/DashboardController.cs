@@ -81,4 +81,12 @@ public class DashboardController : ControllerBase
         var result = await _service.GetTenantMonthSummaryAsync(month);
         return Ok(result);
     }
+
+    /// <summary>GET api/dashboard/company-asset-alerts — expiring within daysAhead (default 30)</summary>
+    [HttpGet("company-asset-alerts")]
+    public async Task<IActionResult> GetCompanyAssetAlerts([FromQuery] int daysAhead = 30)
+    {
+        var result = await _service.GetCompanyAssetAlertsAsync(daysAhead);
+        return Ok(result);
+    }
 }

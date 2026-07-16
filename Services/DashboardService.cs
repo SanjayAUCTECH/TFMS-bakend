@@ -49,4 +49,11 @@ public class DashboardService : IDashboardService
         return ApiResponse<TenantMonthSummaryResponse>.Ok(summary,
             $"Tenant payment summary for {summary.Month} retrieved.");
     }
+
+    public async Task<ApiResponse<CompanyAssetAlertResponse>> GetCompanyAssetAlertsAsync(int daysAhead = 30)
+    {
+        var alerts = await _repo.GetCompanyAssetAlertsAsync(daysAhead);
+        return ApiResponse<CompanyAssetAlertResponse>.Ok(alerts,
+            $"Found {alerts.TotalAlerts} company asset alert(s): {alerts.ExpiredCount} expired, {alerts.ExpiringSoon} expiring soon.");
+    }
 }

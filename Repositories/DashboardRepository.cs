@@ -304,4 +304,36 @@ public class DashboardRepository : IDashboardRepository
         }
         return result;
     }
+
+    public async Task<CompanyAssetAlertResponse> GetCompanyAssetAlertsAsync(int daysAhead = 30)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        var rows = new List<CompanyAssetAlertRow>();
+        await using var cmd = new SqlCommand("sp_GetCompanyAssetExpiryAlerts", conn)
+            { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@DaysAhead", daysAhead);
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            rows.Add(new CompanyAssetAlertRow
+            {
+                Id           = r.GetInt32(r.GetOrdinal("Id")),
+                AssetCode    = r.IsDBNull(r.GetOrdinal("AssetCode"))    ? "" : r.GetString(r.GetOrdinal("AssetCode")),
+                AssetType    = r.IsDBNull(r.GetOrdinal("AssetType"))    ? "" : r.GetString(r.GetOrdinal("AssetType")),
+                DocumentName = r.IsDBNull(r.GetOrdinal("DocumentName")) ? "" : r.GetString(r.GetOrdinal("DocumentName")),
+                CompanyName  = r.IsDBNull(r.GetOrdinal("CompanyName"))  ? "" : r.GetString(r.GetOrdinal("CompanyName")),
+                ExpiryDate   = r.IsDBNull(r.GetOrdinal("ExpiryDate"))   ? "" : r.GetDateTime(r.GetOrdinal("ExpiryDate")).ToString("yyyy-MM-dd"),
+                DaysRemaining= r.IsDBNull(r.GetOrdinal("DaysRemaining"))? 0  : r.GetInt32(r.GetOrdinal("DaysRemaining")),
+                AlertType    = r.IsDBNull(r.GetOrdinal("AlertType"))    ? "" : r.GetString(r.GetOrdinal("AlertType")),
+            });
+        }
+        return new CompanyAssetAlertResponse
+        {
+            TotalAlerts  = rows.Count,
+            ExpiredCount = rows.Count(x => x.AlertType == "Expired"),
+            ExpiringSoon = rows.Count(x => x.AlertType == "Expiring Soon"),
+            Alerts       = rows,
+        };
+    }
 }
