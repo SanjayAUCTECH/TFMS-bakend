@@ -61,6 +61,9 @@ builder.Services.AddAuthorization(options =>
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddSingleton<IDbConnectionFactory>(_ => new SqlConnectionFactory(connStr));
 
+// ── Cloudinary ────────────────────────────────────────────────────────────────
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+
 // ── Repositories ─────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPartnerRepository,      PartnerRepository>();
 builder.Services.AddScoped<IOwnerRepository,        OwnerRepository>();

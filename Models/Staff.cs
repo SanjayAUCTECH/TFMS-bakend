@@ -15,14 +15,34 @@ public class Staff
     public string   LoginAccess { get; set; } = "enabled";
     public string   Status      { get; set; } = "Active";
     public string   Remarks     { get; set; } = string.Empty;
-    // ── New fields ────────────────────────────────────────────────────────
+
+    // Identity & Employment
     public string    EmiratesId  { get; set; } = string.Empty;
     public string    PassportNo  { get; set; } = string.Empty;
     public string    Nationality { get; set; } = string.Empty;
     public string    JobTitle    { get; set; } = string.Empty;
     public DateTime? MoveInDate  { get; set; }
     public DateTime? VisaExpiry  { get; set; }
-    // ─────────────────────────────────────────────────────────────────────
+
+    // Document dates
+    public DateTime? EmiratesIdIssueDate    { get; set; }
+    public DateTime? EmiratesIdExpiryDate   { get; set; }
+    public DateTime? PassportIssueDate      { get; set; }
+    public DateTime? PassportExpiryDate     { get; set; }
+    public DateTime? LabourCardIssueDate    { get; set; }
+    public DateTime? LabourCardExpiryDate   { get; set; }
+    public DateTime? IloeIssueDate          { get; set; }
+    public DateTime? IloeExpiryDate         { get; set; }
+    public DateTime? InsuranceIssueDate     { get; set; }
+    public DateTime? InsuranceExpiryDate    { get; set; }
+
+    // Document URLs (Cloudinary)
+    public string EmiratesIdDocument  { get; set; } = string.Empty;
+    public string PassportDocument    { get; set; } = string.Empty;
+    public string LabourCardDocument  { get; set; } = string.Empty;
+    public string IloeDocument        { get; set; } = string.Empty;
+    public string InsuranceDocument   { get; set; } = string.Empty;
+
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }
 }

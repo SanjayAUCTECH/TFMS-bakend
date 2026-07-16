@@ -55,22 +55,7 @@ public class StaffRepository : IStaffRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateStaff", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Name",        staff.Name);
-        cmd.Parameters.AddWithValue("@Designation", staff.Designation ?? "");
-        cmd.Parameters.AddWithValue("@Contact",     staff.Contact);
-        cmd.Parameters.AddWithValue("@Email",       staff.Email);
-        cmd.Parameters.AddWithValue("@Address",     staff.Address);
-        cmd.Parameters.AddWithValue("@Username",    string.IsNullOrWhiteSpace(staff.Username) ? (object)DBNull.Value : staff.Username);
-        cmd.Parameters.AddWithValue("@Password",    staff.Password);
-        cmd.Parameters.AddWithValue("@LoginAccess", staff.LoginAccess);
-        cmd.Parameters.AddWithValue("@Status",      staff.Status);
-        cmd.Parameters.AddWithValue("@Remarks",     staff.Remarks);
-        cmd.Parameters.AddWithValue("@EmiratesId",  staff.EmiratesId);
-        cmd.Parameters.AddWithValue("@PassportNo",  staff.PassportNo);
-        cmd.Parameters.AddWithValue("@Nationality", staff.Nationality);
-        cmd.Parameters.AddWithValue("@JobTitle",    staff.JobTitle);
-        cmd.Parameters.AddWithValue("@MoveInDate",  (object?)staff.MoveInDate ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@VisaExpiry",  (object?)staff.VisaExpiry ?? DBNull.Value);
+        AddCommonParams(cmd, staff);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -82,23 +67,8 @@ public class StaffRepository : IStaffRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateStaff", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",          staff.Id);
-        cmd.Parameters.AddWithValue("@Name",        staff.Name);
-        cmd.Parameters.AddWithValue("@Designation", staff.Designation ?? "");
-        cmd.Parameters.AddWithValue("@Contact",     staff.Contact);
-        cmd.Parameters.AddWithValue("@Email",       staff.Email);
-        cmd.Parameters.AddWithValue("@Address",     staff.Address);
-        cmd.Parameters.AddWithValue("@Username",    string.IsNullOrWhiteSpace(staff.Username) ? (object)DBNull.Value : staff.Username);
-        cmd.Parameters.AddWithValue("@Password",    (object?)staff.Password ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@LoginAccess", staff.LoginAccess);
-        cmd.Parameters.AddWithValue("@Status",      staff.Status);
-        cmd.Parameters.AddWithValue("@Remarks",     staff.Remarks);
-        cmd.Parameters.AddWithValue("@EmiratesId",  staff.EmiratesId);
-        cmd.Parameters.AddWithValue("@PassportNo",  staff.PassportNo);
-        cmd.Parameters.AddWithValue("@Nationality", staff.Nationality);
-        cmd.Parameters.AddWithValue("@JobTitle",    staff.JobTitle);
-        cmd.Parameters.AddWithValue("@MoveInDate",  (object?)staff.MoveInDate ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@VisaExpiry",  (object?)staff.VisaExpiry ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Id", staff.Id);
+        AddCommonParams(cmd, staff);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -154,34 +124,95 @@ public class StaffRepository : IStaffRepository
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }
 
+    // ── Shared parameter builder ──────────────────────────────────────────────
+
+    private static void AddCommonParams(SqlCommand cmd, Staff s)
+    {
+        cmd.Parameters.AddWithValue("@Name",        s.Name);
+        cmd.Parameters.AddWithValue("@Designation", s.Designation ?? "");
+        cmd.Parameters.AddWithValue("@Contact",     s.Contact);
+        cmd.Parameters.AddWithValue("@Email",       s.Email);
+        cmd.Parameters.AddWithValue("@Address",     s.Address);
+        cmd.Parameters.AddWithValue("@Username",    string.IsNullOrWhiteSpace(s.Username) ? (object)DBNull.Value : s.Username);
+        cmd.Parameters.AddWithValue("@Password",    (object?)s.Password ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LoginAccess", s.LoginAccess);
+        cmd.Parameters.AddWithValue("@Status",      s.Status);
+        cmd.Parameters.AddWithValue("@Remarks",     s.Remarks);
+        cmd.Parameters.AddWithValue("@EmiratesId",  s.EmiratesId);
+        cmd.Parameters.AddWithValue("@PassportNo",  s.PassportNo);
+        cmd.Parameters.AddWithValue("@Nationality", s.Nationality);
+        cmd.Parameters.AddWithValue("@JobTitle",    s.JobTitle);
+        cmd.Parameters.AddWithValue("@MoveInDate",  (object?)s.MoveInDate  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@VisaExpiry",  (object?)s.VisaExpiry  ?? DBNull.Value);
+
+        // Document dates
+        cmd.Parameters.AddWithValue("@EmiratesIdIssueDate",  (object?)s.EmiratesIdIssueDate  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@EmiratesIdExpiryDate", (object?)s.EmiratesIdExpiryDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PassportIssueDate",    (object?)s.PassportIssueDate    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PassportExpiryDate",   (object?)s.PassportExpiryDate   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LabourCardIssueDate",  (object?)s.LabourCardIssueDate  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LabourCardExpiryDate", (object?)s.LabourCardExpiryDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@IloeIssueDate",        (object?)s.IloeIssueDate        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@IloeExpiryDate",       (object?)s.IloeExpiryDate       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@InsuranceIssueDate",   (object?)s.InsuranceIssueDate   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@InsuranceExpiryDate",  (object?)s.InsuranceExpiryDate  ?? DBNull.Value);
+
+        // Document URLs
+        cmd.Parameters.AddWithValue("@EmiratesIdDocument", string.IsNullOrEmpty(s.EmiratesIdDocument) ? (object)DBNull.Value : s.EmiratesIdDocument);
+        cmd.Parameters.AddWithValue("@PassportDocument",   string.IsNullOrEmpty(s.PassportDocument)   ? (object)DBNull.Value : s.PassportDocument);
+        cmd.Parameters.AddWithValue("@LabourCardDocument", string.IsNullOrEmpty(s.LabourCardDocument) ? (object)DBNull.Value : s.LabourCardDocument);
+        cmd.Parameters.AddWithValue("@IloeDocument",       string.IsNullOrEmpty(s.IloeDocument)       ? (object)DBNull.Value : s.IloeDocument);
+        cmd.Parameters.AddWithValue("@InsuranceDocument",  string.IsNullOrEmpty(s.InsuranceDocument)  ? (object)DBNull.Value : s.InsuranceDocument);
+    }
+
+    // ── Mapper ────────────────────────────────────────────────────────────────
+
     private static Staff MapStaff(SqlDataReader r) => new()
     {
         Id          = r.GetInt32(r.GetOrdinal("Id")),
         StaffId     = r.GetString(r.GetOrdinal("StaffId")),
         Name        = r.GetString(r.GetOrdinal("Name")),
-        Role        = r.IsDBNull(r.GetOrdinal("Role"))        ? "Staff" : r.GetString(r.GetOrdinal("Role")),
+        Role        = SafeStr(r, "Role", "Staff"),
         Designation = SafeStr(r, "Designation"),
-        Contact     = r.IsDBNull(r.GetOrdinal("Contact"))     ? "" : r.GetString(r.GetOrdinal("Contact")),
-        Email       = r.IsDBNull(r.GetOrdinal("Email"))       ? "" : r.GetString(r.GetOrdinal("Email")),
-        Address     = r.IsDBNull(r.GetOrdinal("Address"))     ? "" : r.GetString(r.GetOrdinal("Address")),
-        Username    = r.IsDBNull(r.GetOrdinal("Username"))    ? "" : r.GetString(r.GetOrdinal("Username")),
-        Password    = r.IsDBNull(r.GetOrdinal("Password"))    ? "" : r.GetString(r.GetOrdinal("Password")),
-        LoginAccess = r.IsDBNull(r.GetOrdinal("LoginAccess")) ? "enabled" : r.GetString(r.GetOrdinal("LoginAccess")),
+        Contact     = SafeStr(r, "Contact"),
+        Email       = SafeStr(r, "Email"),
+        Address     = SafeStr(r, "Address"),
+        Username    = SafeStr(r, "Username"),
+        Password    = SafeStr(r, "Password"),
+        LoginAccess = SafeStr(r, "LoginAccess", "enabled"),
         Status      = r.GetString(r.GetOrdinal("Status")),
-        Remarks     = r.IsDBNull(r.GetOrdinal("Remarks"))     ? "" : r.GetString(r.GetOrdinal("Remarks")),
+        Remarks     = SafeStr(r, "Remarks"),
         EmiratesId  = SafeStr(r, "EmiratesId"),
         PassportNo  = SafeStr(r, "PassportNo"),
         Nationality = SafeStr(r, "Nationality"),
         JobTitle    = SafeStr(r, "JobTitle"),
         MoveInDate  = SafeDate(r, "MoveInDate"),
         VisaExpiry  = SafeDate(r, "VisaExpiry"),
+
+        EmiratesIdIssueDate  = SafeDate(r, "EmiratesIdIssueDate"),
+        EmiratesIdExpiryDate = SafeDate(r, "EmiratesIdExpiryDate"),
+        PassportIssueDate    = SafeDate(r, "PassportIssueDate"),
+        PassportExpiryDate   = SafeDate(r, "PassportExpiryDate"),
+        LabourCardIssueDate  = SafeDate(r, "LabourCardIssueDate"),
+        LabourCardExpiryDate = SafeDate(r, "LabourCardExpiryDate"),
+        IloeIssueDate        = SafeDate(r, "IloeIssueDate"),
+        IloeExpiryDate       = SafeDate(r, "IloeExpiryDate"),
+        InsuranceIssueDate   = SafeDate(r, "InsuranceIssueDate"),
+        InsuranceExpiryDate  = SafeDate(r, "InsuranceExpiryDate"),
+
+        EmiratesIdDocument = SafeStr(r, "EmiratesIdDocument"),
+        PassportDocument   = SafeStr(r, "PassportDocument"),
+        LabourCardDocument = SafeStr(r, "LabourCardDocument"),
+        IloeDocument       = SafeStr(r, "IloeDocument"),
+        InsuranceDocument  = SafeStr(r, "InsuranceDocument"),
+
         CreatedAt   = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt   = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
 
-    private static string SafeStr(SqlDataReader r, string col)
+    private static string SafeStr(SqlDataReader r, string col, string def = "")
     {
-        try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? "" : r.GetString(o); } catch { return ""; }
+        try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? def : r.GetString(o); } catch { return def; }
     }
 
     private static DateTime? SafeDate(SqlDataReader r, string col)

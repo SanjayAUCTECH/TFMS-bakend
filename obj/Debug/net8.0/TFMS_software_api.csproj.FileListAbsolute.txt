@@ -155,3 +155,5 @@ G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\TFMS_software_api.runtimeconfig.json
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\publish\TFMS_software_api.staticwebassets.endpoints.json
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\Scripts\test_payment_body.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\CloudinaryDotNet.dll
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\Newtonsoft.Json.dll

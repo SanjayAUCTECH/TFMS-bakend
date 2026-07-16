@@ -10,10 +10,16 @@ namespace TFMS_software_api.Controllers;
 [Authorize]
 public class StaffController : ControllerBase
 {
-    private readonly IStaffService _service;
-    public StaffController(IStaffService service) => _service = service;
+    private readonly IStaffService      _service;
+    private readonly ICloudinaryService _cloudinary;
 
-    /// <summary>GET api/staff?Status=Active&SearchText=john</summary>
+    public StaffController(IStaffService service, ICloudinaryService cloudinary)
+    {
+        _service    = service;
+        _cloudinary = cloudinary;
+    }
+
+    /// <summary>GET api/staff?Status=Active&amp;SearchText=john</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] StaffListRequest request)
     {
@@ -29,20 +35,22 @@ public class StaffController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>POST api/staff</summary>
+    /// <summary>POST api/staff — multipart/form-data with optional document files</summary>
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateStaffRequest request)
+    public async Task<IActionResult> Create([FromForm] CreateStaffRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+        await UploadDocuments(request);
         var r = await _service.CreateAsync(request);
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
-    /// <summary>PUT api/staff/5</summary>
+    /// <summary>PUT api/staff/5 — multipart/form-data with optional document files</summary>
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateStaffRequest request)
+    public async Task<IActionResult> Update(int id, [FromForm] UpdateStaffRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+        await UploadDocuments(request);
         var r = await _service.UpdateAsync(id, request);
         return r.Success ? Ok(r) : NotFound(r);
     }
@@ -53,5 +61,35 @@ public class StaffController : ControllerBase
     {
         var r = await _service.DeleteAsync(id);
         return r.Success ? Ok(r) : NotFound(r);
+    }
+
+    // ── Upload all document files to Cloudinary and set URL properties ────────
+
+    private async Task UploadDocuments(CreateStaffRequest req)
+    {
+        if (req.EmiratesIdDocument != null)
+            req.EmiratesIdDocumentUrl = await _cloudinary.UploadFileAsync(req.EmiratesIdDocument, "staff/emirates-id");
+        if (req.PassportDocument != null)
+            req.PassportDocumentUrl = await _cloudinary.UploadFileAsync(req.PassportDocument, "staff/passport");
+        if (req.LabourCardDocument != null)
+            req.LabourCardDocumentUrl = await _cloudinary.UploadFileAsync(req.LabourCardDocument, "staff/labour-card");
+        if (req.IloeDocument != null)
+            req.IloeDocumentUrl = await _cloudinary.UploadFileAsync(req.IloeDocument, "staff/iloe");
+        if (req.InsuranceDocument != null)
+            req.InsuranceDocumentUrl = await _cloudinary.UploadFileAsync(req.InsuranceDocument, "staff/insurance");
+    }
+
+    private async Task UploadDocuments(UpdateStaffRequest req)
+    {
+        if (req.EmiratesIdDocument != null)
+            req.EmiratesIdDocumentUrl = await _cloudinary.UploadFileAsync(req.EmiratesIdDocument, "staff/emirates-id");
+        if (req.PassportDocument != null)
+            req.PassportDocumentUrl = await _cloudinary.UploadFileAsync(req.PassportDocument, "staff/passport");
+        if (req.LabourCardDocument != null)
+            req.LabourCardDocumentUrl = await _cloudinary.UploadFileAsync(req.LabourCardDocument, "staff/labour-card");
+        if (req.IloeDocument != null)
+            req.IloeDocumentUrl = await _cloudinary.UploadFileAsync(req.IloeDocument, "staff/iloe");
+        if (req.InsuranceDocument != null)
+            req.InsuranceDocumentUrl = await _cloudinary.UploadFileAsync(req.InsuranceDocument, "staff/insurance");
     }
 }

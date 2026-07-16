@@ -29,7 +29,6 @@ public class StaffService : IStaffService
 
     public async Task<ApiResponse<StaffResponse>> CreateAsync(CreateStaffRequest request)
     {
-        // Username check — sirf tab karo jab username diya ho (optional field)
         var uname = request.Username?.Trim().ToLower() ?? "";
         if (!string.IsNullOrWhiteSpace(uname) && await _repo.UsernameExistsAsync(uname))
             return ApiResponse<StaffResponse>.Fail("Username already exists. Please use a different username.");
@@ -41,17 +40,36 @@ public class StaffService : IStaffService
             Contact     = request.Contact?.Trim() ?? "",
             Email       = request.Email?.Trim() ?? "",
             Address     = request.Address?.Trim() ?? "",
-            Username    = request.Username?.Trim().ToLower() ?? "",
-            Password    = request.Password,
-            LoginAccess = request.LoginAccess,
-            Status      = request.Status,
+            Username    = uname,
+            Password    = request.Password ?? "Pass@123",
+            LoginAccess = request.LoginAccess ?? "enabled",
+            Status      = request.Status ?? "Active",
             Remarks     = request.Remarks?.Trim() ?? "",
             EmiratesId  = request.EmiratesId?.Trim() ?? "",
             PassportNo  = request.PassportNo?.Trim() ?? "",
             Nationality = request.Nationality?.Trim() ?? "",
             JobTitle    = request.JobTitle?.Trim() ?? "",
-            MoveInDate  = string.IsNullOrWhiteSpace(request.MoveInDate) ? null : DateTime.Parse(request.MoveInDate),
-            VisaExpiry  = string.IsNullOrWhiteSpace(request.VisaExpiry) ? null : DateTime.Parse(request.VisaExpiry),
+            MoveInDate  = ParseDate(request.MoveInDate),
+            VisaExpiry  = ParseDate(request.VisaExpiry),
+
+            // Document dates
+            EmiratesIdIssueDate  = ParseDate(request.EmiratesIdIssueDate),
+            EmiratesIdExpiryDate = ParseDate(request.EmiratesIdExpiryDate),
+            PassportIssueDate    = ParseDate(request.PassportIssueDate),
+            PassportExpiryDate   = ParseDate(request.PassportExpiryDate),
+            LabourCardIssueDate  = ParseDate(request.LabourCardIssueDate),
+            LabourCardExpiryDate = ParseDate(request.LabourCardExpiryDate),
+            IloeIssueDate        = ParseDate(request.IloeIssueDate),
+            IloeExpiryDate       = ParseDate(request.IloeExpiryDate),
+            InsuranceIssueDate   = ParseDate(request.InsuranceIssueDate),
+            InsuranceExpiryDate  = ParseDate(request.InsuranceExpiryDate),
+
+            // Document URLs from Cloudinary
+            EmiratesIdDocument = request.EmiratesIdDocumentUrl ?? "",
+            PassportDocument   = request.PassportDocumentUrl   ?? "",
+            LabourCardDocument = request.LabourCardDocumentUrl ?? "",
+            IloeDocument       = request.IloeDocumentUrl       ?? "",
+            InsuranceDocument  = request.InsuranceDocumentUrl  ?? "",
         };
 
         var id = await _repo.CreateAsync(staff);
@@ -64,28 +82,45 @@ public class StaffService : IStaffService
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return ApiResponse<StaffResponse>.Fail("Staff member not found.");
 
-        // Username check — sirf tab karo jab username diya ho aur kisi aur ke paas na ho
         var uname2 = request.Username?.Trim().ToLower() ?? "";
         if (!string.IsNullOrWhiteSpace(uname2) && await _repo.UsernameExistsAsync(uname2, id))
             return ApiResponse<StaffResponse>.Fail("Username already taken by another staff member.");
 
-        existing.Name        = request.Name?.Trim() ?? "";
-        existing.Designation = request.Designation?.Trim() ?? "";
-        existing.Contact     = request.Contact?.Trim() ?? "";
-        existing.Email       = request.Email?.Trim() ?? "";
-        existing.Address     = request.Address?.Trim() ?? "";
-        existing.Username    = request.Username?.Trim().ToLower() ?? "";
-        existing.LoginAccess = request.LoginAccess;
-        existing.Status      = request.Status;
-        existing.Remarks     = request.Remarks?.Trim() ?? "";
-        existing.EmiratesId  = request.EmiratesId?.Trim() ?? "";
-        existing.PassportNo  = request.PassportNo?.Trim() ?? "";
-        existing.Nationality = request.Nationality?.Trim() ?? "";
-        existing.JobTitle    = request.JobTitle?.Trim() ?? "";
-        existing.MoveInDate  = string.IsNullOrWhiteSpace(request.MoveInDate) ? null : DateTime.Parse(request.MoveInDate);
-        existing.VisaExpiry  = string.IsNullOrWhiteSpace(request.VisaExpiry) ? null : DateTime.Parse(request.VisaExpiry);
+        existing.Name        = request.Name?.Trim() ?? existing.Name;
+        existing.Designation = request.Designation?.Trim() ?? existing.Designation;
+        existing.Contact     = request.Contact?.Trim() ?? existing.Contact;
+        existing.Email       = request.Email?.Trim() ?? existing.Email;
+        existing.Address     = request.Address?.Trim() ?? existing.Address;
+        existing.Username    = uname2;
+        existing.LoginAccess = request.LoginAccess ?? existing.LoginAccess;
+        existing.Status      = request.Status ?? existing.Status;
+        existing.Remarks     = request.Remarks?.Trim() ?? existing.Remarks;
+        existing.EmiratesId  = request.EmiratesId?.Trim() ?? existing.EmiratesId;
+        existing.PassportNo  = request.PassportNo?.Trim() ?? existing.PassportNo;
+        existing.Nationality = request.Nationality?.Trim() ?? existing.Nationality;
+        existing.JobTitle    = request.JobTitle?.Trim() ?? existing.JobTitle;
+        existing.MoveInDate  = ParseDate(request.MoveInDate);
+        existing.VisaExpiry  = ParseDate(request.VisaExpiry);
 
-        // Only update password if provided
+        // Document dates
+        existing.EmiratesIdIssueDate  = ParseDate(request.EmiratesIdIssueDate);
+        existing.EmiratesIdExpiryDate = ParseDate(request.EmiratesIdExpiryDate);
+        existing.PassportIssueDate    = ParseDate(request.PassportIssueDate);
+        existing.PassportExpiryDate   = ParseDate(request.PassportExpiryDate);
+        existing.LabourCardIssueDate  = ParseDate(request.LabourCardIssueDate);
+        existing.LabourCardExpiryDate = ParseDate(request.LabourCardExpiryDate);
+        existing.IloeIssueDate        = ParseDate(request.IloeIssueDate);
+        existing.IloeExpiryDate       = ParseDate(request.IloeExpiryDate);
+        existing.InsuranceIssueDate   = ParseDate(request.InsuranceIssueDate);
+        existing.InsuranceExpiryDate  = ParseDate(request.InsuranceExpiryDate);
+
+        // Document URLs — only overwrite if new file was uploaded
+        if (request.EmiratesIdDocumentUrl != null) existing.EmiratesIdDocument = request.EmiratesIdDocumentUrl;
+        if (request.PassportDocumentUrl   != null) existing.PassportDocument   = request.PassportDocumentUrl;
+        if (request.LabourCardDocumentUrl != null) existing.LabourCardDocument = request.LabourCardDocumentUrl;
+        if (request.IloeDocumentUrl       != null) existing.IloeDocument       = request.IloeDocumentUrl;
+        if (request.InsuranceDocumentUrl  != null) existing.InsuranceDocument  = request.InsuranceDocumentUrl;
+
         if (!string.IsNullOrWhiteSpace(request.Password))
             existing.Password = request.Password;
 
@@ -102,6 +137,11 @@ public class StaffService : IStaffService
             ? ApiResponse<bool>.Ok(true, "Staff member deleted.")
             : ApiResponse<bool>.Fail("Delete failed.");
     }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static DateTime? ParseDate(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : DateTime.Parse(value);
 
     private static StaffResponse ToResponse(Staff s) => new()
     {
@@ -123,6 +163,24 @@ public class StaffService : IStaffService
         JobTitle    = s.JobTitle,
         MoveInDate  = s.MoveInDate?.ToString("yyyy-MM-dd"),
         VisaExpiry  = s.VisaExpiry?.ToString("yyyy-MM-dd"),
+
+        EmiratesIdIssueDate  = s.EmiratesIdIssueDate?.ToString("yyyy-MM-dd"),
+        EmiratesIdExpiryDate = s.EmiratesIdExpiryDate?.ToString("yyyy-MM-dd"),
+        PassportIssueDate    = s.PassportIssueDate?.ToString("yyyy-MM-dd"),
+        PassportExpiryDate   = s.PassportExpiryDate?.ToString("yyyy-MM-dd"),
+        LabourCardIssueDate  = s.LabourCardIssueDate?.ToString("yyyy-MM-dd"),
+        LabourCardExpiryDate = s.LabourCardExpiryDate?.ToString("yyyy-MM-dd"),
+        IloeIssueDate        = s.IloeIssueDate?.ToString("yyyy-MM-dd"),
+        IloeExpiryDate       = s.IloeExpiryDate?.ToString("yyyy-MM-dd"),
+        InsuranceIssueDate   = s.InsuranceIssueDate?.ToString("yyyy-MM-dd"),
+        InsuranceExpiryDate  = s.InsuranceExpiryDate?.ToString("yyyy-MM-dd"),
+
+        EmiratesIdDocument = string.IsNullOrEmpty(s.EmiratesIdDocument) ? null : s.EmiratesIdDocument,
+        PassportDocument   = string.IsNullOrEmpty(s.PassportDocument)   ? null : s.PassportDocument,
+        LabourCardDocument = string.IsNullOrEmpty(s.LabourCardDocument) ? null : s.LabourCardDocument,
+        IloeDocument       = string.IsNullOrEmpty(s.IloeDocument)       ? null : s.IloeDocument,
+        InsuranceDocument  = string.IsNullOrEmpty(s.InsuranceDocument)  ? null : s.InsuranceDocument,
+
         CreatedAt   = s.CreatedAt,
         UpdatedAt   = s.UpdatedAt,
     };
