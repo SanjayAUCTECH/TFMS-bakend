@@ -573,6 +573,24 @@ public class ContractRepository : IContractRepository
                 });
         }
 
+        // ── 5. Terms & Conditions (Page 2 and Page 3 arrays) ─────────────
+        await using (var cmd4 = new SqlCommand(@"
+            SELECT PageNo, TermText
+            FROM ContractTerms
+            WHERE ContractId = @ContractId
+            ORDER BY PageNo, TermNo", conn))
+        {
+            cmd4.Parameters.AddWithValue("@ContractId", contractId);
+            await using var r4 = await cmd4.ExecuteReaderAsync();
+            while (await r4.ReadAsync())
+            {
+                var pageNo = r4.GetInt32(r4.GetOrdinal("PageNo"));
+                var text = r4.IsDBNull(r4.GetOrdinal("TermText")) ? "" : r4.GetString(r4.GetOrdinal("TermText"));
+                if (pageNo == 2) doc.Page2Terms.Add(text);
+                else if (pageNo == 3) doc.Page3Terms.Add(text);
+            }
+        }
+
         return doc;
     }
 }

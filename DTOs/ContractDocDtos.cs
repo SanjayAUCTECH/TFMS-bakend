@@ -89,6 +89,10 @@ public class ContractDocResponse
 
     // ── Installments (full payment schedule) ──────────────────────────────
     public List<ContractDocInstallment> Installments { get; set; } = new();
+
+    // ── Terms & Conditions (from ContractTerms table) ─────────────────────
+    public List<string> Page2Terms { get; set; } = new();
+    public List<string> Page3Terms { get; set; } = new();
 }
 
 public class ContractDocRoom

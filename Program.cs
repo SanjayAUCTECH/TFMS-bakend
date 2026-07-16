@@ -95,6 +95,7 @@ builder.Services.AddScoped<IMisRepository,          MisRepository>();
 builder.Services.AddScoped<IOwnerContractRepository, OwnerContractRepository>();
 builder.Services.AddScoped<ITxnRecordRepository,    TxnRecordRepository>();
 builder.Services.AddScoped<ICompanyAssetRepository, CompanyAssetRepository>();
+builder.Services.AddScoped<IContractTermRepository, ContractTermRepository>();
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPartnerService,      PartnerService>();
