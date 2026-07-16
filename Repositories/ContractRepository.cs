@@ -497,6 +497,26 @@ public class ContractRepository : IContractRepository
             doc.CampIds = campIds;
         }
 
+        // ── 2b. Owner Name from OwnerContracts (by CampIds — distinct, comma-separated) ──
+        if (doc.CampIds.Count > 0)
+        {
+            var campIdsList = string.Join(",", doc.CampIds);
+            await using var cmdOwner = new SqlCommand($@"
+                SELECT DISTINCT o.Name
+                FROM OwnerContracts oc
+                JOIN Owners o ON o.Id = oc.OwnerId
+                WHERE oc.CampId IN ({campIdsList})", conn);
+            await using var rdrOwner = await cmdOwner.ExecuteReaderAsync();
+            var ownerNames = new List<string>();
+            while (await rdrOwner.ReadAsync())
+            {
+                var name = rdrOwner.GetString(0);
+                if (!string.IsNullOrWhiteSpace(name))
+                    ownerNames.Add(name);
+            }
+            doc.OwnerName = string.Join(", ", ownerNames);
+        }
+
         // ── 3. Rooms ─────────────────────────────────────────────────────
         await using (var cmd2 = new SqlCommand(@"
             SELECT r.Id, r.RoomNo, ISNULL(f.Name,'') FloorName, r.MonthlyPrice

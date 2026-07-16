@@ -41,6 +41,9 @@ public class ContractDocResponse
     public string   CampName        { get; set; } = string.Empty;   // primary camp name
     public string   CampCode        { get; set; } = string.Empty;
 
+    // ── Owner (from OwnerContracts by CampId) ──────────────────────────────
+    public string   OwnerName       { get; set; } = string.Empty;
+
     // ── Rooms ──────────────────────────────────────────────────────────────
     public List<ContractDocRoom> Rooms { get; set; } = new();
 

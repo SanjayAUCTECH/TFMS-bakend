@@ -46,9 +46,13 @@ public class CompanyAssetsController : ControllerBase
     public async Task<IActionResult> Create([FromForm] CreateCompanyAssetRequest req)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        string? docUrl = null;
+        string? docUrl = req.DocumentUrl;
         if (req.Document != null)
-            docUrl = await _cloudinary.UploadFileAsync(req.Document, "company-assets");
+        {
+            var uploadedUrl = await _cloudinary.UploadFileAsync(req.Document, "company-assets");
+            // Append uploaded URL to existing URLs (comma-separated)
+            docUrl = string.IsNullOrWhiteSpace(docUrl) ? uploadedUrl : $"{docUrl},{uploadedUrl}";
+        }
         var newId = await _repo.CreateAsync(req, docUrl);
         var created = await _repo.GetByIdAsync(newId);
         return CreatedAtAction(nameof(GetById), new { id = newId },
@@ -62,9 +66,13 @@ public class CompanyAssetsController : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (!await _repo.ExistsAsync(id))
             return NotFound(ApiResponse<object>.Fail("Asset not found."));
-        string? docUrl = null;
+        string? docUrl = req.DocumentUrl;
         if (req.Document != null)
-            docUrl = await _cloudinary.UploadFileAsync(req.Document, "company-assets");
+        {
+            var uploadedUrl = await _cloudinary.UploadFileAsync(req.Document, "company-assets");
+            // Append uploaded URL to existing URLs (comma-separated)
+            docUrl = string.IsNullOrWhiteSpace(docUrl) ? uploadedUrl : $"{docUrl},{uploadedUrl}";
+        }
         await _repo.UpdateAsync(id, req, docUrl);
         var updated = await _repo.GetByIdAsync(id);
         return Ok(ApiResponse<CompanyAssetResponse>.Ok(updated!, "Asset updated successfully."));
