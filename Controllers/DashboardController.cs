@@ -65,4 +65,20 @@ public class DashboardController : ControllerBase
         var result = await _service.GetOwnerMonthSummaryAsync(month);
         return Ok(result);
     }
+
+    /// <summary>GET api/dashboard/tenant-payment-alerts — due within daysAhead (default 2)</summary>
+    [HttpGet("tenant-payment-alerts")]
+    public async Task<IActionResult> GetTenantPaymentAlerts([FromQuery] int daysAhead = 2)
+    {
+        var result = await _service.GetTenantPaymentAlertsAsync(daysAhead);
+        return Ok(result);
+    }
+
+    /// <summary>GET api/dashboard/tenant-month-summary — this month's collection summary</summary>
+    [HttpGet("tenant-month-summary")]
+    public async Task<IActionResult> GetTenantMonthSummary([FromQuery] string? month = null)
+    {
+        var result = await _service.GetTenantMonthSummaryAsync(month);
+        return Ok(result);
+    }
 }
