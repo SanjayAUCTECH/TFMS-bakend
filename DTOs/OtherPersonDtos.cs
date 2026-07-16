@@ -30,6 +30,7 @@ public class UpdateOtherPersonRequest
 
 public class OtherPersonListRequest : Common.PagedRequest
 {
+    public int?    Id          { get; set; }
     public string? Designation { get; set; }
 }
 

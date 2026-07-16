@@ -23,6 +23,7 @@ public class TenantRepository : ITenantRepository
         cmd.Parameters.AddWithValue("@Status",        (object?)request.Status    ?? DBNull.Value);
         // @Type not in sp_GetTenants — skip it
         cmd.Parameters.AddWithValue("@CampId",        (object?)request.CampId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Id",            (object?)request.Id        ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(total);
         var list = new List<Tenant>();

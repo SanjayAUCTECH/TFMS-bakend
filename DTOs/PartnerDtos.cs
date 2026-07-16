@@ -18,7 +18,10 @@ public class UpdatePartnerRequest
     public string  Status  { get; set; } = "Active";
 }
 
-public class PartnerListRequest : Common.PagedRequest { }
+public class PartnerListRequest : Common.PagedRequest
+{
+    public int? Id { get; set; }
+}
 
 public class PartnerResponse
 {

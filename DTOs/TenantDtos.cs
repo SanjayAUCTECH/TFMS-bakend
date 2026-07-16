@@ -35,6 +35,7 @@ public class UpdateTenantRequest : CreateTenantRequest { }
 
 public class TenantListRequest : Common.PagedRequest
 {
+    public int?    Id     { get; set; }
     public int?    CampId { get; set; }
     public string? Type   { get; set; }
 }
