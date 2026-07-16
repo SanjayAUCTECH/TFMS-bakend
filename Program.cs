@@ -32,9 +32,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-// AllowAnyOrigin: works for both local dev and production server
+// Allow all origins with credentials support
 builder.Services.AddCors(options =>
-    options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+    options.AddPolicy("AllowAll", p => p
+        .SetIsOriginAllowed(_ => true)   // allow any origin (replaces AllowAnyOrigin for credentials)
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()));            // required when frontend sends withCredentials: true
 
 // ── JWT Auth ─────────────────────────────────────────────────────────────────
 var jwtKey = builder.Configuration["Jwt:Key"]!;
