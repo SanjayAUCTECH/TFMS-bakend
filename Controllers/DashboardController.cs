@@ -26,4 +26,43 @@ public class DashboardController : ControllerBase
         var result = await _service.GetStatsAsync(campId, tenantId, month);
         return Ok(result);
     }
+
+    /// <summary>
+    /// GET api/dashboard/staff-expiry-alerts
+    /// Returns staff members whose documents are expired or expiring within daysAhead days (default 30).
+    /// Alert clears automatically once expiry date is updated beyond daysAhead from today.
+    /// </summary>
+    [HttpGet("staff-expiry-alerts")]
+    public async Task<IActionResult> GetStaffExpiryAlerts(
+        [FromQuery] int daysAhead = 30)
+    {
+        var result = await _service.GetStaffExpiryAlertsAsync(daysAhead);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET api/dashboard/owner-payment-alerts
+    /// Returns owner installments due within daysAhead days (default 2).
+    /// Alert auto-clears when payment is marked Paid OR when DueDate passes.
+    /// </summary>
+    [HttpGet("owner-payment-alerts")]
+    public async Task<IActionResult> GetOwnerPaymentAlerts(
+        [FromQuery] int daysAhead = 2)
+    {
+        var result = await _service.GetOwnerPaymentAlertsAsync(daysAhead);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET api/dashboard/owner-month-summary
+    /// Returns this month's owner payment summary — total due, paid, pending per owner.
+    /// Optional: ?month=2026-07 to get any month's summary.
+    /// </summary>
+    [HttpGet("owner-month-summary")]
+    public async Task<IActionResult> GetOwnerMonthSummary(
+        [FromQuery] string? month = null)
+    {
+        var result = await _service.GetOwnerMonthSummaryAsync(month);
+        return Ok(result);
+    }
 }

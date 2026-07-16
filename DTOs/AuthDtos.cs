@@ -109,3 +109,27 @@ public class DashCampRevenue
     public string  CampName       { get; set; } = string.Empty;
     public decimal MonthlyRevenue { get; set; }
 }
+
+// ── Staff Document Expiry Alert DTOs ──────────────────────────────────────
+
+public class StaffExpiryAlertResponse
+{
+    /// <summary>Total alert count (expired + expiring soon)</summary>
+    public int                       TotalAlerts    { get; set; }
+    public int                       ExpiredCount   { get; set; }
+    public int                       ExpiringSoon   { get; set; }
+    public List<StaffExpiryAlertRow> Alerts         { get; set; } = new();
+}
+
+public class StaffExpiryAlertRow
+{
+    public int     StaffId       { get; set; }
+    public string  StaffCode     { get; set; } = string.Empty;
+    public string  StaffName     { get; set; } = string.Empty;
+    public string  Contact       { get; set; } = string.Empty;
+    public string  Designation   { get; set; } = string.Empty;
+    public string  DocumentType  { get; set; } = string.Empty;   // "Emirates ID", "Passport", etc.
+    public string  ExpiryDate    { get; set; } = string.Empty;   // "yyyy-MM-dd"
+    public int     DaysRemaining { get; set; }                   // negative = already expired
+    public string  AlertType     { get; set; } = string.Empty;   // "Expired" | "Expiring Soon"
+}

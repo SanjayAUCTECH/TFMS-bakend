@@ -204,4 +204,135 @@ public class DashboardRepository : IDashboardRepository
         cmd.Parameters.AddWithValue("@Id", userId);
         await cmd.ExecuteNonQueryAsync();
     }
+
+    public async Task<StaffExpiryAlertResponse> GetStaffExpiryAlertsAsync(int daysAhead = 30)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        var result = new StaffExpiryAlertResponse();
+        var rows   = new List<StaffExpiryAlertRow>();
+
+        await using var cmd = new SqlCommand("sp_GetStaffExpiryAlerts", conn)
+            { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@DaysAhead", daysAhead);
+
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            var row = new StaffExpiryAlertRow
+            {
+                StaffId       = r.GetInt32(r.GetOrdinal("StaffId")),
+                StaffCode     = r.IsDBNull(r.GetOrdinal("StaffCode"))    ? "" : r.GetString(r.GetOrdinal("StaffCode")),
+                StaffName     = r.IsDBNull(r.GetOrdinal("StaffName"))    ? "" : r.GetString(r.GetOrdinal("StaffName")),
+                Contact       = r.IsDBNull(r.GetOrdinal("Contact"))      ? "" : r.GetString(r.GetOrdinal("Contact")),
+                Designation   = r.IsDBNull(r.GetOrdinal("Designation"))  ? "" : r.GetString(r.GetOrdinal("Designation")),
+                DocumentType  = r.IsDBNull(r.GetOrdinal("DocumentType")) ? "" : r.GetString(r.GetOrdinal("DocumentType")),
+                ExpiryDate    = r.IsDBNull(r.GetOrdinal("ExpiryDate"))
+                                    ? ""
+                                    : r.GetDateTime(r.GetOrdinal("ExpiryDate")).ToString("yyyy-MM-dd"),
+                DaysRemaining = r.IsDBNull(r.GetOrdinal("DaysRemaining")) ? 0 : r.GetInt32(r.GetOrdinal("DaysRemaining")),
+                AlertType     = r.IsDBNull(r.GetOrdinal("AlertType"))    ? "" : r.GetString(r.GetOrdinal("AlertType")),
+            };
+            rows.Add(row);
+        }
+
+        result.Alerts       = rows;
+        result.TotalAlerts  = rows.Count;
+        result.ExpiredCount = rows.Count(x => x.AlertType == "Expired");
+        result.ExpiringSoon = rows.Count(x => x.AlertType == "Expiring Soon");
+
+        return result;
+    }
+
+    public async Task<OwnerPaymentAlertResponse> GetOwnerPaymentAlertsAsync(int daysAhead = 2)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        var rows = new List<OwnerPaymentAlertRow>();
+
+        await using var cmd = new SqlCommand("sp_GetOwnerPaymentAlerts", conn)
+            { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@DaysAhead", daysAhead);
+
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            rows.Add(new OwnerPaymentAlertRow
+            {
+                OwnerId         = r.GetInt32(r.GetOrdinal("OwnerId")),
+                OwnerCode       = r.IsDBNull(r.GetOrdinal("OwnerCode"))    ? "" : r.GetString(r.GetOrdinal("OwnerCode")),
+                OwnerName       = r.IsDBNull(r.GetOrdinal("OwnerName"))    ? "" : r.GetString(r.GetOrdinal("OwnerName")),
+                OwnerContact    = r.IsDBNull(r.GetOrdinal("OwnerContact")) ? "" : r.GetString(r.GetOrdinal("OwnerContact")),
+                OwnerContractId = r.GetInt32(r.GetOrdinal("OwnerContractId")),
+                ContractCode    = r.IsDBNull(r.GetOrdinal("ContractCode")) ? "" : r.GetString(r.GetOrdinal("ContractCode")),
+                CampName        = r.IsDBNull(r.GetOrdinal("CampName"))     ? "" : r.GetString(r.GetOrdinal("CampName")),
+                InstallmentId   = r.GetInt32(r.GetOrdinal("InstallmentId")),
+                InstallmentNo   = r.GetInt32(r.GetOrdinal("InstallmentNo")),
+                Amount          = r.IsDBNull(r.GetOrdinal("Amount"))        ? 0 : r.GetDecimal(r.GetOrdinal("Amount")),
+                PaidAmount      = r.IsDBNull(r.GetOrdinal("PaidAmount"))    ? 0 : r.GetDecimal(r.GetOrdinal("PaidAmount")),
+                BalanceAmount   = r.IsDBNull(r.GetOrdinal("BalanceAmount")) ? 0 : r.GetDecimal(r.GetOrdinal("BalanceAmount")),
+                DueDate         = r.IsDBNull(r.GetOrdinal("DueDate"))
+                                      ? ""
+                                      : r.GetDateTime(r.GetOrdinal("DueDate")).ToString("yyyy-MM-dd"),
+                DaysUntilDue    = r.IsDBNull(r.GetOrdinal("DaysUntilDue")) ? 0 : r.GetInt32(r.GetOrdinal("DaysUntilDue")),
+            });
+        }
+
+        return new OwnerPaymentAlertResponse
+        {
+            TotalAlerts = rows.Count,
+            TotalAmount = rows.Sum(x => x.BalanceAmount),
+            Alerts      = rows,
+        };
+    }
+
+    public async Task<OwnerMonthSummaryResponse> GetOwnerMonthSummaryAsync(string? month = null)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        var result = new OwnerMonthSummaryResponse
+        {
+            Month = month ?? DateTime.UtcNow.ToString("yyyy-MM")
+        };
+
+        await using var cmd = new SqlCommand("sp_GetOwnerMonthSummary", conn)
+            { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@Month", (object?)month ?? DBNull.Value);
+
+        // Result set 1 — per-owner rows
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            result.Owners.Add(new OwnerMonthSummaryRow
+            {
+                OwnerId           = r.GetInt32(r.GetOrdinal("OwnerId")),
+                OwnerCode         = r.IsDBNull(r.GetOrdinal("OwnerCode"))   ? "" : r.GetString(r.GetOrdinal("OwnerCode")),
+                OwnerName         = r.IsDBNull(r.GetOrdinal("OwnerName"))   ? "" : r.GetString(r.GetOrdinal("OwnerName")),
+                Contact           = r.IsDBNull(r.GetOrdinal("Contact"))     ? "" : r.GetString(r.GetOrdinal("Contact")),
+                TotalInstallments = r.IsDBNull(r.GetOrdinal("TotalInstallments")) ? 0 : r.GetInt32(r.GetOrdinal("TotalInstallments")),
+                TotalAmountDue    = r.IsDBNull(r.GetOrdinal("TotalAmountDue"))    ? 0 : r.GetDecimal(r.GetOrdinal("TotalAmountDue")),
+                TotalPaid         = r.IsDBNull(r.GetOrdinal("TotalPaid"))         ? 0 : r.GetDecimal(r.GetOrdinal("TotalPaid")),
+                TotalPending      = r.IsDBNull(r.GetOrdinal("TotalPending"))      ? 0 : r.GetDecimal(r.GetOrdinal("TotalPending")),
+                PaidCount         = r.IsDBNull(r.GetOrdinal("PaidCount"))         ? 0 : r.GetInt32(r.GetOrdinal("PaidCount")),
+                PendingCount      = r.IsDBNull(r.GetOrdinal("PendingCount"))      ? 0 : r.GetInt32(r.GetOrdinal("PendingCount")),
+                CampNames         = r.IsDBNull(r.GetOrdinal("CampNames"))         ? "" : r.GetString(r.GetOrdinal("CampNames")),
+            });
+        }
+
+        // Result set 2 — grand totals
+        await r.NextResultAsync();
+        if (await r.ReadAsync())
+        {
+            result.GrandTotalDue     = r.IsDBNull(r.GetOrdinal("GrandTotalDue"))     ? 0 : r.GetDecimal(r.GetOrdinal("GrandTotalDue"));
+            result.GrandTotalPaid    = r.IsDBNull(r.GetOrdinal("GrandTotalPaid"))    ? 0 : r.GetDecimal(r.GetOrdinal("GrandTotalPaid"));
+            result.GrandTotalPending = r.IsDBNull(r.GetOrdinal("GrandTotalPending")) ? 0 : r.GetDecimal(r.GetOrdinal("GrandTotalPending"));
+            result.TotalOwners       = r.IsDBNull(r.GetOrdinal("TotalOwners"))       ? 0 : r.GetInt32(r.GetOrdinal("TotalOwners"));
+            result.TotalInstallments = r.IsDBNull(r.GetOrdinal("TotalInstallments")) ? 0 : r.GetInt32(r.GetOrdinal("TotalInstallments"));
+        }
+
+        return result;
+    }
 }
