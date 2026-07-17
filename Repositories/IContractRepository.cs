@@ -8,7 +8,7 @@ public interface IContractRepository
     Task<(IEnumerable<Contract> Data, int TotalRecords)> GetAllAsync(ContractListRequest request);
     Task<Contract?>  GetByIdAsync(int id);
     Task<Contract?>  GetByContractIdAsync(string contractId);
-    Task<string>     CreateAsync(Contract contract);   // returns ContractId
+    Task<string>     CreateAsync(Contract contract, List<ContractRoomItem>? rooms = null);   // returns ContractId
     Task<bool>       UpdateStatusAsync(string contractId, string status);
     Task<bool>       DeleteAsync(int id);
     Task<bool>       UpdateScheduleAsync(string contractId, string scheduleJson);

@@ -8,6 +8,7 @@ public class CreateContractRequest
     public DateTime?     StartDate         { get; set; }
     public int?          Months            { get; set; } = 12;
     public List<int>     RoomIds           { get; set; } = new();
+    public List<ContractRoomItem>? Rooms   { get; set; }           // rich room data with amounts
     public decimal?      SecurityDeposit   { get; set; } = 0;
     public string?       ContractType      { get; set; } = "Monthly";
     public string?       InstallmentType   { get; set; } = "monthly";
@@ -26,6 +27,14 @@ public class CreateContractRequest
     public string?  ContractPaymentMode    { get; set; } = string.Empty;
     public string?  ContractPlotNo         { get; set; } = string.Empty;
     public string?  ContractMakaniNo       { get; set; } = string.Empty;
+}
+
+public class ContractRoomItem
+{
+    public int      RoomId        { get; set; }
+    public int?     CampId        { get; set; }
+    public decimal? MonthlyAmount { get; set; }
+    public decimal? TotalAmount   { get; set; }
 }
 
 public class UpdateContractStatusRequest
@@ -48,6 +57,7 @@ public class UpdateContractRequest
     public DateTime? StartDate       { get; set; }
     public int?      Months          { get; set; } = 12;
     public List<int>?  RoomIds       { get; set; } = new();
+    public List<ContractRoomItem>? Rooms { get; set; }
     public decimal?  SecurityDeposit { get; set; } = 0;
     public string?   ContractType    { get; set; }
     public decimal?  LessorAmount    { get; set; } = 0;
@@ -133,8 +143,19 @@ public class ContractResponse
     public decimal  TotalDue          { get; set; }
     public decimal? LastPaymentAmount { get; set; }
     public string?  LastPaymentDate   { get; set; }
-    public List<int>                   RoomIds  { get; set; } = new();
+    public List<ContractRoomDetail>     Rooms    { get; set; } = new();
     public List<ContractPaymentResponse> Payments { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+public class ContractRoomDetail
+{
+    public int      RoomId        { get; set; }
+    public int      CampId        { get; set; }
+    public string   RoomNo        { get; set; } = string.Empty;
+    public decimal  MonthlyAmount { get; set; }
+    public decimal  TotalAmount   { get; set; }
+    public decimal  PaidAmount    { get; set; }
+    public decimal  Balance       { get; set; }
 }

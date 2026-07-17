@@ -105,7 +105,7 @@ public class ContractRepository : IContractRepository
         return await ReadContractWithPayments(cmd);
     }
 
-    public async Task<string> CreateAsync(Contract contract)
+    public async Task<string> CreateAsync(Contract contract, List<ContractRoomItem>? rooms = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
@@ -118,7 +118,17 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@CampIdsJson",           campIdsJson);
         cmd.Parameters.AddWithValue("@StartDate",             contract.StartDate);
         cmd.Parameters.AddWithValue("@Months",                contract.Months);
-        var roomIdsJson = System.Text.Json.JsonSerializer.Serialize(contract.RoomIds);
+
+        // Room IDs JSON — use rich format if Rooms provided, otherwise simple array
+        string roomIdsJson;
+        if (rooms != null && rooms.Count > 0)
+        {
+            roomIdsJson = System.Text.Json.JsonSerializer.Serialize(rooms, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+        }
+        else
+        {
+            roomIdsJson = System.Text.Json.JsonSerializer.Serialize(contract.RoomIds);
+        }
         cmd.Parameters.AddWithValue("@RoomIdsJson",           roomIdsJson);
         cmd.Parameters.AddWithValue("@ContractType",          contract.ContractType);
         cmd.Parameters.AddWithValue("@SecurityDeposit",       contract.SecurityDeposit);
@@ -188,11 +198,20 @@ public class ContractRepository : IContractRepository
             ? System.Text.Json.JsonSerializer.Serialize(request.CampIds)
             : null;
         cmd.Parameters.AddWithValue("@CampIdsJson",   (object?)campIdsJson         ?? DBNull.Value);
-        // ContractType
         cmd.Parameters.AddWithValue("@ContractType",  (object?)request.ContractType ?? DBNull.Value);
-        var roomJson = (request.RoomIds != null && request.RoomIds.Count > 0)
-            ? System.Text.Json.JsonSerializer.Serialize(request.RoomIds)
-            : null;
+        // RoomIds — use rich format if Rooms provided
+        string? roomJson;
+        if (request.Rooms != null && request.Rooms.Count > 0)
+        {
+            roomJson = System.Text.Json.JsonSerializer.Serialize(
+                request.Rooms.Select(r => r.RoomId).ToList());
+        }
+        else
+        {
+            roomJson = (request.RoomIds != null && request.RoomIds.Count > 0)
+                ? System.Text.Json.JsonSerializer.Serialize(request.RoomIds)
+                : null;
+        }
         cmd.Parameters.AddWithValue("@RoomIdsJson",   (object?)roomJson            ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SecurityDeposit", request.SecurityDeposit.HasValue
             ? (object)request.SecurityDeposit.Value : DBNull.Value);
@@ -211,6 +230,28 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@ContractPlotNo",         string.IsNullOrEmpty(request.ContractPlotNo)         ? (object)DBNull.Value : request.ContractPlotNo);
         cmd.Parameters.AddWithValue("@ContractMakaniNo",       string.IsNullOrEmpty(request.ContractMakaniNo)       ? (object)DBNull.Value : request.ContractMakaniNo);
         await cmd.ExecuteNonQueryAsync();
+
+        // Update ContractRooms with amounts if rooms array provided
+        if (request.Rooms != null && request.Rooms.Count > 0 && !string.IsNullOrEmpty(request.ContractId))
+        {
+            var months = request.Months ?? 12;
+            foreach (var room in request.Rooms)
+            {
+                var total = room.TotalAmount ?? (room.MonthlyAmount ?? 0) * months;
+                await using var updCmd = new SqlCommand(@"
+                    UPDATE ContractRooms
+                    SET CampId = @CampId, MonthlyAmount = @MonthlyAmount, TotalAmount = @TotalAmount,
+                        Balance = @TotalAmount - ISNULL(PaidAmount, 0)
+                    WHERE ContractId = @ContractId AND RoomId = @RoomId", conn);
+                updCmd.Parameters.AddWithValue("@ContractId", request.ContractId);
+                updCmd.Parameters.AddWithValue("@RoomId", room.RoomId);
+                updCmd.Parameters.AddWithValue("@CampId", room.CampId ?? 0);
+                updCmd.Parameters.AddWithValue("@MonthlyAmount", room.MonthlyAmount ?? 0);
+                updCmd.Parameters.AddWithValue("@TotalAmount", total);
+                await updCmd.ExecuteNonQueryAsync();
+            }
+        }
+
         return true;
     }
 
@@ -287,6 +328,34 @@ public class ContractRepository : IContractRepository
         } catch {
             contract.CampIds = new List<int>();
         }
+
+        // ── 3. Load RoomDetails from ContractRooms (with amounts) ────────
+        try {
+            await using var roomCmd = new SqlCommand(@"
+                SELECT cr.RoomId, cr.CampId, ISNULL(r.RoomNo,'') RoomNo,
+                       ISNULL(cr.MonthlyAmount, r.MonthlyPrice) MonthlyAmount,
+                       ISNULL(cr.TotalAmount, 0) TotalAmount,
+                       ISNULL(cr.PaidAmount, 0) PaidAmount,
+                       ISNULL(cr.Balance, 0) Balance
+                FROM ContractRooms cr
+                LEFT JOIN Rooms r ON r.Id = cr.RoomId
+                WHERE cr.ContractId = @ContractId", cmd.Connection);
+            roomCmd.Parameters.AddWithValue("@ContractId", contract.ContractId);
+            await using var roomReader = await roomCmd.ExecuteReaderAsync();
+            while (await roomReader.ReadAsync())
+            {
+                contract.RoomDetails.Add(new ContractRoomData
+                {
+                    RoomId        = roomReader.GetInt32(roomReader.GetOrdinal("RoomId")),
+                    CampId        = roomReader.IsDBNull(roomReader.GetOrdinal("CampId")) ? 0 : roomReader.GetInt32(roomReader.GetOrdinal("CampId")),
+                    RoomNo        = roomReader.GetString(roomReader.GetOrdinal("RoomNo")),
+                    MonthlyAmount = roomReader.IsDBNull(roomReader.GetOrdinal("MonthlyAmount")) ? 0 : roomReader.GetDecimal(roomReader.GetOrdinal("MonthlyAmount")),
+                    TotalAmount   = roomReader.IsDBNull(roomReader.GetOrdinal("TotalAmount")) ? 0 : roomReader.GetDecimal(roomReader.GetOrdinal("TotalAmount")),
+                    PaidAmount    = roomReader.IsDBNull(roomReader.GetOrdinal("PaidAmount")) ? 0 : roomReader.GetDecimal(roomReader.GetOrdinal("PaidAmount")),
+                    Balance       = roomReader.IsDBNull(roomReader.GetOrdinal("Balance")) ? 0 : roomReader.GetDecimal(roomReader.GetOrdinal("Balance")),
+                });
+            }
+        } catch { /* column may not exist for old data */ }
 
         return contract;
     }

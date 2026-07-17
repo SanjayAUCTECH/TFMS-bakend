@@ -53,13 +53,18 @@ public class ContractService : IContractService
             ? request.CampIds[0]
             : 0;
 
+        // Derive RoomIds from Rooms array if provided
+        var roomIds = (request.Rooms != null && request.Rooms.Count > 0)
+            ? request.Rooms.Select(r => r.RoomId).ToList()
+            : request.RoomIds ?? new List<int>();
+
         var contractId = await _repo.CreateAsync(new Contract
         {
             TenantId               = request.TenantId      ?? 0,
             CampIds                = request.CampIds?.Count > 0 ? request.CampIds : new(),
             StartDate              = request.StartDate     ?? DateTime.Today,
             Months                 = request.Months        ?? 12,
-            RoomIds                = request.RoomIds       ?? new(),
+            RoomIds                = roomIds,
             SecurityDeposit        = request.SecurityDeposit   ?? 0,
             ContractType           = request.ContractType  ?? "Monthly",
             InstallmentType        = request.InstallmentType   ?? "monthly",
@@ -78,7 +83,7 @@ public class ContractService : IContractService
             ContractPaymentMode    = request.ContractPaymentMode    ?? "",
             ContractPlotNo         = request.ContractPlotNo         ?? "",
             ContractMakaniNo       = request.ContractMakaniNo       ?? "",
-        });
+        }, request.Rooms);
 
         var created = await _repo.GetByContractIdAsync(contractId);
 
@@ -165,7 +170,13 @@ public class ContractService : IContractService
         EndDate = c.EndDate, MonthlyTotal = c.MonthlyTotal, ContractTotal = c.ContractTotal,
         SecurityDeposit = c.SecurityDeposit, ContractType = c.ContractType, InstallmentType = c.InstallmentType,
         IssuedBy = c.IssuedBy, Notes = c.Notes, LessorAmount = c.LessorAmount,
-        Status = c.Status, RoomIds = c.RoomIds, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
+        Status = c.Status, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
+        Rooms = c.RoomDetails.Select(rd => new ContractRoomDetail
+        {
+            RoomId = rd.RoomId, CampId = rd.CampId, RoomNo = rd.RoomNo,
+            MonthlyAmount = rd.MonthlyAmount, TotalAmount = rd.TotalAmount,
+            PaidAmount = rd.PaidAmount, Balance = rd.Balance
+        }).ToList(),
         ContractPropertyUsage = c.ContractPropertyUsage,
         ContractBuildingName  = c.ContractBuildingName,
         ContractPropertyType  = c.ContractPropertyType,

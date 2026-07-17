@@ -39,7 +39,19 @@ public class Contract
     public DateTime      CreatedAt       { get; set; }
     public DateTime      UpdatedAt       { get; set; }
     public List<int>     RoomIds         { get; set; } = new();
+    public List<ContractRoomData> RoomDetails { get; set; } = new();
     public List<Payment> Payments        { get; set; } = new();
+}
+
+public class ContractRoomData
+{
+    public int     RoomId        { get; set; }
+    public int     CampId        { get; set; }
+    public string  RoomNo        { get; set; } = string.Empty;
+    public decimal MonthlyAmount { get; set; }
+    public decimal TotalAmount   { get; set; }
+    public decimal PaidAmount    { get; set; }
+    public decimal Balance       { get; set; }
 }
 
 public class ContractRoom

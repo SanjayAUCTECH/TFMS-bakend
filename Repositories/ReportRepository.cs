@@ -27,11 +27,17 @@ public class ReportRepository : IReportRepository
         var all = new List<InventoryReportRow>();
         await using (var rd = await cmd.ExecuteReaderAsync())
             while (await rd.ReadAsync()) all.Add(new InventoryReportRow {
-                RoomId=rd.GetInt32(0),RoomNo=rd.GetString(1),
-                CampName=rd.IsDBNull(2)?"":rd.GetString(2), FloorName=rd.IsDBNull(3)?"":rd.GetString(3),
-                Status=rd.GetString(4), Occupied=rd.GetBoolean(5), MonthlyPrice=rd.GetDecimal(6),
-                TenantName=rd.IsDBNull(7)?"":rd.GetString(7), ContractId=rd.IsDBNull(8)?"":rd.GetString(8),
-                ContractStatus=rd.IsDBNull(9)?"":rd.GetString(9), OtherDetails=rd.IsDBNull(10)?"":rd.GetString(10),
+                RoomId=rd.GetInt32(rd.GetOrdinal("RoomId")),
+                RoomNo=rd.GetString(rd.GetOrdinal("RoomNo")),
+                CampName=rd.IsDBNull(rd.GetOrdinal("CampName"))?"":rd.GetString(rd.GetOrdinal("CampName")),
+                FloorName=rd.IsDBNull(rd.GetOrdinal("FloorName"))?"":rd.GetString(rd.GetOrdinal("FloorName")),
+                Status=rd.GetString(rd.GetOrdinal("Status")),
+                Occupied=rd.GetBoolean(rd.GetOrdinal("Occupied")),
+                MonthlyPrice=rd.GetDecimal(rd.GetOrdinal("MonthlyPrice")),
+                OtherDetails=rd.IsDBNull(rd.GetOrdinal("OtherDetails"))?"":rd.GetString(rd.GetOrdinal("OtherDetails")),
+                TenantName=rd.IsDBNull(rd.GetOrdinal("TenantName"))?"":rd.GetString(rd.GetOrdinal("TenantName")),
+                ContractId=rd.IsDBNull(rd.GetOrdinal("ContractId"))?"":rd.GetString(rd.GetOrdinal("ContractId")),
+                ContractStatus=rd.IsDBNull(rd.GetOrdinal("ContractStatus"))?"":rd.GetString(rd.GetOrdinal("ContractStatus")),
             });
         int total=all.Count, occ=all.Count(x=>x.Occupied||x.Status=="Occupied"), vac=all.Count(x=>x.Status=="Vacant");
         int pg=r.ResolvedPage, ps=r.ResolvedPageSize==int.MaxValue?all.Count:r.ResolvedPageSize;

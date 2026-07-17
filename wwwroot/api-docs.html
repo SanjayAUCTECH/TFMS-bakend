@@ -71,6 +71,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f4f6fb;color:#222}
   <a href="#rooms">Room Master</a><a href="#tenants">Tenant Master</a>
   <div class="group">Contracts</div>
   <a href="#contracts">Contracts</a>
+  <a href="#contractrenewals">Contract Renewals</a>
   <div class="group">Payments</div>
   <a href="#payments">Payments</a><a href="#waivers">Waivers</a>
   <div class="group">Accounts</div>
@@ -355,9 +356,62 @@ GET /api/dashboard/stats?campId=1&tenantId=2&month=2026-07</div>
 <div class="section-title">📝 Contracts <span class="badge-new">Updated</span></div>
 
 <div class="info-box info-blue">🆕 NEW CONTRACT — Page 1: Save &amp; Next</div>
-<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Create contract</span></div>
-<div class="ep-body"><div class="code-block">{"tenantId":1,"campId":1,"startDate":"2026-07-01T00:00:00","months":12,"roomIds":[1,2,3],"lessorAmount":5000,"installmentType":"monthly","issuedBy":"Admin","notes":""}</div>
-<p style="font-size:12px;color:#667;margin-top:8px">✅ Auto-creates: Contracts + ContractRooms + ContractInstallments + Rooms → Occupied + TxnRecord (DR)</p></div></div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Create contract (full payload)</span></div>
+<div class="ep-body"><div class="code-block">{
+  "tenantId": 17,
+  "campId": 49,
+  "campIds": [49],
+  "startDate": "2026-07-17T00:00:00Z",
+  "months": 1,
+  "rooms": [
+    {"roomId": 392, "campId": 49, "monthlyAmount": 200, "totalAmount": 200}
+  ],
+  "securityDeposit": 0,
+  "contractType": "Monthly Based",
+  "installmentType": "Monthly",
+  "issuedBy": "Admin",
+  "notes": "",
+  "lessorAmount": 0,
+  "monthlyTotal": 200,
+  "contractTotal": 200,
+  "contractPropertyUsage": "Industrial",
+  "contractBuildingName": "Blk",
+  "contractPropertyType": "Labour",
+  "contractLocation": "Dubai",
+  "contractPropertyNo": "P1",
+  "contractPropertyArea": "500",
+  "contractPremisesNo": "PR1",
+  "contractPaymentMode": "",
+  "contractPlotNo": "PL1",
+  "contractMakaniNo": "MK1"
+}</div>
+<table class="params-table"><tr><th>Field</th><th>Type</th><th>Description</th></tr>
+<tr><td>tenantId</td><td>int</td><td><span class="tag tag-req">Required</span> Tenant ID</td></tr>
+<tr><td>campId</td><td>int</td><td>Primary camp ID (first camp)</td></tr>
+<tr><td>campIds</td><td>int[]</td><td><span class="tag tag-req">Required</span> Array of all selected camp IDs</td></tr>
+<tr><td>startDate</td><td>datetime</td><td><span class="tag tag-req">Required</span> Contract start date (ISO format with Z)</td></tr>
+<tr><td>months</td><td>int</td><td><span class="tag tag-req">Required</span> Duration in months</td></tr>
+<tr><td>rooms</td><td>array</td><td><span class="tag tag-req">Required</span> [{roomId, campId, monthlyAmount, totalAmount}]</td></tr>
+<tr><td>securityDeposit</td><td>decimal</td><td>Security deposit (default 0)</td></tr>
+<tr><td>contractType</td><td>string</td><td>"Monthly Based" | "Contractual Based"</td></tr>
+<tr><td>installmentType</td><td>string</td><td>"Monthly" | "Quarterly" | "Half Yearly" | "Yearly" | "Custom"</td></tr>
+<tr><td>issuedBy</td><td>string</td><td>Who issued (default "Admin")</td></tr>
+<tr><td>notes</td><td>string</td><td>Optional notes</td></tr>
+<tr><td>lessorAmount</td><td>decimal</td><td>Lessor amount (used for schedule if > 0)</td></tr>
+<tr><td>monthlyTotal</td><td>decimal</td><td>Monthly rent total</td></tr>
+<tr><td>contractTotal</td><td>decimal</td><td>Total contract value (monthlyTotal × months)</td></tr>
+<tr><td>contractPropertyUsage</td><td>string</td><td>"Residential" | "Commercial" | "Industrial"</td></tr>
+<tr><td>contractBuildingName</td><td>string</td><td>Building name</td></tr>
+<tr><td>contractPropertyType</td><td>string</td><td>Property type (e.g., "Apartment", "Labour")</td></tr>
+<tr><td>contractLocation</td><td>string</td><td>Location</td></tr>
+<tr><td>contractPropertyNo</td><td>string</td><td>Property number</td></tr>
+<tr><td>contractPropertyArea</td><td>string</td><td>Area in sq meters</td></tr>
+<tr><td>contractPremisesNo</td><td>string</td><td>DEWA Premises number</td></tr>
+<tr><td>contractPaymentMode</td><td>string</td><td>Payment mode (usually "")</td></tr>
+<tr><td>contractPlotNo</td><td>string</td><td>Plot number</td></tr>
+<tr><td>contractMakaniNo</td><td>string</td><td>Makani number</td></tr>
+</table>
+<p style="font-size:12px;color:#667;margin-top:8px">✅ Auto-creates: Contracts + ContractCamps + ContractRooms + ContractInstallments + Rooms → Occupied + TxnRecord (DR)</p></div></div>
 
 <div class="info-box info-blue">📋 NEW CONTRACT — Page 2: Save Schedule</div>
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/schedule</span><span class="ep-desc">Save payment schedule (mode/cheque/clearance per installment)</span></div>
@@ -390,12 +444,176 @@ GET /api/dashboard/stats?campId=1&tenantId=2&month=2026-07</div>
 }]}</div></div></div>
 
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PUT">PUT</span><span class="ep-path">/api/contracts</span><span class="ep-desc">Update contract details + rooms</span></div>
-<div class="ep-body"><div class="code-block">{"contractId":"CNT-000001","tenantId":1,"startDate":"2026-07-01","months":12,"roomIds":[1,2],"lessorAmount":5000,"notes":"Updated"}</div></div></div>
+<div class="ep-body"><div class="code-block">{
+  "contractId": "CNT-000150",
+  "tenantId": 17,
+  "campIds": [49],
+  "startDate": "2026-07-17",
+  "months": 1,
+  "rooms": [
+    {"roomId": 392, "campId": 49, "monthlyAmount": 200, "totalAmount": 200}
+  ],
+  "securityDeposit": 0,
+  "contractType": "Monthly Based",
+  "lessorAmount": 0,
+  "monthlyTotal": 200,
+  "contractTotal": 200,
+  "notes": "",
+  "contractPropertyUsage": "Industrial",
+  "contractBuildingName": "Blk",
+  "contractPropertyType": "Labour",
+  "contractLocation": "Dubai",
+  "contractPropertyNo": "P1",
+  "contractPropertyArea": "500",
+  "contractPremisesNo": "PR1",
+  "contractPaymentMode": "",
+  "contractPlotNo": "PL1",
+  "contractMakaniNo": "MK1"
+}</div>
+<p style="font-size:12px;color:#667;margin-top:8px">All fields optional except contractId. Only send fields you want to update.</p>
+</div></div>
 
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/{contractId}/status</span><span class="ep-desc">Update contract status</span></div>
 <div class="ep-body"><div class="code-block">{"status":"Terminated"}  // Active | Expired | Terminated</div></div></div>
 
 <div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method DELETE">DELETE</span><span class="ep-path">/api/contracts/{id}</span><span class="ep-desc">Delete contract (only non-Active)</span></div><div class="ep-body"></div></div>
+</div>
+
+<!-- CONTRACT RENEWALS -->
+<div class="section" id="contractrenewals">
+<div class="section-title">🔄 Contract Renewals <span class="badge-new">NEW</span></div>
+
+<div class="info-box info-green">✅ Renewal creates a NEW contract (same flow as New Contract) + logs renewal history + optionally expires old contract</div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method POST">POST</span><span class="ep-path">/api/contractrenewals/renew</span><span class="ep-desc">Renew contract — full payload (same as New Contract + renewal fields)</span></div>
+<div class="ep-body">
+<div class="sub-label">Request Body</div>
+<div class="code-block">{
+  "originalContractId": "CNT-000150",
+  "tenantId": 17,
+  "campIds": [49],
+  "startDate": "2026-08-17T00:00:00",
+  "months": 1,
+  "rooms": [
+    {"roomId": 392, "campId": 49, "monthlyAmount": 200, "totalAmount": 200}
+  ],
+  "contractType": "Monthly Based",
+  "securityDeposit": 0,
+  "installmentType": "Monthly",
+  "issuedBy": "Admin",
+  "notes": "Renewed from CNT-000150",
+  "lessorAmount": 0,
+  "monthlyTotal": 200,
+  "contractTotal": 200,
+  "renewalType": "Monthly Based",
+  "expireOldContract": true,
+  "contractPropertyUsage": "Industrial",
+  "contractBuildingName": "Blk",
+  "contractPropertyType": "Labour",
+  "contractLocation": "Dubai",
+  "contractPropertyNo": "P1",
+  "contractPropertyArea": "500",
+  "contractPremisesNo": "PR1",
+  "contractPaymentMode": "",
+  "contractPlotNo": "PL1",
+  "contractMakaniNo": "MK1"
+}</div>
+<table class="params-table"><tr><th>Field</th><th>Type</th><th>Description</th></tr>
+<tr><td>originalContractId</td><td>string</td><td><span class="tag tag-req">Required</span> Original contract to renew (e.g., "CNT-000150")</td></tr>
+<tr><td>tenantId</td><td>int</td><td>Defaults to original contract's tenant if not sent</td></tr>
+<tr><td>campIds</td><td>int[]</td><td>Defaults to original contract's camps if not sent</td></tr>
+<tr><td>startDate</td><td>datetime</td><td><span class="tag tag-req">Required</span> New contract start date</td></tr>
+<tr><td>months</td><td>int</td><td>Duration (default: 12)</td></tr>
+<tr><td>rooms</td><td>array</td><td>[{roomId, campId, monthlyAmount, totalAmount}] — defaults to original if not sent</td></tr>
+<tr><td>contractType</td><td>string</td><td>"Monthly Based" | "Contractual Based"</td></tr>
+<tr><td>securityDeposit</td><td>decimal</td><td>Security deposit amount</td></tr>
+<tr><td>installmentType</td><td>string</td><td>"Monthly" | "Quarterly" | "Half Yearly" | "Yearly" | "Custom"</td></tr>
+<tr><td>issuedBy</td><td>string</td><td>Who issued (default "Admin")</td></tr>
+<tr><td>notes</td><td>string</td><td>Optional notes</td></tr>
+<tr><td>lessorAmount</td><td>decimal</td><td>Lessor amount (for payment schedule)</td></tr>
+<tr><td>monthlyTotal</td><td>decimal</td><td>Monthly rent total</td></tr>
+<tr><td>contractTotal</td><td>decimal</td><td>Total contract value (monthlyTotal × months)</td></tr>
+<tr><td>renewalType</td><td>string</td><td>Renewal type label</td></tr>
+<tr><td>expireOldContract</td><td>bool</td><td>true = mark old contract as Expired (default: true)</td></tr>
+<tr><td>contractPropertyUsage</td><td>string</td><td>Property usage — defaults from original if empty</td></tr>
+<tr><td>contractBuildingName</td><td>string</td><td>Building name — defaults from original if empty</td></tr>
+<tr><td>contractPropertyType</td><td>string</td><td>Property type — defaults from original if empty</td></tr>
+<tr><td>contractLocation</td><td>string</td><td>Location — defaults from original if empty</td></tr>
+<tr><td>contractPropertyNo</td><td>string</td><td>Property number — defaults from original if empty</td></tr>
+<tr><td>contractPropertyArea</td><td>string</td><td>Property area — defaults from original if empty</td></tr>
+<tr><td>contractPremisesNo</td><td>string</td><td>Premises number — defaults from original if empty</td></tr>
+<tr><td>contractPaymentMode</td><td>string</td><td>Payment mode</td></tr>
+<tr><td>contractPlotNo</td><td>string</td><td>Plot number — defaults from original if empty</td></tr>
+<tr><td>contractMakaniNo</td><td>string</td><td>Makani number — defaults from original if empty</td></tr>
+</table>
+<div class="sub-label">Response</div>
+<div class="code-block">{
+  "success": true,
+  "data": {
+    "originalContractId": "CNT-000150",
+    "newContractId": "CNT-000151",
+    "renewalType": "Monthly Based",
+    "tenantId": 17,
+    "startDate": "2026-08-17",
+    "months": 1,
+    "monthlyTotal": 200,
+    "contractTotal": 200,
+    "installmentType": "Monthly",
+    "status": "Active"
+  },
+  "message": "Contract renewed successfully. New contract: CNT-000151"
+}</div>
+<p style="font-size:12px;color:#667;margin-top:8px">
+  ✅ Auto-creates: New Contract + ContractCamps + ContractRooms + ContractInstallments + TxnRecord (DR)<br>
+  ✅ Logs renewal in ContractRenewals table<br>
+  ✅ Optionally marks old contract as Expired<br>
+  ⚠ After renewal, call <code>PATCH /api/contracts/schedule</code> to save the payment schedule for the new contract
+</p>
+</div></div>
+
+<div class="info-box info-blue">📋 After Renewal — Save Payment Schedule for the NEW contract</div>
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method PATCH">PATCH</span><span class="ep-path">/api/contracts/schedule</span><span class="ep-desc">Save schedule for renewed contract (same endpoint as New Contract)</span></div>
+<div class="ep-body"><div class="code-block">{
+  "contractId": "CNT-000151",
+  "schedule": [
+    {"no": 1, "amount": 200, "dueDate": "2026-08-17T00:00:00", "mode": "Cash", "cheque": "", "clearance": ""}
+  ]
+}</div>
+<p style="font-size:12px;color:#667;margin-top:8px">Uses the <strong>newContractId</strong> returned from renewal response. Same endpoint as New Contract schedule save.</p>
+</div></div>
+
+<div class="endpoint"><div class="ep-header" onclick="toggle(this)"><span class="method GET">GET</span><span class="ep-path">/api/contractrenewals</span><span class="ep-desc">Get all renewal history (optional filter by contractId)</span></div>
+<div class="ep-body">
+<table class="params-table"><tr><th>Param</th><th>Type</th><th>Description</th></tr>
+<tr><td>contractId</td><td>string</td><td><span class="tag tag-opt">Optional</span> Filter by original or new contract ID</td></tr>
+</table>
+<div class="sub-label">Response</div>
+<div class="code-block">{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "originalContractId": "CNT-000150",
+      "newContractId": "CNT-000151",
+      "renewalType": "Monthly Based",
+      "renewalDate": "2026-07-17",
+      "newStartDate": "2026-08-17",
+      "newEndDate": "2026-09-16",
+      "newMonths": 1,
+      "newMonthlyTotal": 200,
+      "newContractTotal": 200,
+      "securityDeposit": 0,
+      "notes": "Renewed from CNT-000150",
+      "renewedBy": "Admin",
+      "status": "Active",
+      "tenantName": "Ravi Kumar",
+      "createdAt": "2026-07-17T10:30:00",
+      "updatedAt": "2026-07-17T10:30:00"
+    }
+  ],
+  "message": "Renewals retrieved."
+}</div>
+</div></div>
 </div>
 
 <!-- PAYMENTS -->

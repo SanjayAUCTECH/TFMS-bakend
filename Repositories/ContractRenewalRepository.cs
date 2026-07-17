@@ -26,8 +26,18 @@ public class ContractRenewalRepository : IContractRenewalRepository
             ? JsonSerializer.Serialize(r.CampIds) : "[]");
         cmd.Parameters.AddWithValue("@StartDate",          r.StartDate ?? DateTime.Today);
         cmd.Parameters.AddWithValue("@Months",             r.Months ?? 12);
-        cmd.Parameters.AddWithValue("@RoomIdsJson",        r.RoomIds != null && r.RoomIds.Count > 0
-            ? JsonSerializer.Serialize(r.RoomIds) : "[]");
+        // Room IDs — use rich format if Rooms provided
+        string roomIdsJson;
+        if (r.Rooms != null && r.Rooms.Count > 0)
+        {
+            roomIdsJson = JsonSerializer.Serialize(r.Rooms, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+        }
+        else
+        {
+            roomIdsJson = r.RoomIds != null && r.RoomIds.Count > 0
+                ? JsonSerializer.Serialize(r.RoomIds) : "[]";
+        }
+        cmd.Parameters.AddWithValue("@RoomIdsJson", roomIdsJson);
         cmd.Parameters.AddWithValue("@ContractType",       r.ContractType ?? "Monthly");
         cmd.Parameters.AddWithValue("@SecurityDeposit",    r.SecurityDeposit ?? 0);
         cmd.Parameters.AddWithValue("@InstallmentType",    r.InstallmentType ?? "monthly");
