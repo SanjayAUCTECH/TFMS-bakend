@@ -97,6 +97,7 @@ builder.Services.AddScoped<ITxnRecordRepository,    TxnRecordRepository>();
 builder.Services.AddScoped<ICompanyAssetRepository, CompanyAssetRepository>();
 builder.Services.AddScoped<IContractTermRepository, ContractTermRepository>();
 builder.Services.AddScoped<IContractRenewalRepository, ContractRenewalRepository>();
+builder.Services.AddScoped<IContractCancellationRepository, ContractCancellationRepository>();
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPartnerService,      PartnerService>();
