@@ -7,7 +7,6 @@ public class RenewContractRequest
     public List<int>? CampIds             { get; set; }
     public DateTime? StartDate            { get; set; }
     public int?      Months               { get; set; } = 12;
-    public List<int>? RoomIds             { get; set; }
     public List<ContractRoomItem>? Rooms  { get; set; }
     public string?   ContractType         { get; set; } = "Monthly";
     public decimal?  SecurityDeposit      { get; set; } = 0;

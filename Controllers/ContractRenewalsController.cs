@@ -41,8 +41,13 @@ public class ContractRenewalsController : ControllerBase
             request.TenantId = original.TenantId;
         if (request.CampIds == null || request.CampIds.Count == 0)
             request.CampIds = original.CampIds;
-        if (request.RoomIds == null || request.RoomIds.Count == 0)
-            request.RoomIds = original.RoomIds;
+
+        // Derive RoomIds from Rooms array or fallback to original
+        List<int>? roomIds = null;
+        if (request.Rooms != null && request.Rooms.Count > 0)
+            roomIds = request.Rooms.Select(r => r.RoomId).ToList();
+        else
+            roomIds = original.RoomIds;
 
         // Default property fields from original
         if (string.IsNullOrEmpty(request.ContractPropertyUsage))

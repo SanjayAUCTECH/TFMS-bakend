@@ -34,8 +34,7 @@ public class ContractRenewalRepository : IContractRenewalRepository
         }
         else
         {
-            roomIdsJson = r.RoomIds != null && r.RoomIds.Count > 0
-                ? JsonSerializer.Serialize(r.RoomIds) : "[]";
+            roomIdsJson = "[]";
         }
         cmd.Parameters.AddWithValue("@RoomIdsJson", roomIdsJson);
         cmd.Parameters.AddWithValue("@ContractType",       r.ContractType ?? "Monthly");

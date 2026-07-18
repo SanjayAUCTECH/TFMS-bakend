@@ -7,7 +7,6 @@ public class CreateContractRequest
     public List<int>     CampIds           { get; set; } = new();  // all selected camps
     public DateTime?     StartDate         { get; set; }
     public int?          Months            { get; set; } = 12;
-    public List<int>     RoomIds           { get; set; } = new();
     public List<ContractRoomItem>? Rooms   { get; set; }           // rich room data with amounts
     public decimal?      SecurityDeposit   { get; set; } = 0;
     public string?       ContractType      { get; set; } = "Monthly";

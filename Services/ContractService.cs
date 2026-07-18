@@ -56,7 +56,7 @@ public class ContractService : IContractService
         // Derive RoomIds from Rooms array if provided
         var roomIds = (request.Rooms != null && request.Rooms.Count > 0)
             ? request.Rooms.Select(r => r.RoomId).ToList()
-            : request.RoomIds ?? new List<int>();
+            : new List<int>();
 
         var contractId = await _repo.CreateAsync(new Contract
         {
