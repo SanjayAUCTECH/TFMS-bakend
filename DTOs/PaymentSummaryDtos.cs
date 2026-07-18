@@ -55,3 +55,18 @@ public class PaymentHistoryResponse
     public string   TenantName      { get; set; } = string.Empty;
     public string   CampName        { get; set; } = string.Empty;
 }
+
+/// <summary>Room info for Receive Payment — room-wise payment selection</summary>
+public class ContractRoomPaymentInfo
+{
+    public int      Id            { get; set; }
+    public string   ContractId    { get; set; } = string.Empty;
+    public int      RoomId        { get; set; }
+    public int      CampId        { get; set; }
+    public string   RoomNo        { get; set; } = string.Empty;
+    public string   CampName      { get; set; } = string.Empty;
+    public decimal  MonthlyAmount { get; set; }
+    public decimal  TotalAmount   { get; set; }
+    public decimal  PaidAmount    { get; set; }
+    public decimal  Balance       { get; set; }
+}

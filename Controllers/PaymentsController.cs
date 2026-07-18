@@ -62,4 +62,12 @@ public class PaymentsController : ControllerBase
         var r = await _service.RecordPaymentAsync(request);
         return r.Success ? Ok(r) : BadRequest(r);
     }
+
+    /// <summary>GET api/payments/rooms/{contractId} — Get rooms with balances for payment UI.</summary>
+    [HttpGet("rooms/{contractId}")]
+    public async Task<IActionResult> GetContractRooms(string contractId)
+    {
+        var data = await _repo.GetContractRoomsForPaymentAsync(contractId);
+        return Ok(ApiResponse<IEnumerable<ContractRoomPaymentInfo>>.Ok(data, "Contract rooms retrieved."));
+    }
 }

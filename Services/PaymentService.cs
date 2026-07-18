@@ -66,8 +66,7 @@ public class PaymentService : IPaymentService
             if (fp != null) { fundPoolName = fp.Name; fundPoolCode = fp.Code; }
         }
 
-        // 1. Record payment in ContractInstallments
-        var result = await _repo.RecordPaymentAsync(new Payment
+        var payment = new Payment
         {
             ContractId      = request.ContractId,
             InstallmentNo   = request.InstallmentNo,
@@ -83,12 +82,26 @@ public class PaymentService : IPaymentService
             FundPoolId      = request.FundPoolId,
             FundPoolName    = fundPoolName,
             IssuedBy        = request.IssuedBy,
-        });
+        };
+
+        bool result;
+
+        // Use room-wise SP if RoomPayments provided
+        if (request.RoomPayments != null && request.RoomPayments.Count > 0)
+        {
+            var roomPaymentsJson = System.Text.Json.JsonSerializer.Serialize(
+                request.RoomPayments,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+            result = await _repo.RecordPaymentWithRoomsAsync(payment, roomPaymentsJson);
+        }
+        else
+        {
+            result = await _repo.RecordPaymentAsync(payment);
+        }
 
         if (!result)
             return ApiResponse<bool>.Fail("Payment recording failed. Check contract and installment number.");
 
-        // Income + TxnRecord are auto-created inside sp_RecordPayment (DB transaction)
         return ApiResponse<bool>.Ok(true, "Payment recorded successfully.");
     }
 

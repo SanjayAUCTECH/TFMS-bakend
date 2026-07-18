@@ -201,4 +201,55 @@ public class PaymentRepository : IPaymentRepository
         FundPoolName    = r.IsDBNull(r.GetOrdinal("FundPoolName"))    ? "" : r.GetString(r.GetOrdinal("FundPoolName")),
         IssuedBy        = r.IsDBNull(r.GetOrdinal("IssuedBy"))        ? "" : r.GetString(r.GetOrdinal("IssuedBy")),
     };
+
+    public async Task<bool> RecordPaymentWithRoomsAsync(Payment p, string roomPaymentsJson)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_RecordPaymentWithRooms", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@ContractId",       p.ContractId);
+        cmd.Parameters.AddWithValue("@PaidAmount",       p.PaidAmount);
+        cmd.Parameters.AddWithValue("@PaidDate",         p.PaidDate ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@RoomPaymentsJson", roomPaymentsJson ?? "[]");
+        cmd.Parameters.AddWithValue("@InstallmentNo",    p.InstallmentNo);
+        cmd.Parameters.AddWithValue("@PaymentModeId",    p.PaymentModeId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@PaymentMode",      p.PaymentMode);
+        cmd.Parameters.AddWithValue("@ChequeNumber",     p.ChequeNumber);
+        cmd.Parameters.AddWithValue("@ClearanceDate",    p.ClearanceDate);
+        cmd.Parameters.AddWithValue("@Description",      p.Description);
+        cmd.Parameters.AddWithValue("@ReceivedBy",       p.ReceivedBy);
+        cmd.Parameters.AddWithValue("@ReceivedContact",  p.ReceivedContact);
+        cmd.Parameters.AddWithValue("@FundPoolId",       p.FundPoolId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPoolName",     p.FundPoolName);
+        cmd.Parameters.AddWithValue("@IssuedBy",         p.IssuedBy);
+        try { await cmd.ExecuteNonQueryAsync(); return true; }
+        catch { return false; }
+    }
+
+    public async Task<IEnumerable<ContractRoomPaymentInfo>> GetContractRoomsForPaymentAsync(string contractId)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_GetContractRoomsForPayment", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@ContractId", contractId);
+        var list = new List<ContractRoomPaymentInfo>();
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            list.Add(new ContractRoomPaymentInfo
+            {
+                Id            = r.GetInt32(r.GetOrdinal("Id")),
+                ContractId    = contractId,
+                RoomId        = r.GetInt32(r.GetOrdinal("RoomId")),
+                CampId        = r.IsDBNull(r.GetOrdinal("CampId")) ? 0 : r.GetInt32(r.GetOrdinal("CampId")),
+                RoomNo        = r.IsDBNull(r.GetOrdinal("RoomNo")) ? "" : r.GetString(r.GetOrdinal("RoomNo")),
+                CampName      = r.IsDBNull(r.GetOrdinal("CampName")) ? "" : r.GetString(r.GetOrdinal("CampName")),
+                MonthlyAmount = r.IsDBNull(r.GetOrdinal("MonthlyAmount")) ? 0 : r.GetDecimal(r.GetOrdinal("MonthlyAmount")),
+                TotalAmount   = r.IsDBNull(r.GetOrdinal("TotalAmount")) ? 0 : r.GetDecimal(r.GetOrdinal("TotalAmount")),
+                PaidAmount    = r.IsDBNull(r.GetOrdinal("PaidAmount")) ? 0 : r.GetDecimal(r.GetOrdinal("PaidAmount")),
+                Balance       = r.IsDBNull(r.GetOrdinal("Balance")) ? 0 : r.GetDecimal(r.GetOrdinal("Balance")),
+            });
+        }
+        return list;
+    }
 }
