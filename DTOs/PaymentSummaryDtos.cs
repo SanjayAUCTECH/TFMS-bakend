@@ -70,3 +70,18 @@ public class ContractRoomPaymentInfo
     public decimal  PaidAmount    { get; set; }
     public decimal  Balance       { get; set; }
 }
+
+/// <summary>Room transaction record for edit pre-fill</summary>
+public class RoomTransactionResponse
+{
+    public int      Id          { get; set; }
+    public string   ContractId  { get; set; } = string.Empty;
+    public int      RoomId      { get; set; }
+    public int      CampId      { get; set; }
+    public string   RoomNo      { get; set; } = string.Empty;
+    public string   CampName    { get; set; } = string.Empty;
+    public decimal  Amount      { get; set; }
+    public string?  TxnDate     { get; set; }
+    public string?  TxnType     { get; set; }
+    public string?  Description { get; set; }
+}

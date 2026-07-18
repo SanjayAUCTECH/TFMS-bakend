@@ -62,6 +62,8 @@ public class TxnRecordRepository : ITxnRecordRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
+
+        // 1. Update TxnRecord
         await using var cmd = new SqlCommand("sp_UpdateTxnRecord", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id",            id);
         cmd.Parameters.AddWithValue("@Amount",        r.Amount);
@@ -73,8 +75,81 @@ public class TxnRecordRepository : ITxnRecordRepository
         cmd.Parameters.AddWithValue("@Description",   r.Description);
         cmd.Parameters.AddWithValue("@ReceivedBy",    r.ReceivedBy);
         cmd.Parameters.AddWithValue("@ChequeNumber",  r.ChequeNumber);
-        try { await cmd.ExecuteNonQueryAsync(); return true; }
+        try { await cmd.ExecuteNonQueryAsync(); }
         catch { return false; }
+
+        // 2. Handle room payments on edit
+        if (r.RoomPayments != null && r.RoomPayments.Count > 0 && !string.IsNullOrEmpty(r.ContractId))
+        {
+            try
+            {
+                // Step A: Reverse old room amounts in ContractRooms
+                // Try by TxnRecordId first, fallback to ContractId + TxnDate
+                await using var reverseCmd = new SqlCommand(@"
+                    UPDATE cr 
+                    SET cr.PaidAmount = CASE WHEN ISNULL(cr.PaidAmount, 0) - crt.Amount < 0 THEN 0 ELSE ISNULL(cr.PaidAmount, 0) - crt.Amount END,
+                        cr.Balance = ISNULL(cr.TotalAmount, 0) - (CASE WHEN ISNULL(cr.PaidAmount, 0) - crt.Amount < 0 THEN 0 ELSE ISNULL(cr.PaidAmount, 0) - crt.Amount END)
+                    FROM ContractRooms cr
+                    INNER JOIN ContractRoomsTrns crt ON crt.ContractId = cr.ContractId AND crt.RoomId = cr.RoomId
+                    WHERE crt.TxnType = 'CR' AND (
+                        crt.TxnRecordId = @TxnRecordId 
+                        OR (crt.TxnRecordId IS NULL AND crt.ContractId = @ContractId AND CONVERT(NVARCHAR(10), crt.TxnDate, 23) = @TxnDate)
+                    )", conn);
+                reverseCmd.Parameters.AddWithValue("@TxnRecordId", id);
+                reverseCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
+                reverseCmd.Parameters.AddWithValue("@TxnDate", r.TxnDate.ToString("yyyy-MM-dd"));
+                await reverseCmd.ExecuteNonQueryAsync();
+
+                // Step B: Delete old ContractRoomsTrns entries
+                await using var delCmd = new SqlCommand(@"
+                    DELETE FROM ContractRoomsTrns WHERE TxnType = 'CR' AND (
+                        TxnRecordId = @TxnRecordId 
+                        OR (TxnRecordId IS NULL AND ContractId = @ContractId AND CONVERT(NVARCHAR(10), TxnDate, 23) = @TxnDate)
+                    )", conn);
+                delCmd.Parameters.AddWithValue("@TxnRecordId", id);
+                delCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
+                delCmd.Parameters.AddWithValue("@TxnDate", r.TxnDate.ToString("yyyy-MM-dd"));
+                await delCmd.ExecuteNonQueryAsync();
+
+                // Step C: Insert new room entries + update ContractRooms with new amounts
+                foreach (var room in r.RoomPayments)
+                {
+                    if (room.Amount <= 0) continue;
+
+                    // Add new amount to ContractRooms
+                    await using var updCmd = new SqlCommand(@"
+                        UPDATE ContractRooms
+                        SET PaidAmount = ISNULL(PaidAmount, 0) + @Amount,
+                            Balance = ISNULL(TotalAmount, 0) - (ISNULL(PaidAmount, 0) + @Amount),
+                            PaidDate = @PaidDate
+                        WHERE ContractId = @ContractId AND RoomId = @RoomId", conn);
+                    updCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
+                    updCmd.Parameters.AddWithValue("@RoomId", room.RoomId);
+                    updCmd.Parameters.AddWithValue("@Amount", room.Amount);
+                    updCmd.Parameters.AddWithValue("@PaidDate", r.TxnDate);
+                    await updCmd.ExecuteNonQueryAsync();
+
+                    // Insert new record in ContractRoomsTrns
+                    await using var insCmd = new SqlCommand(@"
+                        INSERT INTO ContractRoomsTrns (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Description, CreatedAt)
+                        VALUES (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @Amount, @Amount, @TxnDate, @Description, GETDATE())", conn);
+                    insCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
+                    insCmd.Parameters.AddWithValue("@RoomId", room.RoomId);
+                    insCmd.Parameters.AddWithValue("@CampId", room.CampId);
+                    insCmd.Parameters.AddWithValue("@TxnRecordId", id);
+                    insCmd.Parameters.AddWithValue("@Amount", room.Amount);
+                    insCmd.Parameters.AddWithValue("@TxnDate", r.TxnDate);
+                    insCmd.Parameters.AddWithValue("@Description", $"Payment updated - {r.PaymentMode} - {r.Description}");
+                    await insCmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[TxnRecordRepo] Room update on edit failed: {ex.Message}");
+            }
+        }
+
+        return true;
     }
 
     public async Task<bool> DeleteAsync(int id)

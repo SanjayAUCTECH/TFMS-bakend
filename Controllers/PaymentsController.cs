@@ -70,4 +70,12 @@ public class PaymentsController : ControllerBase
         var data = await _repo.GetContractRoomsForPaymentAsync(contractId);
         return Ok(ApiResponse<IEnumerable<ContractRoomPaymentInfo>>.Ok(data, "Contract rooms retrieved."));
     }
+
+    /// <summary>GET api/payments/room-transactions/{contractId}?txnDate=2026-07-18 — Get room-wise payment history for a specific transaction date.</summary>
+    [HttpGet("room-transactions/{contractId}")]
+    public async Task<IActionResult> GetRoomTransactions(string contractId, [FromQuery] string? txnDate, [FromQuery] int? txnRecordId)
+    {
+        var data = await _repo.GetRoomTransactionsAsync(contractId, txnDate, txnRecordId);
+        return Ok(ApiResponse<IEnumerable<RoomTransactionResponse>>.Ok(data, "Room transactions retrieved."));
+    }
 }

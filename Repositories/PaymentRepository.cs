@@ -206,48 +206,183 @@ public class PaymentRepository : IPaymentRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("sp_RecordPaymentWithRooms", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@ContractId",       p.ContractId);
-        cmd.Parameters.AddWithValue("@PaidAmount",       p.PaidAmount);
-        cmd.Parameters.AddWithValue("@PaidDate",         p.PaidDate ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@RoomPaymentsJson", roomPaymentsJson ?? "[]");
-        cmd.Parameters.AddWithValue("@InstallmentNo",    p.InstallmentNo);
-        cmd.Parameters.AddWithValue("@PaymentModeId",    p.PaymentModeId ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@PaymentMode",      p.PaymentMode);
-        cmd.Parameters.AddWithValue("@ChequeNumber",     p.ChequeNumber);
-        cmd.Parameters.AddWithValue("@ClearanceDate",    p.ClearanceDate);
-        cmd.Parameters.AddWithValue("@Description",      p.Description);
-        cmd.Parameters.AddWithValue("@ReceivedBy",       p.ReceivedBy);
-        cmd.Parameters.AddWithValue("@ReceivedContact",  p.ReceivedContact);
-        cmd.Parameters.AddWithValue("@FundPoolId",       p.FundPoolId ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@FundPoolName",     p.FundPoolName);
-        cmd.Parameters.AddWithValue("@IssuedBy",         p.IssuedBy);
-        try { await cmd.ExecuteNonQueryAsync(); return true; }
+
+        // 1. Record payment using existing SP
+        await using var cmd = new SqlCommand("sp_RecordPayment", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@ContractId",      p.ContractId);
+        cmd.Parameters.AddWithValue("@InstallmentNo",   p.InstallmentNo);
+        cmd.Parameters.AddWithValue("@PaidAmount",      p.PaidAmount);
+        cmd.Parameters.AddWithValue("@PaidDate",        p.PaidDate ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@PaymentModeId",   p.PaymentModeId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@PaymentMode",     p.PaymentMode);
+        cmd.Parameters.AddWithValue("@ChequeNumber",    p.ChequeNumber);
+        cmd.Parameters.AddWithValue("@ClearanceDate",   p.ClearanceDate);
+        cmd.Parameters.AddWithValue("@Description",     p.Description);
+        cmd.Parameters.AddWithValue("@ReceivedBy",      p.ReceivedBy);
+        cmd.Parameters.AddWithValue("@ReceivedContact", p.ReceivedContact);
+        cmd.Parameters.AddWithValue("@FundPoolId",      p.FundPoolId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPoolName",    p.FundPoolName);
+        cmd.Parameters.AddWithValue("@IssuedBy",        p.IssuedBy);
+        try { await cmd.ExecuteNonQueryAsync(); }
         catch { return false; }
+
+        // Get the TxnRecordId that was just created by sp_RecordPayment
+        int txnRecordId = 0;
+        try
+        {
+            await using var idCmd = new SqlCommand(
+                "SELECT TOP 1 Id FROM TxnRecords WHERE ContractId=@ContractId AND TxnType='CR' ORDER BY Id DESC", conn);
+            idCmd.Parameters.AddWithValue("@ContractId", p.ContractId);
+            var result = await idCmd.ExecuteScalarAsync();
+            if (result != null) txnRecordId = Convert.ToInt32(result);
+        }
+        catch { /* ignore */ }
+
+        // 2. Update ContractRooms PaidAmount/Balance + INSERT into ContractRoomsTrns
+        if (!string.IsNullOrEmpty(roomPaymentsJson) && roomPaymentsJson != "[]")
+        {
+            try
+            {
+                var roomItems = System.Text.Json.JsonSerializer.Deserialize<List<DTOs.RoomPaymentItem>>(
+                    roomPaymentsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (roomItems != null)
+                {
+                    foreach (var room in roomItems)
+                    {
+                        if (room.Amount <= 0) continue;
+
+                        // Update ContractRooms PaidAmount and Balance
+                        await using var updCmd = new SqlCommand(@"
+                            UPDATE ContractRooms
+                            SET PaidAmount = ISNULL(PaidAmount, 0) + @Amount,
+                                Balance = ISNULL(TotalAmount, 0) - (ISNULL(PaidAmount, 0) + @Amount),
+                                PaidDate = @PaidDate
+                            WHERE ContractId = @ContractId AND RoomId = @RoomId", conn);
+                        updCmd.Parameters.AddWithValue("@ContractId", p.ContractId);
+                        updCmd.Parameters.AddWithValue("@RoomId", room.RoomId);
+                        updCmd.Parameters.AddWithValue("@Amount", room.Amount);
+                        updCmd.Parameters.AddWithValue("@PaidDate", p.PaidDate ?? (object)DBNull.Value);
+                        await updCmd.ExecuteNonQueryAsync();
+
+                        // INSERT into ContractRoomsTrns
+                        await using var insCmd = new SqlCommand(@"
+                            INSERT INTO ContractRoomsTrns (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Description, CreatedAt)
+                            VALUES (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @TotalAmount, @Amount, @TxnDate, @Description, GETDATE())", conn);
+                        insCmd.Parameters.AddWithValue("@ContractId", p.ContractId);
+                        insCmd.Parameters.AddWithValue("@RoomId", room.RoomId);
+                        insCmd.Parameters.AddWithValue("@CampId", room.CampId);
+                        insCmd.Parameters.AddWithValue("@TxnRecordId", txnRecordId > 0 ? txnRecordId : (object)DBNull.Value);
+                        insCmd.Parameters.AddWithValue("@TotalAmount", room.Amount);
+                        insCmd.Parameters.AddWithValue("@Amount", room.Amount);
+                        insCmd.Parameters.AddWithValue("@TxnDate", p.PaidDate ?? (object)DateTime.Today);
+                        insCmd.Parameters.AddWithValue("@Description", $"Payment received - {p.PaymentMode} - {p.Description}");
+                        await insCmd.ExecuteNonQueryAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[PaymentRepo] Room update failed: {ex.Message}");
+            }
+        }
+
+        return true;
     }
 
     public async Task<IEnumerable<ContractRoomPaymentInfo>> GetContractRoomsForPaymentAsync(string contractId)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("sp_GetContractRoomsForPayment", conn) { CommandType = CommandType.StoredProcedure };
+
+        // Use direct SQL query (works without SP - fallback)
+        var sql = @"
+            SELECT
+                cr.Id,
+                cr.ContractId,
+                cr.RoomId,
+                ISNULL(cr.CampId, 0) AS CampId,
+                ISNULL(r.RoomNo, '') AS RoomNo,
+                ISNULL(ca.Name, '') AS CampName,
+                ISNULL(cr.MonthlyAmount, r.MonthlyPrice) AS MonthlyAmount,
+                ISNULL(cr.TotalAmount, 0) AS TotalAmount,
+                ISNULL(cr.PaidAmount, 0) AS PaidAmount,
+                ISNULL(cr.Balance, ISNULL(cr.TotalAmount, 0) - ISNULL(cr.PaidAmount, 0)) AS Balance
+            FROM ContractRooms cr
+            JOIN Rooms r ON r.Id = cr.RoomId
+            LEFT JOIN Camps ca ON ca.Id = cr.CampId
+            WHERE cr.ContractId = @ContractId
+            ORDER BY ca.Name, r.RoomNo";
+
+        await using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@ContractId", contractId);
         var list = new List<ContractRoomPaymentInfo>();
-        await using var r = await cmd.ExecuteReaderAsync();
-        while (await r.ReadAsync())
+        await using var r2 = await cmd.ExecuteReaderAsync();
+        while (await r2.ReadAsync())
         {
             list.Add(new ContractRoomPaymentInfo
             {
-                Id            = r.GetInt32(r.GetOrdinal("Id")),
+                Id            = r2.GetInt32(r2.GetOrdinal("Id")),
                 ContractId    = contractId,
-                RoomId        = r.GetInt32(r.GetOrdinal("RoomId")),
-                CampId        = r.IsDBNull(r.GetOrdinal("CampId")) ? 0 : r.GetInt32(r.GetOrdinal("CampId")),
-                RoomNo        = r.IsDBNull(r.GetOrdinal("RoomNo")) ? "" : r.GetString(r.GetOrdinal("RoomNo")),
-                CampName      = r.IsDBNull(r.GetOrdinal("CampName")) ? "" : r.GetString(r.GetOrdinal("CampName")),
-                MonthlyAmount = r.IsDBNull(r.GetOrdinal("MonthlyAmount")) ? 0 : r.GetDecimal(r.GetOrdinal("MonthlyAmount")),
-                TotalAmount   = r.IsDBNull(r.GetOrdinal("TotalAmount")) ? 0 : r.GetDecimal(r.GetOrdinal("TotalAmount")),
-                PaidAmount    = r.IsDBNull(r.GetOrdinal("PaidAmount")) ? 0 : r.GetDecimal(r.GetOrdinal("PaidAmount")),
-                Balance       = r.IsDBNull(r.GetOrdinal("Balance")) ? 0 : r.GetDecimal(r.GetOrdinal("Balance")),
+                RoomId        = r2.GetInt32(r2.GetOrdinal("RoomId")),
+                CampId        = r2.IsDBNull(r2.GetOrdinal("CampId")) ? 0 : r2.GetInt32(r2.GetOrdinal("CampId")),
+                RoomNo        = r2.IsDBNull(r2.GetOrdinal("RoomNo")) ? "" : r2.GetString(r2.GetOrdinal("RoomNo")),
+                CampName      = r2.IsDBNull(r2.GetOrdinal("CampName")) ? "" : r2.GetString(r2.GetOrdinal("CampName")),
+                MonthlyAmount = r2.IsDBNull(r2.GetOrdinal("MonthlyAmount")) ? 0 : r2.GetDecimal(r2.GetOrdinal("MonthlyAmount")),
+                TotalAmount   = r2.IsDBNull(r2.GetOrdinal("TotalAmount")) ? 0 : r2.GetDecimal(r2.GetOrdinal("TotalAmount")),
+                PaidAmount    = r2.IsDBNull(r2.GetOrdinal("PaidAmount")) ? 0 : r2.GetDecimal(r2.GetOrdinal("PaidAmount")),
+                Balance       = r2.IsDBNull(r2.GetOrdinal("Balance")) ? 0 : r2.GetDecimal(r2.GetOrdinal("Balance")),
+            });
+        }
+        return list;
+    }
+
+    public async Task<IEnumerable<RoomTransactionResponse>> GetRoomTransactionsAsync(string contractId, string? txnDate, int? txnRecordId)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        var sql = @"
+            SELECT crt.Id, crt.ContractId, crt.RoomId, crt.CampId,
+                   ISNULL(r.RoomNo, '') AS RoomNo,
+                   ISNULL(ca.Name, '') AS CampName,
+                   crt.Amount, 
+                   CONVERT(NVARCHAR(10), crt.TxnDate, 23) AS TxnDate,
+                   crt.TxnType, crt.Description
+            FROM ContractRoomsTrns crt
+            JOIN Rooms r ON r.Id = crt.RoomId
+            LEFT JOIN Camps ca ON ca.Id = crt.CampId
+            WHERE crt.ContractId = @ContractId AND crt.TxnType = 'CR'";
+
+        // Try TxnRecordId first, fallback to txnDate
+        if (txnRecordId.HasValue && txnRecordId > 0)
+            sql += " AND (crt.TxnRecordId = @TxnRecordId OR (@TxnDate IS NOT NULL AND CONVERT(NVARCHAR(10), crt.TxnDate, 23) = @TxnDate))";
+        else if (!string.IsNullOrEmpty(txnDate))
+            sql += " AND CONVERT(NVARCHAR(10), crt.TxnDate, 23) = @TxnDate";
+
+        sql += " ORDER BY crt.Id DESC";
+
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@ContractId", contractId);
+        cmd.Parameters.AddWithValue("@TxnRecordId", txnRecordId.HasValue ? txnRecordId.Value : (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@TxnDate", !string.IsNullOrEmpty(txnDate) ? txnDate : (object)DBNull.Value);
+
+        var list = new List<RoomTransactionResponse>();
+        await using var r2 = await cmd.ExecuteReaderAsync();
+        while (await r2.ReadAsync())
+        {
+            list.Add(new RoomTransactionResponse
+            {
+                Id          = r2.GetInt32(r2.GetOrdinal("Id")),
+                ContractId  = contractId,
+                RoomId      = r2.GetInt32(r2.GetOrdinal("RoomId")),
+                CampId      = r2.IsDBNull(r2.GetOrdinal("CampId")) ? 0 : r2.GetInt32(r2.GetOrdinal("CampId")),
+                RoomNo      = r2.IsDBNull(r2.GetOrdinal("RoomNo")) ? "" : r2.GetString(r2.GetOrdinal("RoomNo")),
+                CampName    = r2.IsDBNull(r2.GetOrdinal("CampName")) ? "" : r2.GetString(r2.GetOrdinal("CampName")),
+                Amount      = r2.IsDBNull(r2.GetOrdinal("Amount")) ? 0 : r2.GetDecimal(r2.GetOrdinal("Amount")),
+                TxnDate     = r2.IsDBNull(r2.GetOrdinal("TxnDate")) ? null : r2.GetString(r2.GetOrdinal("TxnDate")),
+                TxnType     = r2.IsDBNull(r2.GetOrdinal("TxnType")) ? null : r2.GetString(r2.GetOrdinal("TxnType")),
+                Description = r2.IsDBNull(r2.GetOrdinal("Description")) ? null : r2.GetString(r2.GetOrdinal("Description")),
             });
         }
         return list;

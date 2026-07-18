@@ -34,6 +34,9 @@ public class UpdateTxnRecordRequest
     public string   Description   { get; set; } = string.Empty;
     public string   ReceivedBy    { get; set; } = string.Empty;
     public string   ChequeNumber  { get; set; } = string.Empty;
+    public string?  ContractId    { get; set; }
+    public decimal? OldAmount     { get; set; }
+    public List<RoomPaymentItem>? RoomPayments { get; set; }
 }
 
 public class TxnRecordResponse
