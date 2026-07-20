@@ -372,6 +372,8 @@ public class ContractRepository : IContractRepository
         MonthlyTotal    = r.GetDecimal(r.GetOrdinal("MonthlyTotal")),
         ContractTotal   = r.GetDecimal(r.GetOrdinal("ContractTotal")),
         SecurityDeposit = HasColumn(r,"SecurityDeposit") && !r.IsDBNull(r.GetOrdinal("SecurityDeposit")) ? r.GetDecimal(r.GetOrdinal("SecurityDeposit")) : 0,
+        SecurityDepositStatus = HasColumn(r,"SecurityDepositStatus") && !r.IsDBNull(r.GetOrdinal("SecurityDepositStatus")) ? r.GetString(r.GetOrdinal("SecurityDepositStatus")) : "Pending",
+        SecurityDepositPaid = HasColumn(r,"SecurityDepositPaid") && !r.IsDBNull(r.GetOrdinal("SecurityDepositPaid")) ? r.GetDecimal(r.GetOrdinal("SecurityDepositPaid")) : 0,
         ContractType    = HasColumn(r,"ContractType")    && !r.IsDBNull(r.GetOrdinal("ContractType"))    ? r.GetString(r.GetOrdinal("ContractType"))    : "Monthly",
         InstallmentType = HasColumn(r,"InstallmentType") && !r.IsDBNull(r.GetOrdinal("InstallmentType")) ? r.GetString(r.GetOrdinal("InstallmentType")) : "monthly",
         IssuedBy        = HasColumn(r,"IssuedBy")        && !r.IsDBNull(r.GetOrdinal("IssuedBy"))        ? r.GetString(r.GetOrdinal("IssuedBy"))        : "",

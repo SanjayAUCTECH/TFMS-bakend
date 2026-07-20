@@ -168,7 +168,8 @@ public class ContractService : IContractService
         CampIds = c.CampIds?.Count > 0 ? c.CampIds : new List<int>(),
         StartDate = c.StartDate, Months = c.Months,
         EndDate = c.EndDate, MonthlyTotal = c.MonthlyTotal, ContractTotal = c.ContractTotal,
-        SecurityDeposit = c.SecurityDeposit, ContractType = c.ContractType, InstallmentType = c.InstallmentType,
+        SecurityDeposit = c.SecurityDeposit, SecurityDepositStatus = c.SecurityDepositStatus, SecurityDepositPaid = c.SecurityDepositPaid,
+        ContractType = c.ContractType, InstallmentType = c.InstallmentType,
         IssuedBy = c.IssuedBy, Notes = c.Notes, LessorAmount = c.LessorAmount,
         Status = c.Status, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt,
         Rooms = c.RoomDetails.Select(rd => new ContractRoomDetail

@@ -120,6 +120,8 @@ public class ContractResponse
     public decimal  MonthlyTotal    { get; set; }
     public decimal  ContractTotal   { get; set; }
     public decimal  SecurityDeposit { get; set; }
+    public string   SecurityDepositStatus { get; set; } = "Pending";
+    public decimal  SecurityDepositPaid   { get; set; }
     public string   ContractType    { get; set; } = "Monthly";   // Monthly | Scheduled
     public string   InstallmentType { get; set; } = string.Empty;
     public string   IssuedBy        { get; set; } = string.Empty;
