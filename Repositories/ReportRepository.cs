@@ -54,12 +54,14 @@ public class ReportRepository : IReportRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_GetTenantReport", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@PageNumber", 1);
-        cmd.Parameters.AddWithValue("@PageSize",   int.MaxValue);
+        cmd.Parameters.AddWithValue("@PageNumber", r.ResolvedPage);
+        cmd.Parameters.AddWithValue("@PageSize",   r.ResolvedPageSize == int.MaxValue ? 100 : r.ResolvedPageSize);
         cmd.Parameters.AddWithValue("@SearchText", (object?)r.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",     (object?)r.Status     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CampId",     (object?)r.CampId     ?? DBNull.Value);
-        cmd.Parameters.Add(new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output });
+        cmd.Parameters.AddWithValue("@TenantId",   (object?)r.TenantId   ?? DBNull.Value);
+        var pTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pTotal);
         var all = new List<TenantReportRow>();
         await using (var rd = await cmd.ExecuteReaderAsync())
             while (await rd.ReadAsync()) all.Add(new TenantReportRow {
@@ -77,25 +79,48 @@ public class ReportRepository : IReportRepository
                 ContractStart=rd.IsDBNull(rd.GetOrdinal("ContractStart"))?null:rd.GetDateTime(rd.GetOrdinal("ContractStart")),
                 ContractEnd=rd.IsDBNull(rd.GetOrdinal("ContractEnd"))?null:rd.GetDateTime(rd.GetOrdinal("ContractEnd")),
                 ContractStatus=rd.IsDBNull(rd.GetOrdinal("ContractStatus"))?"":rd.GetString(rd.GetOrdinal("ContractStatus")),
+                
+                // Security Deposit Info
+                SecurityDeposit=rd.IsDBNull(rd.GetOrdinal("SecurityDeposit"))?0:rd.GetDecimal(rd.GetOrdinal("SecurityDeposit")),
+                SecurityDepositStatus=rd.IsDBNull(rd.GetOrdinal("SecurityDepositStatus"))?"Pending":rd.GetString(rd.GetOrdinal("SecurityDepositStatus")),
+                SecurityDepositPaid=rd.IsDBNull(rd.GetOrdinal("SecurityDepositPaid"))?0:rd.GetDecimal(rd.GetOrdinal("SecurityDepositPaid")),
+                // SD Settlement
+                SdRefundAmount =rd.IsDBNull(rd.GetOrdinal("SdRefundAmount")) ?0:rd.GetDecimal(rd.GetOrdinal("SdRefundAmount")),
+                SdForfeitAmount=rd.IsDBNull(rd.GetOrdinal("SdForfeitAmount"))?0:rd.GetDecimal(rd.GetOrdinal("SdForfeitAmount")),
+                SdAdjustAmount =rd.IsDBNull(rd.GetOrdinal("SdAdjustAmount")) ?0:rd.GetDecimal(rd.GetOrdinal("SdAdjustAmount")),
+                
+                // Multiple Camps Support
+                CampsCount=rd.IsDBNull(rd.GetOrdinal("CampsCount"))?0:rd.GetInt32(rd.GetOrdinal("CampsCount")),
+                
+                // Rent Amounts
                 MonthlyRent=rd.IsDBNull(rd.GetOrdinal("MonthlyRent"))?0:rd.GetDecimal(rd.GetOrdinal("MonthlyRent")),
-                TotalAmount=rd.IsDBNull(rd.GetOrdinal("TotalAmount"))?0:rd.GetDecimal(rd.GetOrdinal("TotalAmount")),
+                ContractRentTotal=rd.IsDBNull(rd.GetOrdinal("ContractRentTotal"))?0:rd.GetDecimal(rd.GetOrdinal("ContractRentTotal")),
+                TotalAmount=rd.IsDBNull(rd.GetOrdinal("TotalAmount"))?0:rd.GetDecimal(rd.GetOrdinal("TotalAmount")),   // RentTotal + SecurityDeposit
+                
+                // Room Info
                 RoomsBooked=rd.IsDBNull(rd.GetOrdinal("RoomsBooked"))?0:rd.GetInt32(rd.GetOrdinal("RoomsBooked")),
+                
+                // Payment Breakdown (TxnRecords based)
+                RentPaid=rd.IsDBNull(rd.GetOrdinal("RentPaid"))?0:rd.GetDecimal(rd.GetOrdinal("RentPaid")),
+                SecurityDepositPaidAmount=rd.IsDBNull(rd.GetOrdinal("SecurityDepositPaidAmount"))?0:rd.GetDecimal(rd.GetOrdinal("SecurityDepositPaidAmount")),
                 TotalPaid=rd.IsDBNull(rd.GetOrdinal("TotalPaid"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPaid")),
                 TotalDue=rd.IsDBNull(rd.GetOrdinal("TotalDue"))?0:rd.GetDecimal(rd.GetOrdinal("TotalDue")),
                 Balance=rd.IsDBNull(rd.GetOrdinal("Balance"))?0:rd.GetDecimal(rd.GetOrdinal("Balance")),
+                
+                // Waiver Info
                 WaiverAmount=rd.IsDBNull(rd.GetOrdinal("WaiverAmount"))?0:rd.GetDecimal(rd.GetOrdinal("WaiverAmount")),
             });
 
-        // Unique tenants (SP returns one row per contract — deduplicate by TenantId)
-        var uniq = all.GroupBy(x => x.TenantId).Select(g => g.First()).ToList();
-        int total     = uniq.Count;
-        int active    = uniq.Count(x => x.Status == "Active");
-        int inactive  = uniq.Count(x => x.Status != "Active");
-        int companies = uniq.Count(x => x.Type == "Company");
-        int indivs    = uniq.Count(x => x.Type == "Individual");
+        // Summary cards — unique tenants (not contracts)
+        var uniqTenants = all.GroupBy(x => x.TenantId).Select(g => g.First()).ToList();
+        int total     = uniqTenants.Count;
+        int active    = uniqTenants.Count(x => x.Status == "Active");
+        int inactive  = uniqTenants.Count(x => x.Status != "Active");
+        int companies = uniqTenants.Count(x => x.Type == "Company");
+        int indivs    = uniqTenants.Count(x => x.Type != "Company");
 
-        int pg = r.ResolvedPage;
-        int ps = r.ResolvedPageSize == int.MaxValue ? all.Count : r.ResolvedPageSize;
+        // SP already applies pagination — rows are ready
+        int totalRecords = pTotal.Value != DBNull.Value ? (int)pTotal.Value : all.Count;
 
         return new TenantReportResponse {
             Summary = new TenantReportSummary {
@@ -113,8 +138,8 @@ public class ReportRepository : IReportRepository
                 new() { Status = "Active",   Count = active   },
                 new() { Status = "Inactive", Count = inactive },
             },
-            Rows         = all.Skip((pg-1)*ps).Take(ps).ToList(),
-            TotalRecords = all.Count,
+            Rows         = all,
+            TotalRecords = totalRecords,
         };
     }
 

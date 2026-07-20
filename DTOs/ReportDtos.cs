@@ -85,27 +85,51 @@ public class InventoryReportResponse
 // ── Tenant Report ──────────────────────────────────────────────────────────
 public class TenantReportRow
 {
-    public int      TenantId       { get; set; }
-    public string   TenantName     { get; set; } = string.Empty;
-    public string   Contact        { get; set; } = string.Empty;
-    public string   Email          { get; set; } = string.Empty;
-    public string   EmiratesId     { get; set; } = string.Empty;
-    public string   Nationality    { get; set; } = string.Empty;
-    public string   Status         { get; set; } = string.Empty;
-    public string   Type           { get; set; } = string.Empty;
-    public string   ContractId     { get; set; } = string.Empty;
-    public string   CampName       { get; set; } = string.Empty;
-    public string   RoomNo         { get; set; } = string.Empty;
-    public DateTime? ContractStart { get; set; }
-    public DateTime? ContractEnd   { get; set; }
-    public string   ContractStatus { get; set; } = string.Empty;
-    public decimal  MonthlyRent    { get; set; }
-    public decimal  TotalAmount    { get; set; }   // ContractTotal
-    public int      RoomsBooked    { get; set; }
-    public decimal  TotalPaid      { get; set; }
-    public decimal  TotalDue       { get; set; }
-    public decimal  Balance        { get; set; }
-    public decimal  WaiverAmount   { get; set; }
+    public int      TenantId               { get; set; }
+    public string   TenantName             { get; set; } = string.Empty;
+    public string   Contact                { get; set; } = string.Empty;
+    public string   Email                  { get; set; } = string.Empty;
+    public string   EmiratesId             { get; set; } = string.Empty;
+    public string   Nationality            { get; set; } = string.Empty;
+    public string   Status                 { get; set; } = string.Empty;
+    public string   Type                   { get; set; } = string.Empty;
+    public string   ContractId             { get; set; } = string.Empty;
+    public string   CampName               { get; set; } = string.Empty;
+    public string   RoomNo                 { get; set; } = string.Empty;
+    public DateTime? ContractStart         { get; set; }
+    public DateTime? ContractEnd           { get; set; }
+    public string   ContractStatus         { get; set; } = string.Empty;
+    
+    // Security Deposit Info
+    public decimal  SecurityDeposit        { get; set; }
+    public string   SecurityDepositStatus  { get; set; } = string.Empty;
+    public decimal  SecurityDepositPaid    { get; set; }
+
+    // SD Settlement breakdown
+    public decimal  SdRefundAmount         { get; set; }   // SD-REF — refunded to tenant
+    public decimal  SdForfeitAmount        { get; set; }   // SD-FRF — forfeited (penalty/damage)
+    public decimal  SdAdjustAmount         { get; set; }   // SD-ADJ — adjusted against rent
+    
+    // Multiple Camps Support
+    public int      CampsCount             { get; set; }
+    
+    // Rent Amounts
+    public decimal  MonthlyRent            { get; set; }
+    public decimal  ContractRentTotal      { get; set; }
+    public decimal  TotalAmount            { get; set; }   // ContractRentTotal + SecurityDeposit
+    
+    // Room Info
+    public int      RoomsBooked            { get; set; }
+    
+    // Payment Breakdown (TxnRecords based)
+    public decimal  RentPaid               { get; set; }      // TxnType='CR'
+    public decimal  SecurityDepositPaidAmount { get; set; }   // TxnType='SD-CR'
+    public decimal  TotalPaid              { get; set; }      // RentPaid + SecurityDepositPaidAmount
+    public decimal  TotalDue               { get; set; }      // TotalAmount - TotalPaid
+    public decimal  Balance                { get; set; }      // Same as TotalDue
+    
+    // Waiver Info
+    public decimal  WaiverAmount           { get; set; }
 }
 
 // ── Partner Report ─────────────────────────────────────────────────────────

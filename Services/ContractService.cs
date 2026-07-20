@@ -119,9 +119,9 @@ public class ContractService : IContractService
 
     public async Task<ApiResponse<bool>> UpdateStatusAsync(string contractId, UpdateContractStatusRequest request)
     {
-        var valid = new[] { "Active", "Expired", "Terminated" };
+        var valid = new[] { "Active", "Expired", "Terminated", "Completed", "Cancelled" };
         if (string.IsNullOrEmpty(request.Status) || !valid.Contains(request.Status))
-            return ApiResponse<bool>.Fail("Invalid status. Use Active, Expired, or Terminated.");
+            return ApiResponse<bool>.Fail("Invalid status. Use: Active, Expired, Terminated, Completed, or Cancelled.");
         var result = await _repo.UpdateStatusAsync(contractId, request.Status);
         return result ? ApiResponse<bool>.Ok(true, "Contract status updated.") : ApiResponse<bool>.Fail("Contract not found.");
     }
@@ -192,6 +192,9 @@ public class ContractService : IContractService
         TotalDue  = c.TotalDue,
         LastPaymentAmount = c.LastPaymentAmount,
         LastPaymentDate   = c.LastPaymentDate?.ToString("yyyy-MM-dd"),
+        SdForfeitAmount   = c.SdForfeitAmount,
+        SdRefundAmount    = c.SdRefundAmount,
+        SdAdjustAmount    = c.SdAdjustAmount,
         Payments = c.Payments.Select(p => new ContractPaymentResponse
         {
             Id = p.Id, InstallmentNo = p.InstallmentNo, Amount = p.Amount,

@@ -38,6 +38,11 @@ public class Contract
     public decimal       TotalDue        { get; set; }
     public decimal?      LastPaymentAmount { get; set; }
     public DateTime?     LastPaymentDate   { get; set; }
+    // ── Security Deposit Settlement ───────────────────────────────────────
+    public decimal       SdForfeitAmount { get; set; }   // SD-FRF
+    public decimal       SdRefundAmount  { get; set; }   // SD-REF
+    public decimal       SdAdjustAmount  { get; set; }   // SD-ADJ
+    // ─────────────────────────────────────────────────────────────────────
     public DateTime      CreatedAt       { get; set; }
     public DateTime      UpdatedAt       { get; set; }
     public List<int>     RoomIds         { get; set; } = new();

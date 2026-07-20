@@ -144,6 +144,11 @@ public class ContractResponse
     public decimal  TotalDue          { get; set; }
     public decimal? LastPaymentAmount { get; set; }
     public string?  LastPaymentDate   { get; set; }
+    // ── Security Deposit Settlement ────────────────────────────────────────
+    public decimal  SdForfeitAmount   { get; set; }   // SD-FRF — penalty/damage forfeited
+    public decimal  SdRefundAmount    { get; set; }   // SD-REF — refunded to tenant
+    public decimal  SdAdjustAmount    { get; set; }   // SD-ADJ — adjusted against rent
+    // ──────────────────────────────────────────────────────────────────────
     public List<ContractRoomDetail>     Rooms    { get; set; } = new();
     public List<ContractPaymentResponse> Payments { get; set; } = new();
     public DateTime CreatedAt { get; set; }

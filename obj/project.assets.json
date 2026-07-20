@@ -4772,11 +4772,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "G:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\TFMS_software_api.csproj",
+      "projectUniqueName": "g:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\TFMS_software_api.csproj",
       "projectName": "TFMS_software_api",
-      "projectPath": "G:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\TFMS_software_api.csproj",
+      "projectPath": "g:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\TFMS_software_api.csproj",
       "packagesPath": "C:\\Users\\Sanjay\\.nuget\\packages\\",
-      "outputPath": "G:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\obj\\",
+      "outputPath": "g:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

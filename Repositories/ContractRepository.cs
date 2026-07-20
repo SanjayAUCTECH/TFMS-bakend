@@ -398,6 +398,13 @@ public class ContractRepository : IContractRepository
                             ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("LastPaymentAmount"))) : (decimal?)null,
         LastPaymentDate   = HasColumn(r, "LastPaymentDate")     && !r.IsDBNull(r.GetOrdinal("LastPaymentDate"))
                             ? r.GetDateTime(r.GetOrdinal("LastPaymentDate")) : (DateTime?)null,
+        // SD Settlement fields
+        SdForfeitAmount   = HasColumn(r, "SdForfeitAmount") && !r.IsDBNull(r.GetOrdinal("SdForfeitAmount"))
+                            ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("SdForfeitAmount"))) : 0,
+        SdRefundAmount    = HasColumn(r, "SdRefundAmount")  && !r.IsDBNull(r.GetOrdinal("SdRefundAmount"))
+                            ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("SdRefundAmount")))  : 0,
+        SdAdjustAmount    = HasColumn(r, "SdAdjustAmount")  && !r.IsDBNull(r.GetOrdinal("SdAdjustAmount"))
+                            ? Convert.ToDecimal(r.GetValue(r.GetOrdinal("SdAdjustAmount")))  : 0,
         CreatedAt       = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt       = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
