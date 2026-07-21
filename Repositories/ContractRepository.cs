@@ -203,8 +203,10 @@ public class ContractRepository : IContractRepository
         string? roomJson;
         if (request.Rooms != null && request.Rooms.Count > 0)
         {
+            // Serialize full rich format so SP gets monthlyAmount + campId
             roomJson = System.Text.Json.JsonSerializer.Serialize(
-                request.Rooms.Select(r => r.RoomId).ToList());
+                request.Rooms,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
         }
         else
         {

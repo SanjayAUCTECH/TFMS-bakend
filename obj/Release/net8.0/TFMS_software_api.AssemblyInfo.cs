@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TFMS_software_api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9dec36f41f26d94f3eb3e3f15b3abc9af9cd92d6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cd937628303640c2576ea6be320ad7610e4a7574")]
 [assembly: System.Reflection.AssemblyProductAttribute("TFMS_software_api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TFMS_software_api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,0 +1,5 @@
+                                                                                                                                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE sp_CreateContract @TenantId INT, @CampIdsJson NVARCHAR(MAX)=NULL, @StartDate DATE, @Months INT, @RoomIdsJson NVARCHAR(MAX), @ContractType NVARCHAR(50)='Monthly', @SecurityDeposit DECIMAL(18,2)=0, @InstallmentType NVARCHAR(50)='monthly', @I
+
+(1 rows affected)

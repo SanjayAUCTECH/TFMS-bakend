@@ -1,0 +1,13 @@
+                                                                                                                                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE   PROCEDURE [dbo].[sp_UpdatePaymentSchedule]
+    @ContractId   NVARCHAR(20),
+    @ScheduleJson NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Step 1: Delete all existing ContractInstallments for this contract
+    DELETE FROM ContractInst
+
+(1 rows affected)
