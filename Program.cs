@@ -119,6 +119,7 @@ builder.Services.AddScoped<IWaiverService,       WaiverService>();
 builder.Services.AddScoped<IDashboardService,    DashboardService>();
 builder.Services.AddScoped<IAuthService,         AuthService>();
 builder.Services.AddScoped<IIncomeService,       IncomeService>();
+builder.Services.AddScoped<IActivityLogService,  ActivityLogService>();
 builder.Services.AddScoped<IExpenseService,      ExpenseService>();
 builder.Services.AddScoped<IUserService,         UserService>();
 builder.Services.AddScoped<IReportService,       ReportService>();

@@ -149,11 +149,12 @@ public class ReportRepository : IReportRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_GetPartnerReport", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@PageNumber", 1);
-        cmd.Parameters.AddWithValue("@PageSize",   int.MaxValue);
+        cmd.Parameters.AddWithValue("@PageNumber", r.ResolvedPage);
+        cmd.Parameters.AddWithValue("@PageSize",   r.ResolvedPageSize == int.MaxValue ? 100 : r.ResolvedPageSize);
         cmd.Parameters.AddWithValue("@SearchText", (object?)r.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",     (object?)r.Status     ?? DBNull.Value);
-        cmd.Parameters.Add(new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output });
+        var pPartnerTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pPartnerTotal);
         var all = new List<PartnerReportRow>();
         await using (var rd = await cmd.ExecuteReaderAsync())
             while (await rd.ReadAsync()) all.Add(new PartnerReportRow {
@@ -170,16 +171,17 @@ public class ReportRepository : IReportRepository
                 ShareType=rd.IsDBNull(rd.GetOrdinal("ShareType"))?"":rd.GetString(rd.GetOrdinal("ShareType")),
                 TotalCollected=rd.IsDBNull(rd.GetOrdinal("TotalCollected"))?0:rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
                 TotalPaid=rd.IsDBNull(rd.GetOrdinal("TotalPaid"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPaid")),
+                ShareDue=rd.IsDBNull(rd.GetOrdinal("ShareDue"))?0:rd.GetDecimal(rd.GetOrdinal("ShareDue")),
             });
         int total=all.Count, active=all.Count(x=>x.Status=="Active"), inactive=all.Count(x=>x.Status!="Active");
         var campMap = new Dictionary<string,int>();
         foreach(var p in all) foreach(var c in (p.CampNames??"").Split(',').Select(s=>s.Trim()).Where(s=>s!=""))
             campMap[c]=campMap.TryGetValue(c,out var v)?v+1:1;
-        int pg=r.ResolvedPage, ps=r.ResolvedPageSize==int.MaxValue?all.Count:r.ResolvedPageSize;
+        int totalPartnerRecords = pPartnerTotal.Value != DBNull.Value ? (int)pPartnerTotal.Value : all.Count;
         return new PartnerReportResponse {
-            Summary=new(){TotalPartners=total,ActivePartners=active,InactivePartners=inactive,AssignedToCamps=all.Count(x=>x.TotalCamps>0)},
+            Summary=new(){TotalPartners=totalPartnerRecords,ActivePartners=active,InactivePartners=inactive,AssignedToCamps=all.Count(x=>x.TotalCamps>0)},
             CampBreakdown=campMap.Select(kv=>new PartnerCampCount{CampName=kv.Key,PartnerCount=kv.Value}).OrderByDescending(x=>x.PartnerCount).ToList(),
-            Rows=all.Skip((pg-1)*ps).Take(ps).ToList(), TotalRecords=total };
+            Rows=all, TotalRecords=totalPartnerRecords };
     }
 
     // ── Camp Report ──────────────────────────────────────────────────────────

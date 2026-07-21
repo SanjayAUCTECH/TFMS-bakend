@@ -10,38 +10,47 @@ namespace TFMS_software_api.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _service;
-    public AuthController(IAuthService service) => _service = service;
+    private readonly IAuthService        _service;
+    private readonly IActivityLogService _log;
 
-    // ── Helper: get current user ID from JWT claims ───────────────────────────
-    private int CurrentUserId =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    public AuthController(IAuthService service, IActivityLogService log)
+    {
+        _service = service;
+        _log     = log;
+    }
 
-    // =========================================================================
-    // PUBLIC (no token required)
-    // =========================================================================
+    private int    CurrentUserId   => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private string CurrentUserName => User.FindFirstValue(ClaimTypes.Name) ?? "";
+    private string CurrentUserRole => User.FindFirstValue(ClaimTypes.Role) ?? "";
+    private string ClientIp        => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+    private string ClientAgent     => Request.Headers["User-Agent"].ToString();
 
-    /// <summary>
-    /// POST api/auth/login
-    /// Authenticate with username + password and receive JWT token.
-    /// Default admin: admin / Admin@123
-    /// </summary>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+
         var result = await _service.LoginAsync(request);
+
+        // Log login attempt
+        await _log.LogAsync(
+            activityType: ActivityType.Login,
+            module:       ActivityModule.Auth,
+            action:       result.Success
+                ? $"User '{request.Username}' logged in successfully"
+                : $"Failed login attempt for '{request.Username}'",
+            entityId:     request.Username,
+            entityType:   "User",
+            userName:     request.Username,
+            ipAddress:    ClientIp,
+            userAgent:    ClientAgent,
+            status:       result.Success ? "Success" : "Failed",
+            errorMessage: result.Success ? null : result.Message
+        );
+
         return result.Success ? Ok(result) : Unauthorized(result);
     }
 
-    // =========================================================================
-    // PROTECTED (JWT token required)
-    // =========================================================================
-
-    /// <summary>
-    /// GET api/auth/profile
-    /// Get logged-in user's own profile.
-    /// </summary>
     [HttpGet("profile")]
     [Authorize]
     public async Task<IActionResult> GetProfile()
@@ -50,38 +59,40 @@ public class AuthController : ControllerBase
         return result.Success ? Ok(result) : NotFound(result);
     }
 
-    /// <summary>
-    /// PUT api/auth/profile
-    /// Update logged-in user's name, contact, email.
-    /// </summary>
     [HttpPut("profile")]
     [Authorize]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var result = await _service.UpdateProfileAsync(CurrentUserId, request);
+
+        if (result.Success)
+            await _log.LogAsync(ActivityType.Update, ActivityModule.Auth,
+                $"User '{CurrentUserName}' updated profile",
+                CurrentUserId.ToString(), "User",
+                userId: CurrentUserId, userName: CurrentUserName, userRole: CurrentUserRole,
+                ipAddress: ClientIp, userAgent: ClientAgent);
+
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// POST api/auth/change-password
-    /// Change password — requires current password verification.
-    /// Body: { currentPassword, newPassword, confirmPassword }
-    /// </summary>
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var result = await _service.ChangePasswordAsync(CurrentUserId, request);
+
+        await _log.LogAsync(ActivityType.Update, ActivityModule.Auth,
+            $"User '{CurrentUserName}' changed password",
+            CurrentUserId.ToString(), "User",
+            userId: CurrentUserId, userName: CurrentUserName, userRole: CurrentUserRole,
+            ipAddress: ClientIp, userAgent: ClientAgent,
+            status: result.Success ? "Success" : "Failed");
+
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// POST api/auth/refresh-token
-    /// Get a new JWT token using the current valid token (no body needed).
-    /// Call this before token expires to stay logged in.
-    /// </summary>
     [HttpPost("refresh-token")]
     [Authorize]
     public async Task<IActionResult> RefreshToken()
@@ -90,11 +101,6 @@ public class AuthController : ControllerBase
         return result.Success ? Ok(result) : Unauthorized(result);
     }
 
-    /// <summary>
-    /// PATCH api/auth/menu-access
-    /// Update logged-in user's menu access (JSON object).
-    /// Body: { menuAccess: "{ dashboard: true, partners: true, ... }" }
-    /// </summary>
     [HttpPatch("menu-access")]
     [Authorize]
     public async Task<IActionResult> UpdateMenuAccess([FromBody] UpdateMenuAccessRequest request)
@@ -104,23 +110,20 @@ public class AuthController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// POST api/auth/logout
-    /// Logout — client should discard the token (JWT is stateless).
-    /// Server records the logout timestamp.
-    /// </summary>
     [HttpPost("logout")]
     [Authorize]
     public async Task<IActionResult> Logout()
     {
+        await _log.LogAsync(ActivityType.Logout, ActivityModule.Auth,
+            $"User '{CurrentUserName}' logged out",
+            CurrentUserId.ToString(), "User",
+            userId: CurrentUserId, userName: CurrentUserName, userRole: CurrentUserRole,
+            ipAddress: ClientIp, userAgent: ClientAgent);
+
         var result = await _service.LogoutAsync(CurrentUserId);
         return Ok(result);
     }
 
-    /// <summary>
-    /// GET api/auth/me
-    /// Quick check — returns current user info from JWT claims (no DB call).
-    /// </summary>
     [HttpGet("me")]
     [Authorize]
     public IActionResult Me()

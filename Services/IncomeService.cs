@@ -41,14 +41,18 @@ public class IncomeService : IIncomeService
         var income = new Income
         {
             Date         = request.Date,
-            Mode         = request.Mode?.Trim() ?? "",
-            Head         = request.Head?.Trim() ?? "",
+            Mode         = request.Mode?.Trim()        ?? "",
+            Head         = request.Head?.Trim()        ?? "",
             FundPool     = fp.Code,
             FundPoolName = fp.Name,
             Amount       = request.Amount,
-            Purpose      = request.Purpose?.Trim() ?? "",
-            Source       = request.Source?.Trim() ?? "",
-            SourceRef    = request.SourceRef?.Trim() ?? "",
+            Purpose      = request.Purpose?.Trim()     ?? "",
+            Source       = request.Source?.Trim()      ?? "",
+            SourceRef    = request.SourceRef?.Trim()   ?? "",
+            CampId       = request.CampId,
+            CampName     = request.CampName?.Trim()    ?? "",
+            PartnerId    = request.PartnerId,
+            PartnerName  = request.PartnerName?.Trim() ?? "",
         };
 
         var id = await _repo.CreateAsync(income);
@@ -68,14 +72,18 @@ public class IncomeService : IIncomeService
         {
             Id           = id,
             Date         = request.Date,
-            Mode         = request.Mode?.Trim() ?? "",
-            Head         = request.Head?.Trim() ?? "",
+            Mode         = request.Mode?.Trim()        ?? "",
+            Head         = request.Head?.Trim()        ?? "",
             FundPool     = fp.Code,
             FundPoolName = fp.Name,
             Amount       = request.Amount,
-            Purpose      = request.Purpose?.Trim() ?? "",
-            Source       = request.Source?.Trim() ?? "",
-            SourceRef    = request.SourceRef?.Trim() ?? "",
+            Purpose      = request.Purpose?.Trim()     ?? "",
+            Source       = request.Source?.Trim()      ?? "",
+            SourceRef    = request.SourceRef?.Trim()   ?? "",
+            CampId       = request.CampId,
+            CampName     = request.CampName?.Trim()    ?? "",
+            PartnerId    = request.PartnerId,
+            PartnerName  = request.PartnerName?.Trim() ?? "",
         });
 
         var updated = await _repo.GetByIdAsync(id);
@@ -104,6 +112,10 @@ public class IncomeService : IIncomeService
         Purpose      = i.Purpose,
         Source       = i.Source,
         SourceRef    = i.SourceRef,
+        CampId       = i.CampId,
+        CampName     = i.CampName,
+        PartnerId    = i.PartnerId,
+        PartnerName  = i.PartnerName,
         ContractId   = i.ContractId,
         ContractCode = i.ContractCode,
         CreatedAt    = i.CreatedAt,

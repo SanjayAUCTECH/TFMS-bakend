@@ -146,8 +146,9 @@ public class PartnerReportRow
     public string  CampNames       { get; set; } = string.Empty;
     public decimal ShareValue      { get; set; }
     public string  ShareType       { get; set; } = string.Empty;
-    public decimal TotalCollected  { get; set; }
-    public decimal TotalPaid       { get; set; }
+    public decimal TotalCollected  { get; set; }   // rent collected from tenants for partner's camps
+    public decimal TotalPaid       { get; set; }   // expenses paid to partner (RecipientRole=Partner, RecipientId=PartnerId)
+    public decimal ShareDue        { get; set; }   // TotalCollected - TotalPaid
 }
 
 // ── Camp Report ────────────────────────────────────────────────────────────
