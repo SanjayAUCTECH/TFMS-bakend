@@ -84,4 +84,5 @@ public class RoomTransactionResponse
     public string?  TxnDate     { get; set; }
     public string?  TxnType     { get; set; }
     public string?  Description { get; set; }
+    public string   Month       { get; set; } = string.Empty;
 }

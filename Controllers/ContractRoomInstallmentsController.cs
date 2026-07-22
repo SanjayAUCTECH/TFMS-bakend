@@ -62,6 +62,7 @@ public class ContractRoomInstallmentsController : ControllerBase
                 clearanceDate = rd.IsDBNull(rd.GetOrdinal("ClearanceDate")) ? (DateTime?)null : rd.GetDateTime(rd.GetOrdinal("ClearanceDate")),
                 status        = rd.GetString(rd.GetOrdinal("Status")),
                 paidAmount    = rd.GetDecimal(rd.GetOrdinal("PaidAmount")),
+                balance       = rd.GetDecimal(rd.GetOrdinal("Balance")),
                 paidDate      = rd.IsDBNull(rd.GetOrdinal("PaidDate")) ? (DateTime?)null : rd.GetDateTime(rd.GetOrdinal("PaidDate")),
                 createdAt     = rd.GetDateTime(rd.GetOrdinal("CreatedAt")),
                 updatedAt     = rd.GetDateTime(rd.GetOrdinal("UpdatedAt")),

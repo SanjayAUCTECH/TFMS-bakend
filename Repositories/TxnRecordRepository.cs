@@ -83,12 +83,11 @@ public class TxnRecordRepository : ITxnRecordRepository
         {
             try
             {
-                // Step A: Reverse old room amounts in ContractRooms
-                // Try by TxnRecordId first, fallback to ContractId + TxnDate
+                // Step A: Reverse old room amounts in ContractRooms + ContractRoomInstallments
                 await using var reverseCmd = new SqlCommand(@"
                     UPDATE cr 
                     SET cr.PaidAmount = CASE WHEN ISNULL(cr.PaidAmount, 0) - crt.Amount < 0 THEN 0 ELSE ISNULL(cr.PaidAmount, 0) - crt.Amount END,
-                        cr.Balance = ISNULL(cr.TotalAmount, 0) - (CASE WHEN ISNULL(cr.PaidAmount, 0) - crt.Amount < 0 THEN 0 ELSE ISNULL(cr.PaidAmount, 0) - crt.Amount END)
+                        cr.Balance    = ISNULL(cr.TotalAmount, 0) - (CASE WHEN ISNULL(cr.PaidAmount, 0) - crt.Amount < 0 THEN 0 ELSE ISNULL(cr.PaidAmount, 0) - crt.Amount END)
                     FROM ContractRooms cr
                     INNER JOIN ContractRoomsTrns crt ON crt.ContractId = cr.ContractId AND crt.RoomId = cr.RoomId
                     WHERE crt.TxnType = 'CR' AND (
@@ -99,6 +98,10 @@ public class TxnRecordRepository : ITxnRecordRepository
                 reverseCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
                 reverseCmd.Parameters.AddWithValue("@TxnDate", r.TxnDate.ToString("yyyy-MM-dd"));
                 await reverseCmd.ExecuteNonQueryAsync();
+
+                // Revert ContractRoomInstallments — SKIP here
+                // CRI will be SET (not ADD) in Step C, so no need to revert separately
+                // This avoids the bug where all installments of same room get reverted
 
                 // Step B: Delete old ContractRoomsTrns entries
                 await using var delCmd = new SqlCommand(@"
@@ -131,16 +134,57 @@ public class TxnRecordRepository : ITxnRecordRepository
 
                     // Insert new record in ContractRoomsTrns
                     await using var insCmd = new SqlCommand(@"
-                        INSERT INTO ContractRoomsTrns (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Description, CreatedAt)
-                        VALUES (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @Amount, @Amount, @TxnDate, @Description, GETDATE())", conn);
+                        INSERT INTO ContractRoomsTrns (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Month, Description, CreatedAt)
+                        VALUES (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @Amount, @Amount, @TxnDate, @Month, @Description, GETDATE())", conn);
                     insCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
                     insCmd.Parameters.AddWithValue("@RoomId", room.RoomId);
                     insCmd.Parameters.AddWithValue("@CampId", room.CampId);
                     insCmd.Parameters.AddWithValue("@TxnRecordId", id);
                     insCmd.Parameters.AddWithValue("@Amount", room.Amount);
                     insCmd.Parameters.AddWithValue("@TxnDate", r.TxnDate);
+                    insCmd.Parameters.AddWithValue("@Month", room.Month ?? "");
                     insCmd.Parameters.AddWithValue("@Description", $"Payment updated - {r.PaymentMode} - {r.Description}");
                     await insCmd.ExecuteNonQueryAsync();
+
+                    // ── Update ContractRoomInstallments — SET (not add) after revert ─
+                    if (room.ContractRoomInstallmentId.HasValue && room.ContractRoomInstallmentId > 0)
+                    {
+                        await using var criCmd = new SqlCommand(@"
+                            UPDATE ContractRoomInstallments
+                            SET PaidAmount = @Amount,
+                                Balance    = InstallAmount - @Amount,
+                                PaidDate   = @PaidDate,
+                                Status     = CASE
+                                    WHEN @Amount >= InstallAmount THEN 'Paid'
+                                    WHEN @Amount > 0 THEN 'Partial'
+                                    ELSE 'Pending' END,
+                                UpdatedAt  = GETDATE()
+                            WHERE Id = @Id", conn);
+                        criCmd.Parameters.AddWithValue("@Id",      room.ContractRoomInstallmentId.Value);
+                        criCmd.Parameters.AddWithValue("@Amount",  room.Amount);
+                        criCmd.Parameters.AddWithValue("@PaidDate", r.TxnDate);
+                        await criCmd.ExecuteNonQueryAsync();
+                    }
+                    else if (room.InstallmentNo.HasValue)
+                    {
+                        await using var criCmd2 = new SqlCommand(@"
+                            UPDATE ContractRoomInstallments
+                            SET PaidAmount = @Amount,
+                                Balance    = InstallAmount - @Amount,
+                                PaidDate   = @PaidDate,
+                                Status     = CASE
+                                    WHEN @Amount >= InstallAmount THEN 'Paid'
+                                    WHEN @Amount > 0 THEN 'Partial'
+                                    ELSE 'Pending' END,
+                                UpdatedAt  = GETDATE()
+                            WHERE ContractId = @ContractId AND RoomId = @RoomId AND InstallmentNo = @InstNo", conn);
+                        criCmd2.Parameters.AddWithValue("@ContractId", r.ContractId);
+                        criCmd2.Parameters.AddWithValue("@RoomId",     room.RoomId);
+                        criCmd2.Parameters.AddWithValue("@InstNo",     room.InstallmentNo.Value);
+                        criCmd2.Parameters.AddWithValue("@Amount",     room.Amount);
+                        criCmd2.Parameters.AddWithValue("@PaidDate",   r.TxnDate);
+                        await criCmd2.ExecuteNonQueryAsync();
+                    }
                 }
             }
             catch (Exception ex)

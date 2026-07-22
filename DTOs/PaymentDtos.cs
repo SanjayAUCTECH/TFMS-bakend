@@ -25,9 +25,13 @@ public class RecordPaymentRequest
 /// <summary>Individual room payment in a transaction</summary>
 public class RoomPaymentItem
 {
-    public int      RoomId  { get; set; }
-    public int      CampId  { get; set; }
-    public decimal  Amount  { get; set; }
+    public int      RoomId                    { get; set; }
+    public int      CampId                    { get; set; }
+    public decimal  Amount                    { get; set; }
+    public int?     ContractRoomInstallmentId { get; set; }  // ContractRoomInstallments.Id
+    public int?     InstallmentNo             { get; set; }
+    public string   Month                     { get; set; } = string.Empty;
+    public string?  DueDate                   { get; set; }
 }
 
 public class PaymentListRequest : Common.PagedRequest
