@@ -12,4 +12,5 @@ public class Waiver
     public decimal  BalanceAmount  { get; set; }
     public string   Remark         { get; set; } = string.Empty;
     public DateTime WaiverDate     { get; set; }
+    public string   CreatedBy      { get; set; } = string.Empty;
 }

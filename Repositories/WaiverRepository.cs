@@ -60,6 +60,25 @@ public class WaiverRepository : IWaiverRepository
         return (int)newId.Value;
     }
 
+    public async Task<int> CreateWithRoomsAsync(Waiver w, string roomWaiversJson)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_CreateRoomWaiver", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@TenantId",        w.TenantId);
+        cmd.Parameters.AddWithValue("@ContractId",      w.ContractId);
+        cmd.Parameters.AddWithValue("@InstallmentNo",   w.InstallmentNo);
+        cmd.Parameters.AddWithValue("@WaiverAmount",    w.WaiverAmount);
+        cmd.Parameters.AddWithValue("@Remark",          w.Remark);
+        cmd.Parameters.AddWithValue("@WaiverDate",      w.WaiverDate);
+        cmd.Parameters.AddWithValue("@CreatedBy",       w.CreatedBy);
+        cmd.Parameters.AddWithValue("@RoomWaiversJson", roomWaiversJson);
+        var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(newId);
+        await cmd.ExecuteNonQueryAsync();
+        return (int)newId.Value;
+    }
+
     public async Task<bool> DeleteAsync(int id)
     {
         await using var conn = _factory.CreateConnection();

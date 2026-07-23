@@ -44,6 +44,29 @@ public class WaiverService : IWaiverService
         if (request.WaiverAmount > installment.Amount)
             return ApiResponse<WaiverResponse>.Fail("Waiver amount cannot exceed the installment amount.");
 
+        // Use new room-wise SP if RoomWaivers provided
+        if (request.RoomWaivers != null && request.RoomWaivers.Count > 0)
+        {
+            var roomWaiversJson = System.Text.Json.JsonSerializer.Serialize(
+                request.RoomWaivers,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+
+            var id2 = await _repo.CreateWithRoomsAsync(new Waiver
+            {
+                TenantId       = request.TenantId ?? 0,
+                ContractId     = request.ContractId,
+                InstallmentNo  = request.InstallmentNo ?? 0,
+                OriginalAmount = installment.Amount,
+                WaiverAmount   = request.WaiverAmount,
+                BalanceAmount  = installment.Amount - request.WaiverAmount,
+                Remark         = request.Remark,
+                WaiverDate     = request.WaiverDate,
+                CreatedBy      = request.CreatedBy,
+            }, roomWaiversJson);
+            return ApiResponse<WaiverResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id2))!), "Waiver created.");
+        }
+
+        // Original flow (no rooms)
         var id = await _repo.CreateAsync(new Waiver
         {
             TenantId       = request.TenantId ?? 0,
@@ -54,6 +77,7 @@ public class WaiverService : IWaiverService
             BalanceAmount  = installment.Amount - request.WaiverAmount,
             Remark         = request.Remark,
             WaiverDate     = request.WaiverDate,
+            CreatedBy      = request.CreatedBy,
         });
         return ApiResponse<WaiverResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Waiver created.");
     }
