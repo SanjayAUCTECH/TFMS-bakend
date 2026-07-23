@@ -11,6 +11,7 @@ public class CreateOwnerContractRequest
     [Required] public decimal TotalAmount { get; set; }
     [Required] public string  StartDate   { get; set; } = string.Empty;
     [Required] public List<InstallmentRequest> Installments { get; set; } = new();
+    public List<MonthlyContractInstallmentRequest> MonthlyInstallments { get; set; } = new();
 }
 
 public class InstallmentRequest
@@ -18,6 +19,20 @@ public class InstallmentRequest
     public int     No      { get; set; }
     public decimal Amount  { get; set; }
     public string  DueDate { get; set; } = string.Empty;
+}
+
+public class MonthlyContractInstallmentRequest
+{
+    public int      InstallmentNo { get; set; }
+    public decimal  Amount        { get; set; }
+    public decimal  PaidAmount    { get; set; }
+    public decimal  Balance       { get; set; }
+    public string   DueDate       { get; set; } = string.Empty;
+    public string?  PaidDate      { get; set; }
+    public string   Status        { get; set; } = "Pending";
+    public int?     ExpenseId     { get; set; }
+    public string   PaymentMode   { get; set; } = string.Empty;
+    public string   PaymentStatus { get; set; } = "Pending";
 }
 
 // ── Response ──────────────────────────────────────────────────────────────────
@@ -39,6 +54,7 @@ public class OwnerContractResponse
     public DateTime CreatedAt   { get; set; }
     public List<OwnerInstallmentResponse>  Installments { get; set; } = new();
     public List<OwnerTransactionResponse>  Transactions { get; set; } = new();
+    public List<OwnerMonthlyContractInstallmentResponse> MonthlyInstallments { get; set; } = new();
 }
 
 public class OwnerInstallmentResponse
@@ -71,4 +87,25 @@ public class OwnerTransactionResponse
     public string   InstallmentNos  { get; set; } = string.Empty;
     public int?     ExpenseId       { get; set; }
     public DateTime CreatedAt       { get; set; }
+}
+
+public class OwnerMonthlyContractInstallmentResponse
+{
+    public int      Id                           { get; set; }
+    public string   MonthlyContractInstallmentId { get; set; } = string.Empty;
+    public int      OwnerContractId              { get; set; }
+    public int      OwnerId                      { get; set; }
+    public int      CampId                       { get; set; }
+    public int      InstallmentNo                { get; set; }
+    public decimal  Amount                       { get; set; }
+    public decimal  PaidAmount                   { get; set; }
+    public decimal  Balance                      { get; set; }
+    public string   DueDate                      { get; set; } = string.Empty;
+    public string?  PaidDate                     { get; set; }
+    public string   Status                       { get; set; } = string.Empty;
+    public int?     ExpenseId                    { get; set; }
+    public string   PaymentMode                  { get; set; } = string.Empty;
+    public string   PaymentStatus                { get; set; } = string.Empty;
+    public DateTime CreatedAt                    { get; set; }
+    public DateTime UpdatedAt                    { get; set; }
 }

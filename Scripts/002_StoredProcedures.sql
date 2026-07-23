@@ -427,14 +427,16 @@ BEGIN
     DECLARE @Code NVARCHAR(MAX)='CMP-'+RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Camps) AS NVARCHAR),6);
     INSERT INTO Camps(Code,Name,Status,CreatedAt,UpdatedAt) VALUES(@Code,@Name,@Status,GETUTCDATE(),GETUTCDATE());
     SET @NewId=SCOPE_IDENTITY();
-    -- Partners
-    INSERT INTO CampPartners(CampId,PartnerId,ShareType,ShareValue)
-    SELECT @NewId,PartnerId,ShareType,ShareValue FROM OPENJSON(@PartnersJson)
-    WITH(PartnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
-    -- Owners
-    INSERT INTO CampOwners(CampId,OwnerId,ShareType,ShareValue)
-    SELECT @NewId,OwnerId,ShareType,ShareValue FROM OPENJSON(@OwnersJson)
-    WITH(OwnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
+    -- Partners (PascalCase JSON paths for C# compatibility)
+    IF @PartnersJson IS NOT NULL AND LEN(@PartnersJson) > 2
+        INSERT INTO CampPartners(CampId,PartnerId,ShareType,ShareValue)
+        SELECT @NewId,PartnerId,ShareType,ShareValue FROM OPENJSON(@PartnersJson)
+        WITH(PartnerId INT '$.PartnerId',ShareType NVARCHAR(MAX) '$.ShareType',ShareValue DECIMAL(18,2) '$.ShareValue');
+    -- Owners (PascalCase JSON paths for C# compatibility)
+    IF @OwnersJson IS NOT NULL AND LEN(@OwnersJson) > 2
+        INSERT INTO CampOwners(CampId,OwnerId,ShareType,ShareValue)
+        SELECT @NewId,OwnerId,ShareType,ShareValue FROM OPENJSON(@OwnersJson)
+        WITH(OwnerId INT '$.OwnerId',ShareType NVARCHAR(MAX) '$.ShareType',ShareValue DECIMAL(18,2) '$.ShareValue');
     -- Update counts
     UPDATE Camps SET Rooms=(SELECT COUNT(*) FROM Rooms WHERE CampId=@NewId),
                      Floors=(SELECT COUNT(DISTINCT FloorId) FROM Rooms WHERE CampId=@NewId)
@@ -451,12 +453,16 @@ BEGIN
     UPDATE Camps SET Name=@Name,Status=@Status,UpdatedAt=GETUTCDATE() WHERE Id=@Id;
     DELETE FROM CampPartners WHERE CampId=@Id;
     DELETE FROM CampOwners   WHERE CampId=@Id;
-    INSERT INTO CampPartners(CampId,PartnerId,ShareType,ShareValue)
-    SELECT @Id,PartnerId,ShareType,ShareValue FROM OPENJSON(@PartnersJson)
-    WITH(PartnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
-    INSERT INTO CampOwners(CampId,OwnerId,ShareType,ShareValue)
-    SELECT @Id,OwnerId,ShareType,ShareValue FROM OPENJSON(@OwnersJson)
-    WITH(OwnerId INT,ShareType NVARCHAR(MAX),ShareValue DECIMAL(18,2));
+    -- Partners (PascalCase JSON paths for C# compatibility)
+    IF @PartnersJson IS NOT NULL AND LEN(@PartnersJson) > 2
+        INSERT INTO CampPartners(CampId,PartnerId,ShareType,ShareValue)
+        SELECT @Id,PartnerId,ShareType,ShareValue FROM OPENJSON(@PartnersJson)
+        WITH(PartnerId INT '$.PartnerId',ShareType NVARCHAR(MAX) '$.ShareType',ShareValue DECIMAL(18,2) '$.ShareValue');
+    -- Owners (PascalCase JSON paths for C# compatibility)
+    IF @OwnersJson IS NOT NULL AND LEN(@OwnersJson) > 2
+        INSERT INTO CampOwners(CampId,OwnerId,ShareType,ShareValue)
+        SELECT @Id,OwnerId,ShareType,ShareValue FROM OPENJSON(@OwnersJson)
+        WITH(OwnerId INT '$.OwnerId',ShareType NVARCHAR(MAX) '$.ShareType',ShareValue DECIMAL(18,2) '$.ShareValue');
 END
 GO
 CREATE OR ALTER PROCEDURE sp_DeleteCamp @Id INT AS BEGIN SET NOCOUNT ON; DELETE FROM Camps WHERE Id=@Id; END

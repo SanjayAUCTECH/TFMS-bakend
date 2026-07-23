@@ -25,6 +25,7 @@ BEGIN
     ALTER TABLE ContractRenewals NOCHECK CONSTRAINT ALL;
     ALTER TABLE Contracts NOCHECK CONSTRAINT ALL;
     ALTER TABLE OwnerTransactions NOCHECK CONSTRAINT ALL;
+    ALTER TABLE OwnerMonthlyContractInstallments NOCHECK CONSTRAINT ALL;
     ALTER TABLE OwnerInstallments NOCHECK CONSTRAINT ALL;
     ALTER TABLE OwnerContracts NOCHECK CONSTRAINT ALL;
     ALTER TABLE OutgoingPayments NOCHECK CONSTRAINT ALL;
@@ -59,6 +60,7 @@ BEGIN
     DELETE FROM ContractRenewals;
     DELETE FROM Contracts;
     DELETE FROM OwnerTransactions;
+    DELETE FROM OwnerMonthlyContractInstallments;
     DELETE FROM OwnerInstallments;
     DELETE FROM OwnerContracts;
     DELETE FROM OutgoingPayments;
@@ -93,6 +95,7 @@ BEGIN
     DBCC CHECKIDENT ('ContractRenewals', RESEED, 0);
     DBCC CHECKIDENT ('Contracts', RESEED, 0);
     DBCC CHECKIDENT ('OwnerTransactions', RESEED, 0);
+    DBCC CHECKIDENT ('OwnerMonthlyContractInstallments', RESEED, 0);
     DBCC CHECKIDENT ('OwnerInstallments', RESEED, 0);
     DBCC CHECKIDENT ('OwnerContracts', RESEED, 0);
     DBCC CHECKIDENT ('OutgoingPayments', RESEED, 0);
@@ -127,6 +130,7 @@ BEGIN
     ALTER TABLE ContractRenewals WITH CHECK CHECK CONSTRAINT ALL;
     ALTER TABLE Contracts WITH CHECK CHECK CONSTRAINT ALL;
     ALTER TABLE OwnerTransactions WITH CHECK CHECK CONSTRAINT ALL;
+    ALTER TABLE OwnerMonthlyContractInstallments WITH CHECK CHECK CONSTRAINT ALL;
     ALTER TABLE OwnerInstallments WITH CHECK CHECK CONSTRAINT ALL;
     ALTER TABLE OwnerContracts WITH CHECK CHECK CONSTRAINT ALL;
     ALTER TABLE OutgoingPayments WITH CHECK CHECK CONSTRAINT ALL;

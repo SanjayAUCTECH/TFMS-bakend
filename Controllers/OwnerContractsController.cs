@@ -47,6 +47,20 @@ public class OwnerContractsController : ControllerBase
             DueDate = i.DueDate
         }));
 
+        var monthlyInstallmentsJson = JsonSerializer.Serialize(request.MonthlyInstallments.Select(m => new
+        {
+            InstallmentNo = m.InstallmentNo,
+            Amount        = m.Amount,
+            PaidAmount    = m.PaidAmount,
+            Balance       = m.Balance,
+            DueDate       = m.DueDate,
+            PaidDate      = m.PaidDate,
+            Status        = m.Status,
+            ExpenseId     = m.ExpenseId,
+            PaymentMode   = m.PaymentMode,
+            PaymentStatus = m.PaymentStatus
+        }));
+
         var contract = new OwnerContract
         {
             CampId      = request.CampId,
@@ -56,7 +70,7 @@ public class OwnerContractsController : ControllerBase
             StartDate   = DateTime.Parse(request.StartDate),
         };
 
-        var newId = await _repo.CreateAsync(contract, installmentsJson);
+        var newId = await _repo.CreateAsync(contract, installmentsJson, monthlyInstallmentsJson);
         var created = await _repo.GetByIdAsync(newId);
         return CreatedAtAction(nameof(GetById), new { id = newId },
             ApiResponse<OwnerContractResponse>.Ok(ToResponse(created!), "Owner contract created successfully."));
@@ -160,6 +174,26 @@ public class OwnerContractsController : ControllerBase
             InstallmentNos  = t.InstallmentNos,
             ExpenseId       = t.ExpenseId,
             CreatedAt       = t.CreatedAt,
+        }).ToList(),
+        MonthlyInstallments = c.MonthlyInstallments.Select(m => new OwnerMonthlyContractInstallmentResponse
+        {
+            Id                           = m.Id,
+            MonthlyContractInstallmentId = m.MonthlyContractInstallmentId,
+            OwnerContractId              = m.OwnerContractId,
+            OwnerId                      = m.OwnerId,
+            CampId                       = m.CampId,
+            InstallmentNo                = m.InstallmentNo,
+            Amount                       = m.Amount,
+            PaidAmount                   = m.PaidAmount,
+            Balance                      = m.Balance,
+            DueDate                      = m.DueDate.ToString("yyyy-MM-dd"),
+            PaidDate                     = m.PaidDate?.ToString("yyyy-MM-dd"),
+            Status                       = m.Status,
+            ExpenseId                    = m.ExpenseId,
+            PaymentMode                  = m.PaymentMode,
+            PaymentStatus                = m.PaymentStatus,
+            CreatedAt                    = m.CreatedAt,
+            UpdatedAt                    = m.UpdatedAt,
         }).ToList(),
     };
 }

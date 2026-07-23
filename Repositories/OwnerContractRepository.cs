@@ -42,7 +42,27 @@ public class OwnerContractRepository : IOwnerContractRepository
         // Load transactions
         contract.Transactions.AddRange(await GetTransactionsByContractIdAsync(id));
 
+        // Load monthly installments
+        contract.MonthlyInstallments.AddRange(await GetMonthlyInstallmentsByContractIdAsync(id));
+
         return contract;
+    }
+
+    public async Task<IEnumerable<OwnerMonthlyContractInstallment>> GetMonthlyInstallmentsByContractIdAsync(int ownerContractId)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            "SELECT Id, MonthlyContractInstallmentId, OwnerContractId, OwnerId, CampId, " +
+            "InstallmentNo, Amount, PaidAmount, Balance, DueDate, PaidDate, " +
+            "Status, ExpenseId, PaymentMode, PaymentStatus, CreatedAt, UpdatedAt " +
+            "FROM OwnerMonthlyContractInstallments WHERE OwnerContractId = @OwnerContractId ORDER BY InstallmentNo",
+            conn);
+        cmd.Parameters.AddWithValue("@OwnerContractId", ownerContractId);
+        var list = new List<OwnerMonthlyContractInstallment>();
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync()) list.Add(MapMonthlyInstallment(r));
+        return list;
     }
 
     public async Task<IEnumerable<OwnerTransaction>> GetTransactionsByContractIdAsync(int ownerContractId)
@@ -61,7 +81,7 @@ public class OwnerContractRepository : IOwnerContractRepository
         return list;
     }
 
-    public async Task<int> CreateAsync(OwnerContract contract, string installmentsJson)
+    public async Task<int> CreateAsync(OwnerContract contract, string installmentsJson, string monthlyInstallmentsJson)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
@@ -72,6 +92,7 @@ public class OwnerContractRepository : IOwnerContractRepository
         cmd.Parameters.AddWithValue("@TotalAmount",      contract.TotalAmount);
         cmd.Parameters.AddWithValue("@StartDate",        contract.StartDate.ToString("yyyy-MM-dd"));
         cmd.Parameters.AddWithValue("@InstallmentsJson", installmentsJson);
+        cmd.Parameters.AddWithValue("@MonthlyInstallmentsJson", monthlyInstallmentsJson);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -136,5 +157,26 @@ public class OwnerContractRepository : IOwnerContractRepository
         InstallmentNos  = r.IsDBNull(r.GetOrdinal("InstallmentNos"))  ? "" : r.GetString(r.GetOrdinal("InstallmentNos")),
         ExpenseId       = r.IsDBNull(r.GetOrdinal("ExpenseId"))       ? null : r.GetInt32(r.GetOrdinal("ExpenseId")),
         CreatedAt       = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+    };
+
+    private static OwnerMonthlyContractInstallment MapMonthlyInstallment(SqlDataReader r) => new()
+    {
+        Id                           = r.GetInt32(r.GetOrdinal("Id")),
+        MonthlyContractInstallmentId = r.IsDBNull(r.GetOrdinal("MonthlyContractInstallmentId")) ? "" : r.GetString(r.GetOrdinal("MonthlyContractInstallmentId")),
+        OwnerContractId              = r.GetInt32(r.GetOrdinal("OwnerContractId")),
+        OwnerId                      = r.GetInt32(r.GetOrdinal("OwnerId")),
+        CampId                       = r.GetInt32(r.GetOrdinal("CampId")),
+        InstallmentNo                = r.GetInt32(r.GetOrdinal("InstallmentNo")),
+        Amount                       = r.GetDecimal(r.GetOrdinal("Amount")),
+        PaidAmount                   = r.GetDecimal(r.GetOrdinal("PaidAmount")),
+        Balance                      = r.GetDecimal(r.GetOrdinal("Balance")),
+        DueDate                      = r.GetDateTime(r.GetOrdinal("DueDate")),
+        PaidDate                     = r.IsDBNull(r.GetOrdinal("PaidDate")) ? null : r.GetDateTime(r.GetOrdinal("PaidDate")),
+        Status                       = r.IsDBNull(r.GetOrdinal("Status")) ? "" : r.GetString(r.GetOrdinal("Status")),
+        ExpenseId                    = r.IsDBNull(r.GetOrdinal("ExpenseId")) ? null : r.GetInt32(r.GetOrdinal("ExpenseId")),
+        PaymentMode                  = r.IsDBNull(r.GetOrdinal("PaymentMode")) ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
+        PaymentStatus                = r.IsDBNull(r.GetOrdinal("PaymentStatus")) ? "" : r.GetString(r.GetOrdinal("PaymentStatus")),
+        CreatedAt                    = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+        UpdatedAt                    = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
 }

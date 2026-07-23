@@ -19,6 +19,7 @@ public class OwnerContract
     public DateTime UpdatedAt   { get; set; }
     public List<OwnerInstallment>  Installments  { get; set; } = new();
     public List<OwnerTransaction>  Transactions  { get; set; } = new();
+    public List<OwnerMonthlyContractInstallment> MonthlyInstallments { get; set; } = new();
 }
 
 public class OwnerInstallment
@@ -51,4 +52,25 @@ public class OwnerTransaction
     public string   InstallmentNos  { get; set; } = string.Empty;
     public int?     ExpenseId       { get; set; }
     public DateTime CreatedAt       { get; set; }
+}
+
+public class OwnerMonthlyContractInstallment
+{
+    public int      Id                           { get; set; }
+    public string   MonthlyContractInstallmentId { get; set; } = string.Empty;
+    public int      OwnerContractId              { get; set; }
+    public int      OwnerId                      { get; set; }
+    public int      CampId                       { get; set; }
+    public int      InstallmentNo                { get; set; }
+    public decimal  Amount                       { get; set; }
+    public decimal  PaidAmount                   { get; set; }
+    public decimal  Balance                      { get; set; }
+    public DateTime DueDate                      { get; set; }
+    public DateTime? PaidDate                    { get; set; }
+    public string   Status                       { get; set; } = "Pending";
+    public int?     ExpenseId                    { get; set; }
+    public string   PaymentMode                  { get; set; } = string.Empty;
+    public string   PaymentStatus                { get; set; } = "Pending";
+    public DateTime CreatedAt                    { get; set; }
+    public DateTime UpdatedAt                    { get; set; }
 }
