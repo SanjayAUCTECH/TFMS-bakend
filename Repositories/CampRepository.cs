@@ -15,29 +15,37 @@ public class CampRepository : ICampRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_GetCamps", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@PageNumber", request.ResolvedPageNumber);
-        cmd.Parameters.AddWithValue("@PageSize", request.ResolvedPageSize);
+        cmd.Parameters.AddWithValue("@PageNumber",    request.ResolvedPageNumber);
+        cmd.Parameters.AddWithValue("@PageSize",      request.ResolvedPageSize);
         cmd.Parameters.AddWithValue("@SearchText",    (object?)request.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortBy",        (object?)request.SortBy    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortDirection", request.ResolvedSortDir);
         cmd.Parameters.AddWithValue("@Status",        (object?)request.Status    ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@PartnerId",    (object?)request.PartnerId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@OwnerId",      (object?)request.OwnerId   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PartnerId",     (object?)request.PartnerId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@OwnerId",       (object?)request.OwnerId   ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(total);
 
         var dict = new Dictionary<int, Camp>();
+
         await using var r = await cmd.ExecuteReaderAsync();
+
+        // Result Set 1: Camp details
         while (await r.ReadAsync())
         {
             var cId = r.GetInt32(r.GetOrdinal("Id"));
             if (!dict.ContainsKey(cId))
                 dict[cId] = MapCamp(r);
+        }
 
-            // Partners
-            if (!r.IsDBNull(r.GetOrdinal("CampPartnerId")))
+        // Result Set 2: Partners (only if there's a next result)
+        if (await r.NextResultAsync())
+        {
+            while (await r.ReadAsync())
             {
-                var cp = new CampPartner
+                var cId = r.GetInt32(r.GetOrdinal("CampId"));
+                if (!dict.ContainsKey(cId)) continue;
+                dict[cId].Partners.Add(new CampPartner
                 {
                     Id          = r.GetInt32(r.GetOrdinal("CampPartnerId")),
                     CampId      = cId,
@@ -45,27 +53,29 @@ public class CampRepository : ICampRepository
                     PartnerName = r.IsDBNull(r.GetOrdinal("PartnerName")) ? "" : r.GetString(r.GetOrdinal("PartnerName")),
                     ShareType   = r.GetString(r.GetOrdinal("PartnerShareType")),
                     ShareValue  = r.GetDecimal(r.GetOrdinal("PartnerShareValue")),
-                };
-                if (!dict[cId].Partners.Any(p => p.Id == cp.Id))
-                    dict[cId].Partners.Add(cp);
-            }
-
-            // Owners
-            if (!r.IsDBNull(r.GetOrdinal("CampOwnerId")))
-            {
-                var co = new CampOwner
-                {
-                    Id        = r.GetInt32(r.GetOrdinal("CampOwnerId")),
-                    CampId    = cId,
-                    OwnerId   = r.GetInt32(r.GetOrdinal("OwnerId")),
-                    OwnerName = r.IsDBNull(r.GetOrdinal("OwnerName")) ? "" : r.GetString(r.GetOrdinal("OwnerName")),
-                    ShareType = r.GetString(r.GetOrdinal("OwnerShareType")),
-                    ShareValue = r.GetDecimal(r.GetOrdinal("OwnerShareValue")),
-                };
-                if (!dict[cId].Owners.Any(o => o.Id == co.Id))
-                    dict[cId].Owners.Add(co);
+                });
             }
         }
+
+        // Result Set 3: Owners (only if there's a next result)
+        if (await r.NextResultAsync())
+        {
+            while (await r.ReadAsync())
+            {
+                var cId = r.GetInt32(r.GetOrdinal("CampId"));
+                if (!dict.ContainsKey(cId)) continue;
+                dict[cId].Owners.Add(new CampOwner
+                {
+                    Id         = r.GetInt32(r.GetOrdinal("CampOwnerId")),
+                    CampId     = cId,
+                    OwnerId    = r.GetInt32(r.GetOrdinal("OwnerId")),
+                    OwnerName  = r.IsDBNull(r.GetOrdinal("OwnerName")) ? "" : r.GetString(r.GetOrdinal("OwnerName")),
+                    ShareType  = r.GetString(r.GetOrdinal("OwnerShareType")),
+                    ShareValue = r.GetDecimal(r.GetOrdinal("OwnerShareValue")),
+                });
+            }
+        }
+
         await r.CloseAsync();
         return (dict.Values, (int)(total.Value == DBNull.Value ? 0 : total.Value));
     }
@@ -88,11 +98,18 @@ public class CampRepository : ICampRepository
         await using var cmd = new SqlCommand("sp_GetCampById", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
         await using var r = await cmd.ExecuteReaderAsync();
+
+        // Result Set 1: Camp details (single row)
         Camp? camp = null;
-        while (await r.ReadAsync())
+        if (await r.ReadAsync())
+            camp = MapCamp(r);
+
+        if (camp == null) return null;
+
+        // Result Set 2: Partners
+        if (await r.NextResultAsync())
         {
-            camp ??= MapCamp(r);
-            if (!r.IsDBNull(r.GetOrdinal("PartnerId")))
+            while (await r.ReadAsync())
             {
                 camp.Partners.Add(new CampPartner
                 {
@@ -104,7 +121,12 @@ public class CampRepository : ICampRepository
                     ShareValue  = r.GetDecimal(r.GetOrdinal("PartnerShareValue")),
                 });
             }
-            if (!r.IsDBNull(r.GetOrdinal("OwnerId")))
+        }
+
+        // Result Set 3: Owners
+        if (await r.NextResultAsync())
+        {
+            while (await r.ReadAsync())
             {
                 camp.Owners.Add(new CampOwner
                 {
@@ -117,6 +139,7 @@ public class CampRepository : ICampRepository
                 });
             }
         }
+
         return camp;
     }
 

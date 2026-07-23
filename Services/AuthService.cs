@@ -74,6 +74,7 @@ public class AuthService : IAuthService
             Username    = user.Username,
             Role        = user.Role,
             Source      = user.Source,
+            SourceId    = user.SourceId,
             Contact     = user.Contact,
             Email       = user.Email,
             IsAdmin     = user.IsAdmin,

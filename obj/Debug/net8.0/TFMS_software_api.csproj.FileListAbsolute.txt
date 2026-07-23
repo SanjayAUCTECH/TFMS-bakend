@@ -96,3 +96,5 @@ g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\refint\TFMS_software_api.dll
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\TFMS_software_api.pdb
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\TFMS_software_api.genruntimeconfig.cache
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Debug\net8.0\TFMS_software_api.pdb
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Debug\net8.0\ref\TFMS_software_api.dll

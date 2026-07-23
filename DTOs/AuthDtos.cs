@@ -34,6 +34,7 @@ public class ProfileResponse
     public string   Username    { get; set; } = string.Empty;
     public string   Role        { get; set; } = string.Empty;
     public string   Source      { get; set; } = string.Empty;
+    public int?     SourceId    { get; set; }
     public string   Contact     { get; set; } = string.Empty;
     public string   Email       { get; set; } = string.Empty;
     public bool     IsAdmin     { get; set; }
