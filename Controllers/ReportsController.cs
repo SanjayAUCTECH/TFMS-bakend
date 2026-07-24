@@ -52,10 +52,38 @@ public class ReportsController : ControllerBase
     public async Task<IActionResult> Transactions([FromQuery] ReportRequest request)
         => Ok(await _service.GetTransactionStatementAsync(request));
 
+    /// <summary>
+    /// GET api/reports/transaction-report
+    /// Filters: DateFrom, DateTo, AccountHead, Party, CampId, FundPool, Type (Income/Expense), Source, Mode, Role
+    /// Cards: NoOfPayments, TotalIncome, TotalExpense, TotalAmount
+    /// </summary>
+    [HttpGet("transaction-report")]
+    public async Task<IActionResult> TransactionReport([FromQuery] ReportRequest request)
+        => Ok(await _service.GetTransactionReportAsync(request));
+
     /// <summary>GET api/reports/due?TenantId=1&CampId=2&Month=2026-07</summary>
     [HttpGet("due")]
     public async Task<IActionResult> Due([FromQuery] ReportRequest request)
         => Ok(await _service.GetDueReportAsync(request));
+
+    /// <summary>
+    /// GET api/reports/camp-collection — Camp wise collection report
+    /// Filters: CampId, PartnerId, OwnerId, ContractId, DateFrom, DateTo, Month (yyyy-MM)
+    /// </summary>
+    [HttpGet("camp-collection")]
+    public async Task<IActionResult> CampCollection([FromQuery] ReportRequest request)
+        => Ok(await _service.GetCampCollectionReportAsync(request));
+
+    /// <summary>
+    /// GET api/reports/room-wise-collection?CampId=1 (CampId REQUIRED)
+    /// Filters: DateFrom, DateTo, Month (yyyy-MM), ContractStatus, Status (RoomStatus)
+    /// </summary>
+    [HttpGet("room-wise-collection")]
+    public async Task<IActionResult> RoomWiseCollection([FromQuery] ReportRequest request)
+    {
+        if (request.CampId == null) return BadRequest("CampId is required.");
+        return Ok(await _service.GetRoomWiseCollectionReportAsync(request));
+    }
 
     /// <summary>GET api/reports/room-history/{roomId}</summary>
     [HttpGet("room-history/{roomId:int}")]

@@ -20,6 +20,16 @@ public class ReportRequest
     public string? ContractId    { get; set; }
     public string? Month         { get; set; }
     public string? Year          { get; set; }
+    // Transaction Report filters
+    public string? AccountHead   { get; set; }
+    public string? Party         { get; set; }
+    public string? FundPool      { get; set; }
+    public string? Type          { get; set; }   // Income | Expense
+    public string? Source        { get; set; }
+    public string? Mode          { get; set; }
+    public string? Role          { get; set; }
+    public int?    OwnerId       { get; set; }   // Camp Collection filter
+    public string? ContractStatus { get; set; }  // Room wise collection filter
 
     [BindNever, JsonIgnore]
     public int ResolvedPage     => PageNumber is > 0 ? PageNumber.Value : 1;
@@ -348,6 +358,40 @@ public class DueReportResponse
     public List<DueReportRow>      Rows        { get; set; } = new();
     public int                     TotalRecords{ get; set; }
 }
+// ── Transaction Report (Income + Expense) ────────────────────────────────
+public class TransactionReportRow
+{
+    public int      Id              { get; set; }
+    public DateTime Date            { get; set; }
+    public string   AccountHead     { get; set; } = string.Empty;
+    public string   PartyRecipient  { get; set; } = string.Empty;
+    public string   CampName        { get; set; } = string.Empty;
+    public string   FundPool        { get; set; } = string.Empty;
+    public string   FundPoolName    { get; set; } = string.Empty;
+    public string   Type            { get; set; } = string.Empty;   // Income | Expense
+    public string   Source          { get; set; } = string.Empty;
+    public string   Mode            { get; set; } = string.Empty;
+    public decimal  Amount          { get; set; }
+    public string   Role            { get; set; } = string.Empty;
+    public string   RefId           { get; set; } = string.Empty;
+}
+
+public class TransactionReportSummaryCards
+{
+    public int     NoOfPayments  { get; set; }
+    public decimal TotalIncome   { get; set; }
+    public decimal TotalExpense  { get; set; }
+    public decimal TotalAmount   { get; set; }
+}
+
+public class TransactionReportResponse
+{
+    public TransactionReportSummaryCards   Summary      { get; set; } = new();
+    public List<TransactionReportRow>      Rows         { get; set; } = new();
+    public int                             TotalRecords { get; set; }
+}
+
+// ── Transaction Statement (legacy, kept for backward compat) ──────────────
 public class TransactionReportSummary
 {
     public int     TotalCount   { get; set; }
@@ -356,7 +400,7 @@ public class TransactionReportSummary
     public int     PendingCount { get; set; }
 }
 public class TransactionMonthlyData { public string Month { get; set; } = ""; public decimal Income { get; set; } public decimal Expenses { get; set; } }
-public class TransactionReportResponse
+public class TransactionStatementResponse
 {
     public TransactionReportSummary        Summary      { get; set; } = new();
     public List<TransactionMonthlyData>    MonthlyData  { get; set; } = new();
@@ -403,4 +447,80 @@ public class MakePaymentResponse
     public string  FundPoolName  { get; set; } = string.Empty;
     public string  Reference     { get; set; } = string.Empty;
     public DateTime CreatedAt    { get; set; }
+}
+
+// ── Camp Collection Report ────────────────────────────────────────────────
+public class CampCollectionRow
+{
+    public int     CampId              { get; set; }
+    public string  CampCode            { get; set; } = string.Empty;
+    public string  CampName            { get; set; } = string.Empty;
+    public string  CampStatus          { get; set; } = string.Empty;
+    public int     TotalRooms          { get; set; }
+    public int     OccupiedRooms       { get; set; }
+    public int     VacantRooms         { get; set; }
+    public int     TotalContracts      { get; set; }
+    public int     ActiveContracts     { get; set; }
+    public decimal TotalAmount         { get; set; }
+    public decimal TotalCollected      { get; set; }
+    public decimal TotalDue            { get; set; }
+    public int     TotalPartners       { get; set; }
+    public int     TotalOwners         { get; set; }
+}
+
+public class CampCollectionSubTotal
+{
+    public int     SubTotalRooms           { get; set; }
+    public int     SubTotalOccupied        { get; set; }
+    public int     SubTotalVacant          { get; set; }
+    public int     SubTotalContracts       { get; set; }
+    public int     SubTotalActiveContracts { get; set; }
+    public decimal SubTotalAmount          { get; set; }
+    public decimal SubTotalCollected       { get; set; }
+    public decimal SubTotalDue             { get; set; }
+    public int     SubTotalPartners        { get; set; }
+    public int     SubTotalOwners          { get; set; }
+}
+
+public class CampCollectionReportResponse
+{
+    public List<CampCollectionRow> Rows         { get; set; } = new();
+    public CampCollectionSubTotal  SubTotal     { get; set; } = new();
+    public int                     TotalRecords { get; set; }
+}
+
+// ── Room Wise Collection Report ───────────────────────────────────────────
+public class RoomWiseCollectionRow
+{
+    public int      RoomId         { get; set; }
+    public string   RoomNo         { get; set; } = string.Empty;
+    public string   RoomStatus     { get; set; } = string.Empty;
+    public decimal  MonthlyPrice   { get; set; }
+    public bool     Occupied       { get; set; }
+    public string   ContractId     { get; set; } = string.Empty;
+    public string   ContractStatus { get; set; } = string.Empty;
+    public string   TenantName     { get; set; } = string.Empty;
+    public decimal  TotalAmount    { get; set; }
+    public decimal  Collected      { get; set; }
+    public decimal  Due            { get; set; }
+    public DateTime? LastDate      { get; set; }
+    public decimal  LastAmount     { get; set; }
+    public string   Status         { get; set; } = string.Empty;
+}
+
+public class RoomWiseCollectionSummary
+{
+    public int     TotalRooms      { get; set; }
+    public int     OccupiedRooms   { get; set; }
+    public int     VacantRooms     { get; set; }
+    public decimal TotalAmount     { get; set; }
+    public decimal TotalCollected  { get; set; }
+    public decimal TotalDue        { get; set; }
+}
+
+public class RoomWiseCollectionResponse
+{
+    public List<RoomWiseCollectionRow> Rows         { get; set; } = new();
+    public RoomWiseCollectionSummary   Summary      { get; set; } = new();
+    public int                         TotalRecords { get; set; }
 }

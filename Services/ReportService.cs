@@ -51,6 +51,29 @@ public class ReportService : IReportService
             PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
     }
 
+    public async Task<ApiResponse<TransactionReportResponse>> GetTransactionReportAsync(ReportRequest request)
+    {
+        var result = await _repo.GetTransactionReportAsync(request);
+        return ApiResponse<TransactionReportResponse>.Ok(result, "Transaction report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
+    }
+
+    public async Task<ApiResponse<CampCollectionReportResponse>> GetCampCollectionReportAsync(ReportRequest request)
+    {
+        var result = await _repo.GetCampCollectionReportAsync(request);
+        return ApiResponse<CampCollectionReportResponse>.Ok(result, "Camp collection report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
+    }
+
+    public async Task<ApiResponse<RoomWiseCollectionResponse>> GetRoomWiseCollectionReportAsync(ReportRequest request)
+    {
+        if (request.CampId == null)
+            return ApiResponse<RoomWiseCollectionResponse>.Fail("CampId is required.");
+        var result = await _repo.GetRoomWiseCollectionReportAsync(request);
+        return ApiResponse<RoomWiseCollectionResponse>.Ok(result, "Room wise collection report retrieved.",
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
+    }
+
     public async Task<ApiResponse<DueReportResponse>> GetDueReportAsync(ReportRequest request)
     {
         var result = await _repo.GetDueReportAsync(request);

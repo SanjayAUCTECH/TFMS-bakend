@@ -291,8 +291,7 @@ public class ReportRepository : IReportRepository
                 ContractId=rd.IsDBNull(rd.GetOrdinal("ContractId"))?"":rd.GetString(rd.GetOrdinal("ContractId")),
                 TenantName=rd.IsDBNull(rd.GetOrdinal("TenantName"))?"":rd.GetString(rd.GetOrdinal("TenantName")),
                 CampName=rd.IsDBNull(rd.GetOrdinal("CampName"))?"":rd.GetString(rd.GetOrdinal("CampName")),
-                RoomNo="",
-                InstallmentNo=0,
+                RoomNo="", InstallmentNo=0,
                 Amount=rd.IsDBNull(rd.GetOrdinal("Amount"))?0:rd.GetDecimal(rd.GetOrdinal("Amount")),
                 PaidAmount=rd.IsDBNull(rd.GetOrdinal("Amount"))?0:rd.GetDecimal(rd.GetOrdinal("Amount")),
                 Balance=0,
@@ -301,7 +300,6 @@ public class ReportRepository : IReportRepository
                 ReceivedBy="",
                 FundPoolName=rd.IsDBNull(rd.GetOrdinal("FundPoolName"))?"":rd.GetString(rd.GetOrdinal("FundPoolName")),
                 ChequeNumber="",
-                // Extra fields from new SP
                 AccountHead=rd.IsDBNull(rd.GetOrdinal("AccountHead"))?"":rd.GetString(rd.GetOrdinal("AccountHead")),
                 Particular=rd.IsDBNull(rd.GetOrdinal("Particular"))?"":rd.GetString(rd.GetOrdinal("Particular")),
                 TxnType=rd.IsDBNull(rd.GetOrdinal("TxnType"))?"":rd.GetString(rd.GetOrdinal("TxnType")),
@@ -314,9 +312,74 @@ public class ReportRepository : IReportRepository
             Income=paid.Where(x=>x.Date.Month==i+1).Sum(x=>x.PaidAmount), Expenses=0}).ToList();
         int pg=r.ResolvedPage, ps=r.ResolvedPageSize==int.MaxValue?all.Count:r.ResolvedPageSize;
         return new TransactionReportResponse {
-            Summary=new(){TotalCount=all.Count,TotalIncome=totalIncome,PaidCount=paid.Count,PendingCount=all.Count(x=>x.Status=="Pending")},
-            MonthlyData=monthly,
-            Rows=all.Skip((pg-1)*ps).Take(ps).ToList(), TotalRecords=all.Count };
+            Summary=new TransactionReportSummaryCards{NoOfPayments=all.Count,TotalIncome=totalIncome,TotalExpense=0,TotalAmount=totalIncome},
+            Rows=all.Select(x=>new TransactionReportRow{Id=x.Id,Date=x.Date,AccountHead=x.AccountHead,PartyRecipient=x.Particular,CampName=x.CampName,FundPoolName=x.FundPoolName,Type=x.TxnType,Source=x.Source,Mode=x.PaymentMode,Amount=x.Amount,Role="",RefId=x.ContractId}).Skip((pg-1)*ps).Take(ps).ToList(),
+            TotalRecords=all.Count };
+    }
+
+    // ── Transaction Report (Income + Expense tables) ──────────────────────────
+    public async Task<TransactionReportResponse> GetTransactionReportAsync(ReportRequest r)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_GetTransactionReport", conn) { CommandType = CommandType.StoredProcedure };
+        int pageSize = r.ResolvedPageSize == int.MaxValue ? 2147483647 : r.ResolvedPageSize;
+        cmd.Parameters.AddWithValue("@PageNumber",   r.ResolvedPage);
+        cmd.Parameters.AddWithValue("@PageSize",     pageSize);
+        cmd.Parameters.AddWithValue("@DateFrom",     (object?)r.DateFrom    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateTo",       (object?)r.DateTo      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@AccountHead",  (object?)r.AccountHead ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Party",        (object?)r.Party       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId",       (object?)r.CampId      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPool",     (object?)r.FundPool    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Type",         (object?)r.Type        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Source",       (object?)r.Source      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Mode",         (object?)r.Mode        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Role",         (object?)r.Role        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SearchText",   (object?)r.SearchText  ?? DBNull.Value);
+        var pTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pTotal);
+
+        var rows  = new List<TransactionReportRow>();
+        var cards = new TransactionReportSummaryCards();
+
+        await using (var rd = await cmd.ExecuteReaderAsync())
+        {
+            // Result set 1: rows
+            while (await rd.ReadAsync())
+                rows.Add(new TransactionReportRow {
+                    Id             = rd.IsDBNull(rd.GetOrdinal("Id"))             ? 0                : rd.GetInt32(rd.GetOrdinal("Id")),
+                    Date           = rd.IsDBNull(rd.GetOrdinal("Date"))           ? DateTime.MinValue : rd.GetDateTime(rd.GetOrdinal("Date")),
+                    AccountHead    = rd.IsDBNull(rd.GetOrdinal("AccountHead"))    ? "" : rd.GetString(rd.GetOrdinal("AccountHead")),
+                    PartyRecipient = rd.IsDBNull(rd.GetOrdinal("PartyRecipient")) ? "" : rd.GetString(rd.GetOrdinal("PartyRecipient")),
+                    CampName       = rd.IsDBNull(rd.GetOrdinal("CampName"))       ? "" : rd.GetString(rd.GetOrdinal("CampName")),
+                    FundPool       = rd.IsDBNull(rd.GetOrdinal("FundPool"))       ? "" : rd.GetString(rd.GetOrdinal("FundPool")),
+                    FundPoolName   = rd.IsDBNull(rd.GetOrdinal("FundPoolName"))   ? "" : rd.GetString(rd.GetOrdinal("FundPoolName")),
+                    Type           = rd.IsDBNull(rd.GetOrdinal("Type"))           ? "" : rd.GetString(rd.GetOrdinal("Type")),
+                    Source         = rd.IsDBNull(rd.GetOrdinal("Source"))         ? "" : rd.GetString(rd.GetOrdinal("Source")),
+                    Mode           = rd.IsDBNull(rd.GetOrdinal("Mode"))           ? "" : rd.GetString(rd.GetOrdinal("Mode")),
+                    Amount         = rd.IsDBNull(rd.GetOrdinal("Amount"))         ? 0  : rd.GetDecimal(rd.GetOrdinal("Amount")),
+                    Role           = rd.IsDBNull(rd.GetOrdinal("Role"))           ? "" : rd.GetString(rd.GetOrdinal("Role")),
+                    RefId          = rd.IsDBNull(rd.GetOrdinal("RefId"))          ? "" : rd.GetString(rd.GetOrdinal("RefId")),
+                });
+
+            // Result set 2: summary cards
+            await rd.NextResultAsync();
+            if (await rd.ReadAsync())
+                cards = new TransactionReportSummaryCards {
+                    NoOfPayments = rd.IsDBNull(rd.GetOrdinal("NoOfPayments")) ? 0 : rd.GetInt32(rd.GetOrdinal("NoOfPayments")),
+                    TotalIncome  = rd.IsDBNull(rd.GetOrdinal("TotalIncome"))  ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalIncome")),
+                    TotalExpense = rd.IsDBNull(rd.GetOrdinal("TotalExpense")) ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalExpense")),
+                    TotalAmount  = rd.IsDBNull(rd.GetOrdinal("TotalAmount"))  ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalAmount")),
+                };
+        }
+
+        int totalRecords = pTotal.Value != DBNull.Value ? (int)pTotal.Value : rows.Count;
+        return new TransactionReportResponse {
+            Summary      = cards,
+            Rows         = rows,
+            TotalRecords = totalRecords,
+        };
     }
 
     // ── Tenant Ledger ─────────────────────────────────────────────────────────
@@ -363,43 +426,94 @@ public class ReportRepository : IReportRepository
         await conn.OpenAsync();
 
         // Build WHERE conditions
-        var where = new List<string> { "ci.Status IN ('Pending','Partial')" };
-        if (r.TenantId.HasValue) where.Add("ct.TenantId=@TenantId");
-        if (r.CampId.HasValue)   where.Add("ct.Id IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
+        var where  = new List<string> { "ci.Status IN ('Pending','Partial','Overdue')" };
+        var params_ = new List<SqlParameter>();
+
+        if (r.TenantId.HasValue)
+        {
+            where.Add("ct.TenantId = @TenantId");
+            params_.Add(new SqlParameter("@TenantId", r.TenantId.Value));
+        }
+        if (r.CampId.HasValue)
+        {
+            where.Add("ct.ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId = @CampId)");
+            params_.Add(new SqlParameter("@CampId", r.CampId.Value));
+        }
+        if (!string.IsNullOrEmpty(r.ContractId))
+        {
+            where.Add("ci.ContractId = @ContractId");
+            params_.Add(new SqlParameter("@ContractId", r.ContractId));
+        }
         if (!string.IsNullOrEmpty(r.Month))
         {
-            var parts = r.Month.Split('-');
-            if (parts.Length == 2)
-                where.Add("FORMAT(ci.DueDate,'yyyy-MM')=@Month");
+            where.Add("FORMAT(ci.DueDate,'yyyy-MM') = @Month");
+            params_.Add(new SqlParameter("@Month", r.Month));
         }
+        if (!string.IsNullOrEmpty(r.DateFrom))
+        {
+            where.Add("ci.DueDate >= @DateFrom");
+            params_.Add(new SqlParameter("@DateFrom", r.DateFrom));
+        }
+        if (!string.IsNullOrEmpty(r.DateTo))
+        {
+            where.Add("ci.DueDate <= @DateTo");
+            params_.Add(new SqlParameter("@DateTo", r.DateTo));
+        }
+        if (!string.IsNullOrEmpty(r.Status))
+        {
+            // Status filter: Overdue or Pending
+            if (r.Status == "Overdue")
+                where.Add("ci.DueDate < GETDATE()");
+            else if (r.Status == "Pending")
+                where.Add("ci.DueDate >= GETDATE()");
+        }
+        if (!string.IsNullOrEmpty(r.SearchText))
+        {
+            where.Add("(t.Name LIKE @SearchText OR ci.ContractId LIKE @SearchText OR ca2sub.Name LIKE @SearchText)");
+            params_.Add(new SqlParameter("@SearchText", $"%{r.SearchText}%"));
+        }
+        if (!string.IsNullOrEmpty(r.Mode))
+        {
+            where.Add("ISNULL(ci.PaymentMode,'') = @Mode");
+            params_.Add(new SqlParameter("@Mode", r.Mode));
+        }
+
         var whereClause = "WHERE " + string.Join(" AND ", where);
 
         var sql = $@"
             SELECT
                 ci.Id, ci.ContractId, ci.InstallmentNo,
                 ci.Amount, ci.PaidAmount,
-                ci.Amount - ci.PaidAmount  BalanceAmount,
+                ci.Amount - ci.PaidAmount              BalanceAmount,
                 ci.DueDate, ci.Status,
-                ISNULL(ci.PaymentMode,'')  PaymentMode,
-                ISNULL(t.Name,'')          TenantName,
+                ISNULL(ci.PaymentMode,'')              PaymentMode,
+                ISNULL(t.Name,'')                      TenantName,
                 ct.TenantId,
-                ISNULL((SELECT TOP 1 ca2.Name FROM ContractCamps cc2 JOIN Camps ca2 ON ca2.Id=cc2.CampId WHERE cc2.ContractId=ct.ContractId ORDER BY cc2.Id),'') CampName,
-                ISNULL(rm.RoomNo,'')       RoomNo,
+                ISNULL((SELECT TOP 1 ca2.Name FROM ContractCamps cc2
+                         JOIN Camps ca2 ON ca2.Id=cc2.CampId
+                         WHERE cc2.ContractId=ct.ContractId
+                         ORDER BY cc2.Id),'')          CampName,
+                ISNULL(rm.RoomNo,'')                   RoomNo,
                 CASE WHEN ci.DueDate < GETDATE() THEN 'Overdue' ELSE 'Pending' END DueStatus
             FROM ContractInstallments ci
-            JOIN Contracts ct ON ct.ContractId=ci.ContractId
-            LEFT JOIN Tenants t  ON t.Id=ct.TenantId
-            LEFT JOIN ContractRooms cr ON cr.ContractId=ci.ContractId
-            LEFT JOIN Rooms rm   ON rm.Id=cr.RoomId
+            JOIN Contracts ct          ON ct.ContractId = ci.ContractId
+            LEFT JOIN Tenants t        ON t.Id = ct.TenantId
+            LEFT JOIN (SELECT DISTINCT ContractId,
+                              (SELECT TOP 1 ca2.Name FROM ContractCamps cc2
+                               JOIN Camps ca2 ON ca2.Id=cc2.CampId
+                               WHERE cc2.ContractId=ci2.ContractId
+                               ORDER BY cc2.Id) Name
+                       FROM ContractInstallments ci2) ca2sub
+                   ON ca2sub.ContractId = ci.ContractId
+            LEFT JOIN ContractRooms cr ON cr.ContractId = ci.ContractId
+            LEFT JOIN Rooms rm         ON rm.Id = cr.RoomId
             {whereClause}
             ORDER BY ci.DueDate";
 
         var allRows = new List<DueReportRow>();
         await using (var cmd = new SqlCommand(sql, conn))
         {
-            if (r.TenantId.HasValue) cmd.Parameters.AddWithValue("@TenantId", r.TenantId.Value);
-            if (r.CampId.HasValue)   cmd.Parameters.AddWithValue("@CampId",   r.CampId.Value);
-            if (!string.IsNullOrEmpty(r.Month)) cmd.Parameters.AddWithValue("@Month", r.Month);
+            foreach (var p in params_) cmd.Parameters.Add(p);
             cmd.CommandTimeout = 60;
             await using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
@@ -525,5 +639,130 @@ public class ReportRepository : IReportRepository
         });
         await rd.CloseAsync();
         return (list, (int)(total.Value == DBNull.Value ? 0 : total.Value));
+    }
+
+    // ── Camp Collection Report ────────────────────────────────────────────────
+    public async Task<CampCollectionReportResponse> GetCampCollectionReportAsync(ReportRequest r)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_GetCampCollectionReport", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@CampId",     (object?)r.CampId     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PartnerId",  (object?)r.PartnerId  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@OwnerId",    (object?)r.OwnerId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractId", (object?)r.ContractId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateFrom",   (object?)r.DateFrom   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateTo",     (object?)r.DateTo     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Month",      (object?)r.Month      ?? DBNull.Value);
+        var pTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pTotal);
+
+        var rows    = new List<CampCollectionRow>();
+        var subTotal= new CampCollectionSubTotal();
+
+        await using (var rd = await cmd.ExecuteReaderAsync())
+        {
+            // Result set 1: rows
+            while (await rd.ReadAsync())
+                rows.Add(new CampCollectionRow {
+                    CampId          = rd.IsDBNull(rd.GetOrdinal("CampId"))          ? 0  : rd.GetInt32(rd.GetOrdinal("CampId")),
+                    CampCode        = rd.IsDBNull(rd.GetOrdinal("CampCode"))        ? "" : rd.GetString(rd.GetOrdinal("CampCode")),
+                    CampName        = rd.IsDBNull(rd.GetOrdinal("CampName"))        ? "" : rd.GetString(rd.GetOrdinal("CampName")),
+                    CampStatus      = rd.IsDBNull(rd.GetOrdinal("CampStatus"))      ? "" : rd.GetString(rd.GetOrdinal("CampStatus")),
+                    TotalRooms      = rd.IsDBNull(rd.GetOrdinal("TotalRooms"))      ? 0  : rd.GetInt32(rd.GetOrdinal("TotalRooms")),
+                    OccupiedRooms   = rd.IsDBNull(rd.GetOrdinal("OccupiedRooms"))   ? 0  : rd.GetInt32(rd.GetOrdinal("OccupiedRooms")),
+                    VacantRooms     = rd.IsDBNull(rd.GetOrdinal("VacantRooms"))     ? 0  : rd.GetInt32(rd.GetOrdinal("VacantRooms")),
+                    TotalContracts  = rd.IsDBNull(rd.GetOrdinal("TotalContracts"))  ? 0  : rd.GetInt32(rd.GetOrdinal("TotalContracts")),
+                    ActiveContracts = rd.IsDBNull(rd.GetOrdinal("ActiveContracts")) ? 0  : rd.GetInt32(rd.GetOrdinal("ActiveContracts")),
+                    TotalAmount     = rd.IsDBNull(rd.GetOrdinal("TotalAmount"))     ? 0  : rd.GetDecimal(rd.GetOrdinal("TotalAmount")),
+                    TotalCollected  = rd.IsDBNull(rd.GetOrdinal("TotalCollected"))  ? 0  : rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
+                    TotalDue        = rd.IsDBNull(rd.GetOrdinal("TotalDue"))        ? 0  : rd.GetDecimal(rd.GetOrdinal("TotalDue")),
+                    TotalPartners   = rd.IsDBNull(rd.GetOrdinal("TotalPartners"))   ? 0  : rd.GetInt32(rd.GetOrdinal("TotalPartners")),
+                    TotalOwners     = rd.IsDBNull(rd.GetOrdinal("TotalOwners"))     ? 0  : rd.GetInt32(rd.GetOrdinal("TotalOwners")),
+                });
+
+            // Result set 2: sub totals
+            await rd.NextResultAsync();
+            if (await rd.ReadAsync())
+                subTotal = new CampCollectionSubTotal {
+                    SubTotalRooms           = rd.IsDBNull(rd.GetOrdinal("SubTotalRooms"))           ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalRooms")),
+                    SubTotalOccupied        = rd.IsDBNull(rd.GetOrdinal("SubTotalOccupied"))        ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalOccupied")),
+                    SubTotalVacant          = rd.IsDBNull(rd.GetOrdinal("SubTotalVacant"))          ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalVacant")),
+                    SubTotalContracts       = rd.IsDBNull(rd.GetOrdinal("SubTotalContracts"))       ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalContracts")),
+                    SubTotalActiveContracts = rd.IsDBNull(rd.GetOrdinal("SubTotalActiveContracts")) ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalActiveContracts")),
+                    SubTotalAmount          = rd.IsDBNull(rd.GetOrdinal("SubTotalAmount"))          ? 0 : rd.GetDecimal(rd.GetOrdinal("SubTotalAmount")),
+                    SubTotalCollected       = rd.IsDBNull(rd.GetOrdinal("SubTotalCollected"))       ? 0 : rd.GetDecimal(rd.GetOrdinal("SubTotalCollected")),
+                    SubTotalDue             = rd.IsDBNull(rd.GetOrdinal("SubTotalDue"))             ? 0 : rd.GetDecimal(rd.GetOrdinal("SubTotalDue")),
+                    SubTotalPartners        = rd.IsDBNull(rd.GetOrdinal("SubTotalPartners"))        ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalPartners")),
+                    SubTotalOwners          = rd.IsDBNull(rd.GetOrdinal("SubTotalOwners"))          ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalOwners")),
+                };
+        }
+
+        int totalRecords = pTotal.Value != DBNull.Value ? (int)pTotal.Value : rows.Count;
+        return new CampCollectionReportResponse {
+            Rows         = rows,
+            SubTotal     = subTotal,
+            TotalRecords = totalRecords,
+        };
+    }
+
+    // ── Room Wise Collection Report ───────────────────────────────────────────
+    public async Task<RoomWiseCollectionResponse> GetRoomWiseCollectionReportAsync(ReportRequest r)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_GetRoomWiseCollectionReport", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@CampId",         r.CampId!.Value);
+        cmd.Parameters.AddWithValue("@DateFrom",       (object?)r.DateFrom       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateTo",         (object?)r.DateTo         ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Month",          (object?)r.Month          ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractStatus", (object?)r.ContractStatus ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@RoomStatus",     (object?)r.Status         ?? DBNull.Value);
+        var pTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pTotal);
+
+        var rows    = new List<RoomWiseCollectionRow>();
+        var summary = new RoomWiseCollectionSummary();
+
+        await using (var rd = await cmd.ExecuteReaderAsync())
+        {
+            // Result set 1: rows
+            while (await rd.ReadAsync())
+                rows.Add(new RoomWiseCollectionRow {
+                    RoomId         = rd.IsDBNull(rd.GetOrdinal("RoomId"))         ? 0    : rd.GetInt32(rd.GetOrdinal("RoomId")),
+                    RoomNo         = rd.IsDBNull(rd.GetOrdinal("RoomNo"))         ? ""   : rd.GetString(rd.GetOrdinal("RoomNo")),
+                    RoomStatus     = rd.IsDBNull(rd.GetOrdinal("RoomStatus"))     ? ""   : rd.GetString(rd.GetOrdinal("RoomStatus")),
+                    MonthlyPrice   = rd.IsDBNull(rd.GetOrdinal("MonthlyPrice"))   ? 0    : rd.GetDecimal(rd.GetOrdinal("MonthlyPrice")),
+                    Occupied       = !rd.IsDBNull(rd.GetOrdinal("Occupied"))      && rd.GetBoolean(rd.GetOrdinal("Occupied")),
+                    ContractId     = rd.IsDBNull(rd.GetOrdinal("ContractId"))     ? ""   : rd.GetString(rd.GetOrdinal("ContractId")),
+                    ContractStatus = rd.IsDBNull(rd.GetOrdinal("ContractStatus")) ? ""   : rd.GetString(rd.GetOrdinal("ContractStatus")),
+                    TenantName     = rd.IsDBNull(rd.GetOrdinal("TenantName"))     ? ""   : rd.GetString(rd.GetOrdinal("TenantName")),
+                    TotalAmount    = rd.IsDBNull(rd.GetOrdinal("TotalAmount"))    ? 0    : rd.GetDecimal(rd.GetOrdinal("TotalAmount")),
+                    Collected      = rd.IsDBNull(rd.GetOrdinal("Collected"))      ? 0    : rd.GetDecimal(rd.GetOrdinal("Collected")),
+                    Due            = rd.IsDBNull(rd.GetOrdinal("Due"))            ? 0    : rd.GetDecimal(rd.GetOrdinal("Due")),
+                    LastDate       = rd.IsDBNull(rd.GetOrdinal("LastDate"))       ? null : rd.GetDateTime(rd.GetOrdinal("LastDate")),
+                    LastAmount     = rd.IsDBNull(rd.GetOrdinal("LastAmount"))     ? 0    : rd.GetDecimal(rd.GetOrdinal("LastAmount")),
+                    Status         = rd.IsDBNull(rd.GetOrdinal("Status"))         ? ""   : rd.GetString(rd.GetOrdinal("Status")),
+                });
+
+            // Result set 2: summary
+            await rd.NextResultAsync();
+            if (await rd.ReadAsync())
+                summary = new RoomWiseCollectionSummary {
+                    TotalRooms     = rd.IsDBNull(rd.GetOrdinal("TotalRooms"))     ? 0 : rd.GetInt32(rd.GetOrdinal("TotalRooms")),
+                    OccupiedRooms  = rd.IsDBNull(rd.GetOrdinal("OccupiedRooms"))  ? 0 : rd.GetInt32(rd.GetOrdinal("OccupiedRooms")),
+                    VacantRooms    = rd.IsDBNull(rd.GetOrdinal("VacantRooms"))    ? 0 : rd.GetInt32(rd.GetOrdinal("VacantRooms")),
+                    TotalAmount    = rd.IsDBNull(rd.GetOrdinal("TotalAmount"))    ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalAmount")),
+                    TotalCollected = rd.IsDBNull(rd.GetOrdinal("TotalCollected")) ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
+                    TotalDue       = rd.IsDBNull(rd.GetOrdinal("TotalDue"))       ? 0 : rd.GetDecimal(rd.GetOrdinal("TotalDue")),
+                };
+        }
+
+        int totalRecords = pTotal.Value != DBNull.Value ? (int)pTotal.Value : rows.Count;
+        return new RoomWiseCollectionResponse {
+            Rows         = rows,
+            Summary      = summary,
+            TotalRecords = totalRecords,
+        };
     }
 }

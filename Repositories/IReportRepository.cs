@@ -11,6 +11,9 @@ public interface IReportRepository
     Task<CampReportResponse>       GetCampReportAsync(ReportRequest r);
     Task<WaiverReportResponse>     GetWaiverReportAsync(ReportRequest r);
     Task<TransactionReportResponse>GetTransactionStatementAsync(ReportRequest r);
+    Task<TransactionReportResponse>GetTransactionReportAsync(ReportRequest r);
+    Task<CampCollectionReportResponse> GetCampCollectionReportAsync(ReportRequest r);
+    Task<RoomWiseCollectionResponse>   GetRoomWiseCollectionReportAsync(ReportRequest r);
     Task<TenantLedgerSummary?>     GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo);
     Task<DueReportResponse>        GetDueReportAsync(ReportRequest r);
 
