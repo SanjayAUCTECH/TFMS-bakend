@@ -40,7 +40,7 @@ public class ExpenseService : IExpenseService
         if (fp == null) return ApiResponse<ExpenseResponse>.Fail("Fund Pool not found.");
 
         string campName = string.Empty;
-        if (request.CampId.HasValue)
+        if (request.CampId.HasValue && request.CampId.Value > 0)
         {
             var camp = await _campRepo.GetByIdAsync(request.CampId.Value);
             if (camp == null) return ApiResponse<ExpenseResponse>.Fail("Camp not found.");
@@ -56,10 +56,10 @@ public class ExpenseService : IExpenseService
             FundPoolName  = fp.Name,
             Amount        = request.Amount,
             Nature        = request.Nature?.Trim() ?? "",
-            CampId        = request.CampId,
+            CampId        = request.CampId.HasValue && request.CampId.Value > 0 ? request.CampId : null,
             CampName      = campName,
             RecipientRole = request.RecipientRole?.Trim() ?? "",
-            RecipientId   = request.RecipientId,
+            RecipientId   = request.RecipientId.HasValue && request.RecipientId.Value > 0 ? request.RecipientId : null,
             RecipientName = request.RecipientName?.Trim() ?? "",
             Purpose       = request.Purpose?.Trim() ?? "",
         };
@@ -78,7 +78,7 @@ public class ExpenseService : IExpenseService
         if (fp == null) return ApiResponse<ExpenseResponse>.Fail("Fund Pool not found.");
 
         string campName = string.Empty;
-        if (request.CampId.HasValue)
+        if (request.CampId.HasValue && request.CampId.Value > 0)
         {
             var camp = await _campRepo.GetByIdAsync(request.CampId.Value);
             if (camp == null) return ApiResponse<ExpenseResponse>.Fail("Camp not found.");
@@ -95,10 +95,10 @@ public class ExpenseService : IExpenseService
             FundPoolName  = fp.Name,
             Amount        = request.Amount,
             Nature        = request.Nature?.Trim() ?? "",
-            CampId        = request.CampId,
+            CampId        = request.CampId.HasValue && request.CampId.Value > 0 ? request.CampId : null,
             CampName      = campName,
             RecipientRole = request.RecipientRole?.Trim() ?? "",
-            RecipientId   = request.RecipientId,
+            RecipientId   = request.RecipientId.HasValue && request.RecipientId.Value > 0 ? request.RecipientId : null,
             RecipientName = request.RecipientName?.Trim() ?? "",
             Purpose       = request.Purpose?.Trim() ?? "",
         });
