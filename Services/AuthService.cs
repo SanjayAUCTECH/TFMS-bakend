@@ -1,4 +1,6 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -13,11 +15,14 @@ public class AuthService : IAuthService
     private readonly IDashboardRepository _dashRepo;
     private readonly IUserRepository      _userRepo;
     private readonly IConfiguration       _config;
+    private readonly IDbConnectionFactory _factory;
 
-    public AuthService(IDashboardRepository dashRepo, IUserRepository userRepo, IConfiguration config)
+    public AuthService(IDashboardRepository dashRepo, IUserRepository userRepo, IConfiguration config, IDbConnectionFactory factory)
     {
         _dashRepo = dashRepo;
         _userRepo = userRepo;
+        _config = config;
+        _factory = factory;
         _config   = config;
     }
 
@@ -66,6 +71,9 @@ public class AuthService : IAuthService
         var user = await _userRepo.GetByIdAsync(userId);
         if (user == null) return ApiResponse<ProfileResponse>.Fail("User not found.");
 
+        // Get user code based on role
+        string userCode = await GetUserCodeByRoleAsync(user.Role, user.SourceId);
+
         return ApiResponse<ProfileResponse>.Ok(new ProfileResponse
         {
             Id          = user.Id,
@@ -83,7 +91,61 @@ public class AuthService : IAuthService
             MenuAccess  = user.MenuAccess,
             LastLogin   = user.LastLogin,
             CreatedAt   = user.CreatedAt,
+            UserCode    = userCode,
         });
+    }
+
+    // ── Get User Code by Role ─────────────────────────────────────────────────
+    private async Task<string> GetUserCodeByRoleAsync(string role, int? sourceId)
+    {
+        if (sourceId == null || sourceId <= 0) return string.Empty;
+
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        string code = string.IsNullOrEmpty(role) ? sourceId.Value.ToString() : role.ToLower() switch
+        {
+            "staff" => await GetStaffCodeAsync(conn, sourceId.Value),
+            "tenant" => sourceId.Value.ToString(),
+            "owner" => await GetOwnerCodeAsync(conn, sourceId.Value),
+            "partner" => await GetPartnerCodeAsync(conn, sourceId.Value),
+            "admin" => sourceId.Value.ToString(),
+            _ => await GetOtherPersonCodeAsync(conn, sourceId.Value)
+        };
+
+        return code;
+    }
+
+    private async Task<string> GetStaffCodeAsync(IDbConnection conn, int staffId)
+    {
+        await using var cmd = new SqlCommand("SELECT ISNULL(StaffId, '') FROM Staffs WHERE Id = @Id", (SqlConnection)conn);
+        cmd.Parameters.AddWithValue("@Id", staffId);
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString() ?? string.Empty;
+    }
+
+    private async Task<string> GetOwnerCodeAsync(IDbConnection conn, int ownerId)
+    {
+        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM Owners WHERE Id = @Id", (SqlConnection)conn);
+        cmd.Parameters.AddWithValue("@Id", ownerId);
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString() ?? string.Empty;
+    }
+
+    private async Task<string> GetPartnerCodeAsync(IDbConnection conn, int partnerId)
+    {
+        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM Partners WHERE Id = @Id", (SqlConnection)conn);
+        cmd.Parameters.AddWithValue("@Id", partnerId);
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString() ?? string.Empty;
+    }
+
+    private async Task<string> GetOtherPersonCodeAsync(IDbConnection conn, int otherPersonId)
+    {
+        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM OtherPersons WHERE Id = @Id", (SqlConnection)conn);
+        cmd.Parameters.AddWithValue("@Id", otherPersonId);
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString() ?? string.Empty;
     }
 
     // ── Update Profile ────────────────────────────────────────────────────────

@@ -126,21 +126,23 @@ BEGIN
                 WHERE tr.ContractId = c.ContractId
                   AND tr.TxnType IN ('CR','SD-CR')), 0)             TotalPaid,
 
-        -- Total Due
+        -- Due Amount (TotalAmount - TotalPaid)
         (ISNULL(c.ContractTotal, 0) + ISNULL(c.SecurityDeposit, 0))
         - ISNULL((SELECT SUM(tr.Amount) FROM TxnRecords tr
                   WHERE tr.ContractId = c.ContractId
                     AND tr.TxnType IN ('CR','SD-CR')), 0)           TotalDue,
 
-        -- Balance
+        -- Waiver
+        ISNULL((SELECT SUM(w.WaiverAmount) FROM Waivers w
+                WHERE w.ContractId = c.ContractId), 0)              WaiverAmount,
+
+        -- Balance = DueAmount - WaiverAmount
         (ISNULL(c.ContractTotal, 0) + ISNULL(c.SecurityDeposit, 0))
         - ISNULL((SELECT SUM(tr.Amount) FROM TxnRecords tr
                   WHERE tr.ContractId = c.ContractId
-                    AND tr.TxnType IN ('CR','SD-CR')), 0)           Balance,
-
-        -- Waiver
-        ISNULL((SELECT SUM(w.WaiverAmount) FROM Waivers w
-                WHERE w.ContractId = c.ContractId), 0)              WaiverAmount
+                    AND tr.TxnType IN ('CR','SD-CR')), 0)
+        - ISNULL((SELECT SUM(w.WaiverAmount) FROM Waivers w
+                  WHERE w.ContractId = c.ContractId), 0)            Balance
 
     FROM Tenants t
     LEFT JOIN Contracts c   ON c.TenantId = t.Id

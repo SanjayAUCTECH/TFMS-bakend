@@ -43,6 +43,7 @@ public class ProfileResponse
     public string   MenuAccess  { get; set; } = "{}";
     public DateTime? LastLogin  { get; set; }
     public DateTime CreatedAt   { get; set; }
+    public string   UserCode    { get; set; } = string.Empty;
 }
 
 public class UpdateProfileRequest

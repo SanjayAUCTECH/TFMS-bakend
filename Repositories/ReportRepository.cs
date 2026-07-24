@@ -105,11 +105,16 @@ public class ReportRepository : IReportRepository
                 SecurityDepositPaidAmount=rd.IsDBNull(rd.GetOrdinal("SecurityDepositPaidAmount"))?0:rd.GetDecimal(rd.GetOrdinal("SecurityDepositPaidAmount")),
                 TotalPaid=rd.IsDBNull(rd.GetOrdinal("TotalPaid"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPaid")),
                 TotalDue=rd.IsDBNull(rd.GetOrdinal("TotalDue"))?0:rd.GetDecimal(rd.GetOrdinal("TotalDue")),
-                Balance=rd.IsDBNull(rd.GetOrdinal("Balance"))?0:rd.GetDecimal(rd.GetOrdinal("Balance")),
                 
                 // Waiver Info
                 WaiverAmount=rd.IsDBNull(rd.GetOrdinal("WaiverAmount"))?0:rd.GetDecimal(rd.GetOrdinal("WaiverAmount")),
             });
+
+        // Calculate Balance: TotalDue - WaiverAmount
+        foreach (var row in all)
+        {
+            row.Balance = row.TotalDue - row.WaiverAmount;
+        }
 
         // Summary cards — unique tenants (not contracts)
         var uniqTenants = all.GroupBy(x => x.TenantId).Select(g => g.First()).ToList();
