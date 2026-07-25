@@ -8,12 +8,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ExpensesController : ControllerBase
+public class ExpensesController : BaseApiController
 {
     private readonly IExpenseService _service;
-    public ExpensesController(IExpenseService service) => _service = service;
+    public ExpensesController(IExpenseService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
-    /// <summary>GET api/expenses?PageNumber=1&PageSize=10&Head=Salaries&Nature=HO&CampId=1</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] ExpenseListRequest request)
     {
@@ -21,7 +21,6 @@ public class ExpensesController : ControllerBase
         return Ok(await _service.GetAllAsync(request));
     }
 
-    /// <summary>GET api/expenses/5</summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -29,29 +28,32 @@ public class ExpensesController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>POST api/expenses</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateExpenseRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Expenses, $"Created Expense '{request.Head}' #{r.Data!.Id}", r.Data!.Id.ToString(), "Expense");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
-    /// <summary>PUT api/expenses/5</summary>
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateExpenseRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Expenses, $"Updated Expense #{id}", id.ToString(), "Expense");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>DELETE api/expenses/5</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Expenses, $"Deleted Expense #{id}", id.ToString(), "Expense");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

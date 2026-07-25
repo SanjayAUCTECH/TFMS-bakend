@@ -8,10 +8,11 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class PartnersController : ControllerBase
+public class PartnersController : BaseApiController
 {
     private readonly IPartnerService _service;
-    public PartnersController(IPartnerService service) => _service = service;
+    public PartnersController(IPartnerService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
     /// <summary>GET api/partners?PageNumber=1&PageSize=10&SearchText=abc&Status=Active</summary>
     [HttpGet]
@@ -35,6 +36,8 @@ public class PartnersController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var result = await _service.CreateAsync(request);
+        if (result.Success)
+            await Log(ActivityType.Insert, ActivityModule.Partners, $"Created Partner #{result.Data!.Id}", result.Data!.Id.ToString(), "Partner");
         return result.Success ? CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result) : BadRequest(result);
     }
 
@@ -44,6 +47,8 @@ public class PartnersController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var result = await _service.UpdateAsync(id, request);
+        if (result.Success)
+            await Log(ActivityType.Update, ActivityModule.Partners, $"Updated Partner #{id}", id.ToString(), "Partner");
         return result.Success ? Ok(result) : NotFound(result);
     }
 
@@ -52,6 +57,8 @@ public class PartnersController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var result = await _service.DeleteAsync(id);
+        if (result.Success)
+            await Log(ActivityType.Delete, ActivityModule.Partners, $"Deleted Partner #{id}", id.ToString(), "Partner");
         return result.Success ? Ok(result) : NotFound(result);
     }
 }

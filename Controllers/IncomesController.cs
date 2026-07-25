@@ -8,12 +8,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class IncomesController : ControllerBase
+public class IncomesController : BaseApiController
 {
     private readonly IIncomeService _service;
-    public IncomesController(IIncomeService service) => _service = service;
+    public IncomesController(IIncomeService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
-    /// <summary>GET api/incomes?PageNumber=1&PageSize=10&Head=Rent+Income&DateFrom=2026-01-01</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] IncomeListRequest request)
     {
@@ -21,7 +21,6 @@ public class IncomesController : ControllerBase
         return Ok(await _service.GetAllAsync(request));
     }
 
-    /// <summary>GET api/incomes/5</summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -29,29 +28,32 @@ public class IncomesController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>POST api/incomes</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateIncomeRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Incomes, $"Created Income '{request.Head}' #{r.Data!.Id}", r.Data!.Id.ToString(), "Income");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
-    /// <summary>PUT api/incomes/5</summary>
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateIncomeRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Incomes, $"Updated Income #{id}", id.ToString(), "Income");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>DELETE api/incomes/5</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Incomes, $"Deleted Income #{id}", id.ToString(), "Income");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

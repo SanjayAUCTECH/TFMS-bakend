@@ -8,10 +8,11 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class OwnersController : ControllerBase
+public class OwnersController : BaseApiController
 {
     private readonly IOwnerService _service;
-    public OwnersController(IOwnerService service) => _service = service;
+    public OwnersController(IOwnerService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] OwnerListRequest request)
@@ -32,6 +33,8 @@ public class OwnersController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var result = await _service.CreateAsync(request);
+        if (result.Success)
+            await Log(ActivityType.Insert, "Owners", $"Created Owner #{result.Data!.Id}", result.Data!.Id.ToString(), "Owner");
         return result.Success ? CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result) : BadRequest(result);
     }
 
@@ -40,6 +43,8 @@ public class OwnersController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var result = await _service.UpdateAsync(id, request);
+        if (result.Success)
+            await Log(ActivityType.Update, "Owners", $"Updated Owner #{id}", id.ToString(), "Owner");
         return result.Success ? Ok(result) : NotFound(result);
     }
 
@@ -47,6 +52,8 @@ public class OwnersController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var result = await _service.DeleteAsync(id);
+        if (result.Success)
+            await Log(ActivityType.Delete, "Owners", $"Deleted Owner #{id}", id.ToString(), "Owner");
         return result.Success ? Ok(result) : NotFound(result);
     }
 }

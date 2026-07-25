@@ -10,12 +10,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class PaymentsController : ControllerBase
+public class PaymentsController : BaseApiController
 {
     private readonly IPaymentService    _service;
     private readonly IPaymentRepository _repo;
-    public PaymentsController(IPaymentService service, IPaymentRepository repo)
-    { _service = service; _repo = repo; }
+    public PaymentsController(IPaymentService service, IPaymentRepository repo, IActivityLogService log)
+    { _service = service; _repo = repo; _activityLog = log; }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] PaymentListRequest request)
@@ -31,12 +31,10 @@ public class PaymentsController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>GET api/payments/contract/{contractId} — All installments of a contract.</summary>
     [HttpGet("contract/{contractId}")]
     public async Task<IActionResult> GetByContractId(string contractId)
         => Ok(await _service.GetByContractIdAsync(contractId));
 
-    /// <summary>GET api/payments/summary/{contractId} — Financial summary card for Make Payment page.</summary>
     [HttpGet("summary/{contractId}")]
     public async Task<IActionResult> GetSummary(string contractId)
     {
@@ -46,7 +44,6 @@ public class PaymentsController : ControllerBase
             : Ok(ApiResponse<PaymentSummaryResponse>.Ok(data, "Payment summary retrieved."));
     }
 
-    /// <summary>GET api/payments/history/{contractId} — Full payment history for receipt & list.</summary>
     [HttpGet("history/{contractId}")]
     public async Task<IActionResult> GetHistory(string contractId)
     {
@@ -54,16 +51,18 @@ public class PaymentsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<PaymentHistoryResponse>>.Ok(data, "Payment history retrieved."));
     }
 
-    /// <summary>POST api/payments/record — Record a payment for an installment.</summary>
     [HttpPost("record")]
     public async Task<IActionResult> RecordPayment([FromBody] RecordPaymentRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.RecordPaymentAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Payments,
+                $"Payment recorded for Contract {request.ContractId} Amount:{request.PaidAmount}",
+                request.ContractId, "Payment");
         return r.Success ? Ok(r) : BadRequest(r);
     }
 
-    /// <summary>GET api/payments/rooms/{contractId} — Get rooms with balances for payment UI.</summary>
     [HttpGet("rooms/{contractId}")]
     public async Task<IActionResult> GetContractRooms(string contractId)
     {
@@ -71,7 +70,6 @@ public class PaymentsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<ContractRoomPaymentInfo>>.Ok(data, "Contract rooms retrieved."));
     }
 
-    /// <summary>GET api/payments/room-transactions/{contractId}?txnDate=2026-07-18 — Get room-wise payment history for a specific transaction date.</summary>
     [HttpGet("room-transactions/{contractId}")]
     public async Task<IActionResult> GetRoomTransactions(string contractId, [FromQuery] string? txnDate, [FromQuery] int? txnRecordId)
     {

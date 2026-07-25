@@ -3,21 +3,23 @@ using Microsoft.AspNetCore.Mvc;
 using TFMS_software_api.Common;
 using TFMS_software_api.DTOs;
 using TFMS_software_api.Repositories;
+using TFMS_software_api.Services;
 
 namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ContractCancellationsController : ControllerBase
+public class ContractCancellationsController : BaseApiController
 {
     private readonly IContractCancellationRepository _repo;
     private readonly IContractRepository _contractRepo;
 
-    public ContractCancellationsController(IContractCancellationRepository repo, IContractRepository contractRepo)
+    public ContractCancellationsController(IContractCancellationRepository repo, IContractRepository contractRepo, IActivityLogService log)
     {
         _repo = repo;
         _contractRepo = contractRepo;
+        _activityLog = log;
     }
 
     /// <summary>
@@ -41,6 +43,7 @@ public class ContractCancellationsController : ControllerBase
         try
         {
             var newId = await _repo.CancelAsync(request);
+            await Log(ActivityType.Update, ActivityModule.ContractCancel, $"Contract {request.ContractId} cancelled", request.ContractId, "Contract");
             return Ok(ApiResponse<object>.Ok(new
             {
                 id = newId,

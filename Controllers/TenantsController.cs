@@ -8,12 +8,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class TenantsController : ControllerBase
+public class TenantsController : BaseApiController
 {
     private readonly ITenantService _service;
-    public TenantsController(ITenantService service) => _service = service;
+    public TenantsController(ITenantService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
-    /// <summary>GET api/tenants?PageNumber=1&PageSize=10&SearchText=rahul&Status=Active&Type=Individual&CampId=1</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] TenantListRequest request)
     {
@@ -33,6 +33,8 @@ public class TenantsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Tenants, $"Created Tenant '{request.Name}' #{r.Data!.Id}", r.Data!.Id.ToString(), "Tenant");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -41,6 +43,8 @@ public class TenantsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Tenants, $"Updated Tenant #{id}", id.ToString(), "Tenant");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
@@ -48,6 +52,8 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Tenants, $"Deleted Tenant #{id}", id.ToString(), "Tenant");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

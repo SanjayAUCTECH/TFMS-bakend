@@ -9,12 +9,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class RoomsController : ControllerBase
+public class RoomsController : BaseApiController
 {
     private readonly IRoomService    _service;
     private readonly IRoomRepository _repo;
-    public RoomsController(IRoomService service, IRoomRepository repo)
-    { _service = service; _repo = repo; }
+    public RoomsController(IRoomService service, IRoomRepository repo, IActivityLogService log)
+    { _service = service; _repo = repo; _activityLog = log; }
 
     /// <summary>GET api/rooms?CampId=1&FloorId=2&RoomStatus=Vacant&PageNumber=1&PageSize=10</summary>
     [HttpGet]
@@ -40,6 +40,8 @@ public class RoomsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Rooms, $"Created Room #{r.Data!.Id}", r.Data!.Id.ToString(), "Room");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -62,6 +64,8 @@ public class RoomsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Rooms, $"Updated Room #{id}", id.ToString(), "Room");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
@@ -69,6 +73,8 @@ public class RoomsController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Rooms, $"Deleted Room #{id}", id.ToString(), "Room");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

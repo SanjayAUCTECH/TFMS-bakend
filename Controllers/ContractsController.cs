@@ -8,12 +8,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ContractsController : ControllerBase
+public class ContractsController : BaseApiController
 {
     private readonly IContractService _service;
-    public ContractsController(IContractService service) => _service = service;
+    public ContractsController(IContractService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
-    /// <summary>GET api/contracts?PageNumber=1&PageSize=10&Status=Active&TenantId=1&CampId=2</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] ContractListRequest request)
     {
@@ -28,7 +28,6 @@ public class ContractsController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>GET api/contracts/by-contractid/CNT-000001</summary>
     [HttpGet("by-contractid/{contractId}")]
     public async Task<IActionResult> GetByContractId(string contractId)
     {
@@ -36,11 +35,6 @@ public class ContractsController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>
-    /// GET api/contracts/{contractId}/document
-    /// Full contract document data — for 2-page and 3-page contract preview/print.
-    /// Returns contract + tenant + lessor + property + rooms + installments + payment summary.
-    /// </summary>
     [HttpGet("{contractId}/document")]
     public async Task<IActionResult> GetDocument(string contractId)
     {
@@ -53,31 +47,38 @@ public class ContractsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Contracts, $"Created Contract #{r.Data!.ContractId}", r.Data!.ContractId, "Contract");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
-    /// <summary>PUT api/contracts — Update contract details + rooms</summary>
     [HttpPut]
     public async Task<IActionResult> UpdateContract([FromBody] UpdateContractRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateContractAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Contracts, $"Updated Contract {request.ContractId}", request.ContractId ?? "", "Contract");
         return r.Success ? Ok(r) : BadRequest(r);
     }
+
     [HttpPatch("{contractId}/status")]
     public async Task<IActionResult> UpdateStatus(string contractId, [FromBody] UpdateContractStatusRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateStatusAsync(contractId, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Contracts, $"Status updated to '{request.Status}' for Contract {contractId}", contractId, "Contract");
         return r.Success ? Ok(r) : BadRequest(r);
     }
 
-    /// <summary>PATCH api/contracts/schedule — Save payment schedule (mode/date/amount per installment)</summary>
     [HttpPatch("schedule")]
     public async Task<IActionResult> UpdateSchedule([FromBody] UpdateContractScheduleRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateScheduleAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Contracts, $"Payment schedule updated for Contract {request.ContractId}", request.ContractId ?? "", "Contract");
         return r.Success ? Ok(r) : BadRequest(r);
     }
 
@@ -85,6 +86,8 @@ public class ContractsController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Contracts, $"Deleted Contract #{id}", id.ToString(), "Contract");
         return r.Success ? Ok(r) : BadRequest(r);
     }
 }

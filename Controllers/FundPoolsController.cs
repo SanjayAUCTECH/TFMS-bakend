@@ -9,10 +9,11 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class FundPoolsController : ControllerBase
+public class FundPoolsController : BaseApiController
 {
     private readonly IFundPoolService _service;
-    public FundPoolsController(IFundPoolService service) => _service = service;
+    public FundPoolsController(IFundPoolService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] FundPoolListRequest request)
@@ -65,6 +66,8 @@ public class FundPoolsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.FundPools, $"Created FundPool #{r.Data!.Id}", r.Data!.Id.ToString(), "FundPool");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -73,9 +76,17 @@ public class FundPoolsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.FundPools, $"Updated FundPool #{id}", id.ToString(), "FundPool");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id) { var r = await _service.DeleteAsync(id); return r.Success ? Ok(r) : NotFound(r); }
+    public async Task<IActionResult> Delete(int id)
+    {
+        var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.FundPools, $"Deleted FundPool #{id}", id.ToString(), "FundPool");
+        return r.Success ? Ok(r) : NotFound(r);
+    }
 }

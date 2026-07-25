@@ -8,12 +8,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class CampsController : ControllerBase
+public class CampsController : BaseApiController
 {
     private readonly ICampService _service;
-    public CampsController(ICampService service) => _service = service;
+    public CampsController(ICampService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
-    /// <summary>GET api/camps?PageNumber=1&PageSize=10&SearchText=main&Status=Active</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] CampListRequest request)
     {
@@ -21,7 +21,6 @@ public class CampsController : ControllerBase
         return Ok(await _service.GetAllAsync(request));
     }
 
-    /// <summary>GET api/camps/active — For dropdowns.</summary>
     [HttpGet("active")]
     public async Task<IActionResult> GetAllActive() => Ok(await _service.GetAllActiveAsync());
 
@@ -37,6 +36,8 @@ public class CampsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Camps, $"Created Camp '{request.Name}' #{r.Data!.Id}", r.Data!.Id.ToString(), "Camp");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -45,6 +46,8 @@ public class CampsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Camps, $"Updated Camp #{id}", id.ToString(), "Camp");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
@@ -52,6 +55,8 @@ public class CampsController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Camps, $"Deleted Camp #{id}", id.ToString(), "Camp");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

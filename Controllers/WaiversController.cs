@@ -8,10 +8,11 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class WaiversController : ControllerBase
+public class WaiversController : BaseApiController
 {
     private readonly IWaiverService _service;
-    public WaiversController(IWaiverService service) => _service = service;
+    public WaiversController(IWaiverService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
     /// <summary>GET api/waivers?TenantId=1&ContractId=CNT-000001&DateFrom=2026-01-01&DateTo=2026-12-31</summary>
     [HttpGet]
@@ -33,6 +34,8 @@ public class WaiversController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Waivers, $"Created Waiver #{r.Data!.Id}", r.Data!.Id.ToString(), "Waiver");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -40,6 +43,8 @@ public class WaiversController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Waivers, $"Deleted Waiver #{id}", id.ToString(), "Waiver");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

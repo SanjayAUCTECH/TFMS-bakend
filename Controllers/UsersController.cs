@@ -8,12 +8,12 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UsersController : ControllerBase
+public class UsersController : BaseApiController
 {
     private readonly IUserService _service;
-    public UsersController(IUserService service) => _service = service;
+    public UsersController(IUserService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
-    /// <summary>GET api/users?PageNumber=1&PageSize=10&Role=Admin&Status=Active</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] UserListRequest request)
     {
@@ -21,7 +21,6 @@ public class UsersController : ControllerBase
         return Ok(await _service.GetAllAsync(request));
     }
 
-    /// <summary>GET api/users/5</summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -29,65 +28,72 @@ public class UsersController : ControllerBase
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>POST api/users</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Users, $"Created User '{request.Username}' #{r.Data!.Id}", r.Data!.Id.ToString(), "User");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
-    /// <summary>PUT api/users/5</summary>
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Users, $"Updated User #{id}", id.ToString(), "User");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>POST api/users/5/change-password</summary>
     [HttpPost("{id:int}/change-password")]
     public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.ChangePasswordAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Users, $"Password changed for User #{id}", id.ToString(), "User");
         return r.Success ? Ok(r) : BadRequest(r);
     }
 
-    /// <summary>POST api/users/5/reset-password — Admin only</summary>
     [HttpPost("{id:int}/reset-password")]
     public async Task<IActionResult> ResetPassword(int id, [FromBody] ResetPasswordRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.ResetPasswordAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Users, $"Password reset for User #{id}", id.ToString(), "User");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>PATCH api/users/5/login-access — Enable or disable login</summary>
     [HttpPatch("{id:int}/login-access")]
     public async Task<IActionResult> UpdateLoginAccess(int id, [FromBody] UpdateLoginAccessRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateLoginAccessAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Users, $"Login access updated to '{request.LoginAccess}' for User #{id}", id.ToString(), "User");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>PATCH api/users/5/menu-access</summary>
     [HttpPatch("{id:int}/menu-access")]
     public async Task<IActionResult> UpdateMenuAccess(int id, [FromBody] UpdateMenuAccessRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateMenuAccessAsync(id, request);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Users, $"Menu access updated for User #{id}", id.ToString(), "User");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>DELETE api/users/5</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Users, $"Deleted User #{id}", id.ToString(), "User");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

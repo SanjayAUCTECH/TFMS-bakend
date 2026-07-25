@@ -4,16 +4,18 @@ using TFMS_software_api.Common;
 using TFMS_software_api.DTOs;
 using TFMS_software_api.Models;
 using TFMS_software_api.Repositories;
+using TFMS_software_api.Services;
 
 namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class TxnRecordsController : ControllerBase
+public class TxnRecordsController : BaseApiController
 {
     private readonly ITxnRecordRepository _repo;
-    public TxnRecordsController(ITxnRecordRepository repo) => _repo = repo;
+    public TxnRecordsController(ITxnRecordRepository repo, IActivityLogService log)
+    { _repo = repo; _activityLog = log; }
 
     /// <summary>GET api/txnrecords?contractId=CNT001&tenantId=1&campId=2&txnType=DR</summary>
     [HttpGet]
@@ -58,6 +60,7 @@ public class TxnRecordsController : ControllerBase
             InstallmentNo=req.InstallmentNo,
         };
         var id = await _repo.CreateAsync(txn);
+        await Log(ActivityType.Insert, ActivityModule.Payments, $"Created TxnRecord #{id} Type:{req.TxnType} Contract:{req.ContractId}", id.ToString(), "TxnRecord");
         return Ok(ApiResponse<object>.Ok(new { id }, "Txn record created."));
     }
 
@@ -66,6 +69,8 @@ public class TxnRecordsController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateTxnRecordRequest req)
     {
         var ok = await _repo.UpdateAsync(id, req);
+        if (ok)
+            await Log(ActivityType.Update, ActivityModule.Payments, $"Updated TxnRecord #{id}", id.ToString(), "TxnRecord");
         return ok ? Ok(ApiResponse<object?>.Ok(null, "Txn record updated."))
                   : NotFound(ApiResponse<object?>.Fail("Txn record not found."));
     }
@@ -75,6 +80,7 @@ public class TxnRecordsController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         await _repo.DeleteAsync(id);
+        await Log(ActivityType.Delete, ActivityModule.Payments, $"Deleted TxnRecord #{id}", id.ToString(), "TxnRecord");
         return Ok(ApiResponse<object?>.Ok(null, "Txn record deleted."));
     }
 }

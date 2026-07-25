@@ -3,21 +3,23 @@ using Microsoft.AspNetCore.Mvc;
 using TFMS_software_api.Common;
 using TFMS_software_api.DTOs;
 using TFMS_software_api.Repositories;
+using TFMS_software_api.Services;
 
 namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ContractRenewalsController : ControllerBase
+public class ContractRenewalsController : BaseApiController
 {
     private readonly IContractRenewalRepository _repo;
     private readonly IContractRepository _contractRepo;
 
-    public ContractRenewalsController(IContractRenewalRepository repo, IContractRepository contractRepo)
+    public ContractRenewalsController(IContractRenewalRepository repo, IContractRepository contractRepo, IActivityLogService log)
     {
         _repo = repo;
         _contractRepo = contractRepo;
+        _activityLog = log;
     }
 
     /// <summary>
@@ -74,6 +76,7 @@ public class ContractRenewalsController : ControllerBase
         try
         {
             var newContractId = await _repo.RenewAsync(request);
+            await Log(ActivityType.Insert, ActivityModule.ContractRenewals, $"Contract {request.OriginalContractId} renewed → {newContractId}", newContractId, "Contract");
 
             // Fetch the newly created contract
             var newContract = await _contractRepo.GetByContractIdAsync(newContractId);
