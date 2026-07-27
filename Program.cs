@@ -215,9 +215,7 @@ static string GetFriendlyFkMessage(string sqlMsg)
         return "Cannot delete: this record is being used in another part of the system. Please remove all references before deleting.";
 }
 
-// ── Swagger (development/staging only — never in production) ─────────────────
-if (!app.Environment.IsProduction())
-{
+// ── Swagger (enabled on all environments including production for test server) ──
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -243,7 +241,6 @@ window.addEventListener('load', function () {
 });
 </script>";
 });
-}
 
 app.UseCors("AllowAll");
 // NOTE: No UseHttpsRedirection — API runs on plain HTTP

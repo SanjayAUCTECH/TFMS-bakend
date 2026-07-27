@@ -39,7 +39,7 @@ public class AuthService : IAuthService
         if (user.Status != "Active")
             return ApiResponse<LoginResponse>.Fail("Your account is inactive. Please contact admin.");
 
-        if (user.LoginAccess != "enabled")
+        if (!string.Equals(user.LoginAccess, "enabled", StringComparison.OrdinalIgnoreCase))
             return ApiResponse<LoginResponse>.Fail("Login access is disabled for this account.");
 
         await _dashRepo.UpdateLastLoginAsync(user.Id);
@@ -118,7 +118,7 @@ public class AuthService : IAuthService
 
     private async Task<string> GetStaffCodeAsync(IDbConnection conn, int staffId)
     {
-        await using var cmd = new SqlCommand("SELECT ISNULL(StaffId, '') FROM Staffs WHERE Id = @Id", (SqlConnection)conn);
+        await using var cmd = new SqlCommand("SELECT ISNULL(StaffId, '') FROM Staff WHERE Id = @Id AND IsDeleted=0", (SqlConnection)conn);
         cmd.Parameters.AddWithValue("@Id", staffId);
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString() ?? string.Empty;
@@ -208,7 +208,7 @@ public class AuthService : IAuthService
         if (user.Status != "Active")
             return ApiResponse<LoginResponse>.Fail("Account is inactive.");
 
-        if (user.LoginAccess != "enabled")
+        if (!string.Equals(user.LoginAccess, "enabled", StringComparison.OrdinalIgnoreCase))
             return ApiResponse<LoginResponse>.Fail("Login access is disabled.");
 
         var token = GenerateToken(user.Id, user.Username, user.Role, user.IsAdmin, user.UserId, out var expiresAt);

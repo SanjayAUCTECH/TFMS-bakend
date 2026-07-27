@@ -1,0 +1,43 @@
+﻿
+-- â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?
+-- FIX 3: sp_CreateOwnerContract â?" handle both PascalCase + camelCase JSON
+-- â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?â?
+CREATE   PROCEDURE sp_CreateOwnerContract
+    @CampId INT, @OwnerId INT, @PaymentType NVARCHAR(MAX)='Monthly',
+    @TotalAmount DECIMAL(18,2), @StartDate NVARCHAR(MAX),
+    @Status NVARCHAR(MAX)='Active',
+    @InstallmentsJson NVARCHAR(MAX)='[]',
+    @MonthlyInstallmentsJson NVARCHAR(MAX)='[]',
+    @AddedBy INT=NULL, @NewId INT OUTPUT
+AS BEGIN
+    SET NOCOUNT ON;
+    DECLARE @OcCode NVARCHAR(50)=CONCAT('OC-',RIGHT('00000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OwnerContracts) AS NVARCHAR),5));
+    DECLARE @OwnerCode NVARCHAR(MAX)=''; SELECT @OwnerCode=ISNULL(Code,'') FROM Owners WHERE Id=@OwnerId;
+    DECLARE @OwnerName NVARCHAR(MAX)=''; SELECT @OwnerName=ISNULL(Name,'') FROM Owners WHERE Id=@OwnerId;
+    DECLARE @CampName NVARCHAR(MAX)=''; SELECT @CampName=ISNULL(Name,'') FROM Camps WHERE Id=@CampId;
+    INSERT INTO OwnerContracts(OcCode,CampId,CampName,OwnerId,OwnerName,OwnerCode,PaymentType,TotalAmount,StartDate,Status,AddedBy,IsDeleted,CreatedAt,UpdatedAt)
+    VALUES(@OcCode,@CampId,@CampName,@OwnerId,@OwnerName,@OwnerCode,@PaymentType,@TotalAmount,CAST(@StartDate AS DATE),@Status,@AddedBy,0,GETUTCDATE(),GETUTCDATE());
+    SET @NewId=SCOPE_IDENTITY();
+    IF @InstallmentsJson IS NOT NULL AND @InstallmentsJson<>'[]'
+        INSERT INTO OwnerInstallments(OwnerContractId,No,Amount,PaidAmount,DueDate,Status,AddedBy,IsDeleted)
+        SELECT @NewId,
+            ISNULL(CAST(j.NoPascal AS INT), ISNULL(CAST(j.NoCamel AS INT), 0)),
+            ISNULL(CAST(j.AmtPascal AS DECIMAL(18,2)), ISNULL(CAST(j.AmtCamel AS DECIMAL(18,2)), 0)),
+            0,
+            CAST(ISNULL(j.DuePascal, j.DueCamel) AS DATE),
+            'Pending', @AddedBy, 0
+        FROM OPENJSON(@InstallmentsJson) WITH(
+            NoPascal   INT            '$.No',
+            NoCamel    INT            '$.no',
+            AmtPascal  DECIMAL(18,2)  '$.Amount',
+            AmtCamel   DECIMAL(18,2)  '$.amount',
+            DuePascal  NVARCHAR(50)   '$.DueDate',
+            DueCamel   NVARCHAR(50)   '$.dueDate'
+        ) j;
+    DECLARE @TxnCode NVARCHAR(50)=CONCAT('OTX-',RIGHT('00000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OwnerTransactions) AS NVARCHAR),5));
+    INSERT INTO OwnerTransactions(TxnCode,OwnerContractId,OcCode,CampId,CampName,OwnerId,OwnerName,Type,Amount,Date,Description,InstallmentNos,CreatedAt)
+    VALUES(@TxnCode,@NewId,@OcCode,@CampId,@CampName,@OwnerId,@OwnerName,'DR',@TotalAmount,GETUTCDATE(),CONCAT('Contract Created - Total: ',@TotalAmount),'',GETUTCDATE());
+END
+
+
+(1 rows affected)

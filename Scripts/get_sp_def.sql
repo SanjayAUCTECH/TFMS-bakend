@@ -1,0 +1,4 @@
+USE TFMS_TestSoftwareDB;
+GO
+SELECT OBJECT_DEFINITION(OBJECT_ID('sp_CreateOwnerContract')) AS SpDef;
+GO

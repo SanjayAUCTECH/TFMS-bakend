@@ -286,20 +286,23 @@ public class PaymentRepository : IPaymentRepository
                         updCmd.Parameters.AddWithValue("@PaidDate",   p.PaidDate ?? (object)DBNull.Value);
                         await updCmd.ExecuteNonQueryAsync();
 
-                        // ── Insert into ContractRoomsTrns ──────────────────────
+                        // ── Insert into ContractRoomsTrns (with CriId + InstallmentNo for exact revert) ──
                         await using var insCmd = new SqlCommand(@"
                             INSERT INTO ContractRoomsTrns
-                                (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Month, Description, CreatedAt)
+                                (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Month, Description, CriId, InstallmentNo, CreatedAt)
                             VALUES
-                                (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @Amount, @Amount, @TxnDate, @Month, @Desc, GETDATE())", conn, txn);
-                        insCmd.Parameters.AddWithValue("@ContractId", p.ContractId);
-                        insCmd.Parameters.AddWithValue("@RoomId",     room.RoomId);
-                        insCmd.Parameters.AddWithValue("@CampId",     room.CampId);
+                                (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @Amount, @Amount, @TxnDate, @Month, @Desc, @CriId, @InstallmentNo, GETDATE())", conn, txn);
+                        insCmd.Parameters.AddWithValue("@ContractId",  p.ContractId);
+                        insCmd.Parameters.AddWithValue("@RoomId",      room.RoomId);
+                        insCmd.Parameters.AddWithValue("@CampId",      room.CampId);
                         insCmd.Parameters.AddWithValue("@TxnRecordId", txnRecordId > 0 ? txnRecordId : (object)DBNull.Value);
-                        insCmd.Parameters.AddWithValue("@Amount",     room.Amount);
-                        insCmd.Parameters.AddWithValue("@TxnDate",    p.PaidDate ?? (object)DateTime.Today);
-                        insCmd.Parameters.AddWithValue("@Month",      room.Month ?? "");
-                        insCmd.Parameters.AddWithValue("@Desc",       $"Payment received - {p.PaymentMode}");
+                        insCmd.Parameters.AddWithValue("@Amount",      room.Amount);
+                        insCmd.Parameters.AddWithValue("@TxnDate",     p.PaidDate ?? (object)DateTime.Today);
+                        insCmd.Parameters.AddWithValue("@Month",       room.Month ?? "");
+                        insCmd.Parameters.AddWithValue("@Desc",        $"Payment received - {p.PaymentMode}");
+                        insCmd.Parameters.AddWithValue("@CriId",       room.ContractRoomInstallmentId.HasValue && room.ContractRoomInstallmentId > 0
+                                                                            ? room.ContractRoomInstallmentId.Value : (object)DBNull.Value);
+                        insCmd.Parameters.AddWithValue("@InstallmentNo", room.InstallmentNo.HasValue ? room.InstallmentNo.Value : (object)DBNull.Value);
                         await insCmd.ExecuteNonQueryAsync();
 
                         // ── Update ContractRoomInstallments — cap to InstallAmount ─
