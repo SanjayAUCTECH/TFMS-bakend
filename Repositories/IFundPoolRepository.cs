@@ -10,5 +10,5 @@ public interface IFundPoolRepository
     Task<FundPool?> GetByIdAsync(int id);
     Task<int>  CreateAsync(FundPool fp);
     Task<bool> UpdateAsync(FundPool fp);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? deletedBy = null);
 }

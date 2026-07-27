@@ -35,7 +35,7 @@ public class PartnersController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreatePartnerRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var result = await _service.CreateAsync(request);
+        var result = await _service.CreateAsync(request, CurrentUserId);
         if (result.Success)
             await Log(ActivityType.Insert, ActivityModule.Partners, $"Created Partner #{result.Data!.Id}", result.Data!.Id.ToString(), "Partner");
         return result.Success ? CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result) : BadRequest(result);
@@ -46,7 +46,7 @@ public class PartnersController : BaseApiController
     public async Task<IActionResult> Update(int id, [FromBody] UpdatePartnerRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var result = await _service.UpdateAsync(id, request);
+        var result = await _service.UpdateAsync(id, request, CurrentUserId);
         if (result.Success)
             await Log(ActivityType.Update, ActivityModule.Partners, $"Updated Partner #{id}", id.ToString(), "Partner");
         return result.Success ? Ok(result) : NotFound(result);
@@ -56,7 +56,7 @@ public class PartnersController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _service.DeleteAsync(id);
+        var result = await _service.DeleteAsync(id, CurrentUserId);
         if (result.Success)
             await Log(ActivityType.Delete, ActivityModule.Partners, $"Deleted Partner #{id}", id.ToString(), "Partner");
         return result.Success ? Ok(result) : NotFound(result);

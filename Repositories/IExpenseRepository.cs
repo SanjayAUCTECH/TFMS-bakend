@@ -9,7 +9,7 @@ public interface IExpenseRepository
     Task<Expense?> GetByIdAsync(int id);
     Task<int>      CreateAsync(Expense expense);
     Task<bool>     UpdateAsync(Expense expense);
-    Task<bool>     DeleteAsync(int id);
+    Task<bool>     DeleteAsync(int id, int? deletedBy = null);
     Task<bool>     ExistsAsync(int id);
     Task<object>   GetStatsAsync();
 }

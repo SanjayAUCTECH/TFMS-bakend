@@ -55,6 +55,7 @@ public class PaymentsController : BaseApiController
     public async Task<IActionResult> RecordPayment([FromBody] RecordPaymentRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+        request.AddedBy = CurrentUserId;
         var r = await _service.RecordPaymentAsync(request);
         if (r.Success)
             await Log(ActivityType.Insert, ActivityModule.Payments,

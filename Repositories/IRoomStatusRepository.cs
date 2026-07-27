@@ -8,5 +8,5 @@ public interface IRoomStatusRepository
     Task<RoomStatus?> GetByIdAsync(int id);
     Task<int>  CreateAsync(RoomStatus rs);
     Task<bool> UpdateAsync(RoomStatus rs);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? deletedBy = null);
 }

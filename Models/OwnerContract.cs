@@ -17,6 +17,10 @@ public class OwnerContract
     public string   Status      { get; set; } = "Active";
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }
+    // Audit
+    public int?  AddedBy   { get; set; }
+    public int?  UpdatedBy { get; set; }
+    public bool  IsDeleted { get; set; }
     public List<OwnerInstallment>  Installments  { get; set; } = new();
     public List<OwnerTransaction>  Transactions  { get; set; } = new();
     public List<OwnerMonthlyContractInstallment> MonthlyInstallments { get; set; } = new();

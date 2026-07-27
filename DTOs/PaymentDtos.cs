@@ -18,6 +18,7 @@ public class RecordPaymentRequest
     public int?     FundPoolId      { get; set; }
     public string   FundPoolName    { get; set; } = string.Empty;
     public string   IssuedBy        { get; set; } = string.Empty;
+    public int?     AddedBy         { get; set; }
     /// <summary>Room-wise payment breakdown [{roomId, campId, amount}]</summary>
     public List<RoomPaymentItem>? RoomPayments { get; set; }
 }

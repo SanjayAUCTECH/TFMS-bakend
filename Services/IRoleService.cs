@@ -8,7 +8,7 @@ public interface IRoleService
     Task<ApiResponse<IEnumerable<RoleResponse>>> GetAllAsync(RoleListRequest request);
     Task<ApiResponse<IEnumerable<RoleResponse>>> GetAllActiveAsync();
     Task<ApiResponse<RoleResponse>> GetByIdAsync(int id);
-    Task<ApiResponse<RoleResponse>> CreateAsync(CreateRoleRequest request);
-    Task<ApiResponse<RoleResponse>> UpdateAsync(int id, UpdateRoleRequest request);
-    Task<ApiResponse<bool>>         DeleteAsync(int id);
+    Task<ApiResponse<RoleResponse>> CreateAsync(CreateRoleRequest request, int? userId = null);
+    Task<ApiResponse<RoleResponse>> UpdateAsync(int id, UpdateRoleRequest request, int? userId = null);
+    Task<ApiResponse<bool>>         DeleteAsync(int id, int? userId = null);
 }

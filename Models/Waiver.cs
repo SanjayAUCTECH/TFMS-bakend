@@ -13,4 +13,8 @@ public class Waiver
     public string   Remark         { get; set; } = string.Empty;
     public DateTime WaiverDate     { get; set; }
     public string   CreatedBy      { get; set; } = string.Empty;
+    // Audit
+    public int?     AddedBy        { get; set; }
+    public int?     DeletedBy      { get; set; }
+    public bool     IsDeleted      { get; set; }
 }

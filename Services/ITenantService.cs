@@ -7,7 +7,7 @@ public interface ITenantService
 {
     Task<ApiResponse<IEnumerable<TenantResponse>>> GetAllAsync(TenantListRequest request);
     Task<ApiResponse<TenantResponse>> GetByIdAsync(int id);
-    Task<ApiResponse<TenantResponse>> CreateAsync(CreateTenantRequest request);
-    Task<ApiResponse<TenantResponse>> UpdateAsync(int id, UpdateTenantRequest request);
-    Task<ApiResponse<bool>>           DeleteAsync(int id);
+    Task<ApiResponse<TenantResponse>> CreateAsync(CreateTenantRequest request, int? userId = null);
+    Task<ApiResponse<TenantResponse>> UpdateAsync(int id, UpdateTenantRequest request, int? userId = null);
+    Task<ApiResponse<bool>>           DeleteAsync(int id, int? userId = null);
 }

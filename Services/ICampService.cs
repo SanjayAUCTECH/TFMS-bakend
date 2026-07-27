@@ -8,7 +8,7 @@ public interface ICampService
     Task<ApiResponse<IEnumerable<CampResponse>>> GetAllAsync(CampListRequest request);
     Task<ApiResponse<IEnumerable<CampResponse>>> GetAllActiveAsync();
     Task<ApiResponse<CampResponse>> GetByIdAsync(int id);
-    Task<ApiResponse<CampResponse>> CreateAsync(CreateCampRequest request);
-    Task<ApiResponse<CampResponse>> UpdateAsync(int id, UpdateCampRequest request);
-    Task<ApiResponse<bool>>         DeleteAsync(int id);
+    Task<ApiResponse<CampResponse>> CreateAsync(CreateCampRequest request, int? userId = null);
+    Task<ApiResponse<CampResponse>> UpdateAsync(int id, UpdateCampRequest request, int? userId = null);
+    Task<ApiResponse<bool>>         DeleteAsync(int id, int? userId = null);
 }

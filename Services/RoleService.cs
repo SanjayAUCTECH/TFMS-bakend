@@ -28,23 +28,23 @@ public class RoleService : IRoleService
         return r == null ? ApiResponse<RoleResponse>.Fail("Not found.") : ApiResponse<RoleResponse>.Ok(ToResponse(r));
     }
 
-    public async Task<ApiResponse<RoleResponse>> CreateAsync(CreateRoleRequest request)
+    public async Task<ApiResponse<RoleResponse>> CreateAsync(CreateRoleRequest request, int? userId = null)
     {
-        var id = await _repo.CreateAsync(new Role { RoleName = request.RoleName?.Trim() ?? "", Status = request.Status });
+        var id = await _repo.CreateAsync(new Role { RoleName = request.RoleName?.Trim() ?? "", Status = request.Status, AddedBy = userId });
         return ApiResponse<RoleResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Role created.");
     }
 
-    public async Task<ApiResponse<RoleResponse>> UpdateAsync(int id, UpdateRoleRequest request)
+    public async Task<ApiResponse<RoleResponse>> UpdateAsync(int id, UpdateRoleRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<RoleResponse>.Fail("Not found.");
-        await _repo.UpdateAsync(new Role { Id = id, RoleName = request.RoleName.Trim(), Status = request.Status });
+        await _repo.UpdateAsync(new Role { Id = id, RoleName = request.RoleName.Trim(), Status = request.Status, UpdatedBy = userId });
         return ApiResponse<RoleResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static RoleResponse ToResponse(Role r) => new()

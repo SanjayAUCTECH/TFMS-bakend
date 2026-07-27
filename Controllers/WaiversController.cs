@@ -33,7 +33,7 @@ public class WaiversController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateWaiverRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Insert, ActivityModule.Waivers, $"Created Waiver #{r.Data!.Id}", r.Data!.Id.ToString(), "Waiver");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
@@ -42,7 +42,7 @@ public class WaiversController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var r = await _service.DeleteAsync(id);
+        var r = await _service.DeleteAsync(id, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Delete, ActivityModule.Waivers, $"Deleted Waiver #{id}", id.ToString(), "Waiver");
         return r.Success ? Ok(r) : NotFound(r);

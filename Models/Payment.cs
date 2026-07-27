@@ -20,4 +20,7 @@ public class Payment
     public int?     FundPoolId      { get; set; }
     public string   FundPoolName    { get; set; } = string.Empty;
     public string   IssuedBy        { get; set; } = string.Empty;
+    // Audit
+    public int?  AddedBy   { get; set; }
+    public bool  IsDeleted { get; set; }
 }

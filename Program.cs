@@ -32,13 +32,14 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-// Allow all origins with credentials support
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:3000", "http://localhost:5173", "http://localhost:9001" };
 builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", p => p
-        .SetIsOriginAllowed(_ => true)   // allow any origin (replaces AllowAnyOrigin for credentials)
+        .WithOrigins(allowedOrigins)
         .AllowAnyMethod()
         .AllowAnyHeader()
-        .AllowCredentials()));            // required when frontend sends withCredentials: true
+        .AllowCredentials()));
 
 // ── JWT Auth ─────────────────────────────────────────────────────────────────
 var jwtKey = builder.Configuration["Jwt:Key"]!;
@@ -46,19 +47,32 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters {
             ValidateIssuer = true, ValidateAudience = true,
-            ValidateLifetime = false, ValidateIssuerSigningKey = true,
+            ValidateLifetime = true, ValidateIssuerSigningKey = true,
             ValidIssuer    = builder.Configuration["Jwt:Issuer"],
             ValidAudience  = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(5)
         };
     });
-// ── Authorization: disable auth check globally (all endpoints open) ──────────
+// ── Authorization: require valid JWT for all endpoints ──────────────────────
 builder.Services.AddAuthorization(options =>
 {
-    options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-        .RequireAssertion(_ => true)   // always pass — no token required
-        .Build();
-    options.FallbackPolicy = null;     // no fallback restriction
+    // In Development: open access so frontend can work without token during dev
+    // In Production: JWT required on all [Authorize] endpoints
+    if (builder.Environment.IsDevelopment())
+    {
+        options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            .RequireAssertion(_ => true)   // dev only — no token required
+            .Build();
+        options.FallbackPolicy = null;
+    }
+    else
+    {
+        options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
+        options.FallbackPolicy = null;
+    }
 });
 
 // ── Database ─────────────────────────────────────────────────────────────────
@@ -201,18 +215,19 @@ static string GetFriendlyFkMessage(string sqlMsg)
         return "Cannot delete: this record is being used in another part of the system. Please remove all references before deleting.";
 }
 
-// ── Swagger (all environments) ───────────────────────────────────────────────
+// ── Swagger (development/staging only — never in production) ─────────────────
+if (!app.Environment.IsProduction())
+{
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "TFMS API v1");
     c.RoutePrefix = "swagger";
     c.DocumentTitle = "TFMS API";
-    // Inject JS: auto-login and set Bearer token on page load
+    // Add API Docs button only — no auto-login, no embedded credentials
     c.HeadContent = @"
 <script>
 window.addEventListener('load', function () {
-  // Add API Docs button to Swagger topbar
   setTimeout(function() {
     var topbar = document.querySelector('.topbar-wrapper');
     if (topbar && !document.getElementById('api-docs-btn')) {
@@ -225,33 +240,10 @@ window.addEventListener('load', function () {
       topbar.appendChild(btn);
     }
   }, 800);
-  // Auto-login with default admin credentials and set Bearer token
-  setTimeout(function () {
-    fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'Admin@1234' })
-    })
-    .then(r => r.json())
-    .then(function(res) {
-      if (res.success && res.data && res.data.token) {
-        var token = res.data.token;
-        // Set token in Swagger UI authorize
-        window.ui.preauthorizeApiKey('Bearer', 'Bearer ' + token);
-        console.log('[TFMS] Auto-authorized as:', res.data.username);
-        // Show small banner
-        var banner = document.createElement('div');
-        banner.style = 'background:#1a7a4a;color:#fff;padding:8px 16px;font-size:13px;position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center';
-        banner.innerHTML = '✅ Auto-logged in as <strong>' + res.data.name + '</strong> (' + res.data.role + ') — Token valid till ' + new Date(res.data.expiresAt).toLocaleTimeString();
-        document.body.prepend(banner);
-        setTimeout(() => banner.remove(), 5000);
-      }
-    })
-    .catch(function(e) { console.warn('[TFMS] Auto-login failed:', e); });
-  }, 1000);
 });
 </script>";
 });
+}
 
 app.UseCors("AllowAll");
 // NOTE: No UseHttpsRedirection — API runs on plain HTTP

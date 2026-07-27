@@ -26,34 +26,34 @@ public class PartnerService : IPartnerService
         return ApiResponse<PartnerResponse>.Ok(ToResponse(partner));
     }
 
-    public async Task<ApiResponse<PartnerResponse>> CreateAsync(CreatePartnerRequest request)
+    public async Task<ApiResponse<PartnerResponse>> CreateAsync(CreatePartnerRequest request, int? userId = null)
     {
         var partner = new Partner
         {
             Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "",
-            Mobile = request.Mobile?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status,
+            Mobile = request.Mobile?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status, AddedBy = userId,
         };
         var id = await _repo.CreateAsync(partner);
         var created = await _repo.GetByIdAsync(id);
         return ApiResponse<PartnerResponse>.Ok(ToResponse(created!), "Partner created successfully.");
     }
 
-    public async Task<ApiResponse<PartnerResponse>> UpdateAsync(int id, UpdatePartnerRequest request)
+    public async Task<ApiResponse<PartnerResponse>> UpdateAsync(int id, UpdatePartnerRequest request, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<PartnerResponse>.Fail("Partner not found.");
         await _repo.UpdateAsync(new Partner
         {
             Id = id, Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "",
-            Mobile = request.Mobile?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status,
+            Mobile = request.Mobile?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status, UpdatedBy = userId,
         });
         var updated = await _repo.GetByIdAsync(id);
         return ApiResponse<PartnerResponse>.Ok(ToResponse(updated!), "Partner updated successfully.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<bool>.Fail("Partner not found.");
-        var result = await _repo.DeleteAsync(id);
+        var result = await _repo.DeleteAsync(id, userId);
         return result ? ApiResponse<bool>.Ok(true, "Partner deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 

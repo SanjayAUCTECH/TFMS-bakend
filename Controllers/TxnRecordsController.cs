@@ -58,6 +58,7 @@ public class TxnRecordsController : BaseApiController
             FundPoolId=req.FundPoolId, FundPoolName=req.FundPoolName,
             Description=req.Description, ReceivedBy=req.ReceivedBy,
             InstallmentNo=req.InstallmentNo,
+            AddedBy=CurrentUserId,
         };
         var id = await _repo.CreateAsync(txn);
         await Log(ActivityType.Insert, ActivityModule.Payments, $"Created TxnRecord #{id} Type:{req.TxnType} Contract:{req.ContractId}", id.ToString(), "TxnRecord");
@@ -79,8 +80,8 @@ public class TxnRecordsController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _repo.DeleteAsync(id);
-        await Log(ActivityType.Delete, ActivityModule.Payments, $"Deleted TxnRecord #{id}", id.ToString(), "TxnRecord");
+        await _repo.DeleteAsync(id, CurrentUserId);
+        await Log(ActivityType.Delete, ActivityModule.TxnRecords, $"Deleted TxnRecord #{id}", id.ToString(), "TxnRecord");
         return Ok(ApiResponse<object?>.Ok(null, "Txn record deleted."));
     }
 }

@@ -59,6 +59,7 @@ public class IncomeRepository : IIncomeRepository
         cmd.Parameters.AddWithValue("@CampName",    income.CampName    ?? "");
         cmd.Parameters.AddWithValue("@PartnerId",   (object?)income.PartnerId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@PartnerName", income.PartnerName ?? "");
+        cmd.Parameters.AddWithValue("@AddedBy",     (object?)income.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -83,15 +84,17 @@ public class IncomeRepository : IIncomeRepository
         cmd.Parameters.AddWithValue("@CampName",    income.CampName    ?? "");
         cmd.Parameters.AddWithValue("@PartnerId",   (object?)income.PartnerId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@PartnerName", income.PartnerName ?? "");
+        cmd.Parameters.AddWithValue("@UpdatedBy",   (object?)income.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteIncome", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync();
         return true;
     }

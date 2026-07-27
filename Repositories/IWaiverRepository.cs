@@ -9,5 +9,5 @@ public interface IWaiverRepository
     Task<Waiver?> GetByIdAsync(int id);
     Task<int>  CreateAsync(Waiver waiver);
     Task<int>  CreateWithRoomsAsync(Waiver waiver, string roomWaiversJson);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? deletedBy = null);
 }

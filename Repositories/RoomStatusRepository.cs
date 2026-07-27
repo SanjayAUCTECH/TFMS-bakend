@@ -36,6 +36,7 @@ public class RoomStatusRepository : IRoomStatusRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateRoomStatus", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Name", rs.Name);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)rs.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -52,12 +53,13 @@ public class RoomStatusRepository : IRoomStatusRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteRoomStatus", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 }

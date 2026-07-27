@@ -9,5 +9,5 @@ public interface IOtherPersonRepository
     Task<OtherPerson?> GetByIdAsync(int id);
     Task<int>  CreateAsync(OtherPerson op);
     Task<bool> UpdateAsync(OtherPerson op);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? deletedBy = null);
 }

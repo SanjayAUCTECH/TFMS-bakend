@@ -35,7 +35,7 @@ public class CampsController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateCampRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Insert, ActivityModule.Camps, $"Created Camp '{request.Name}' #{r.Data!.Id}", r.Data!.Id.ToString(), "Camp");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
@@ -45,7 +45,7 @@ public class CampsController : BaseApiController
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCampRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Update, ActivityModule.Camps, $"Updated Camp #{id}", id.ToString(), "Camp");
         return r.Success ? Ok(r) : NotFound(r);
@@ -54,7 +54,7 @@ public class CampsController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var r = await _service.DeleteAsync(id);
+        var r = await _service.DeleteAsync(id, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Delete, ActivityModule.Camps, $"Deleted Camp #{id}", id.ToString(), "Camp");
         return r.Success ? Ok(r) : NotFound(r);

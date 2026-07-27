@@ -22,24 +22,24 @@ public class RoomStatusService : IRoomStatusService
         return rs == null ? ApiResponse<RoomStatusResponse>.Fail("Not found.") : ApiResponse<RoomStatusResponse>.Ok(new RoomStatusResponse { Id = rs.Id, Name = rs.Name });
     }
 
-    public async Task<ApiResponse<RoomStatusResponse>> CreateAsync(CreateRoomStatusRequest request)
+    public async Task<ApiResponse<RoomStatusResponse>> CreateAsync(CreateRoomStatusRequest request, int? userId = null)
     {
-        var id = await _repo.CreateAsync(new RoomStatus { Name = request.Name.Trim() });
+        var id = await _repo.CreateAsync(new RoomStatus { Name = request.Name.Trim(), AddedBy = userId });
         var rs = await _repo.GetByIdAsync(id);
         return ApiResponse<RoomStatusResponse>.Ok(new RoomStatusResponse { Id = rs!.Id, Name = rs.Name }, "Room Status created.");
     }
 
-    public async Task<ApiResponse<RoomStatusResponse>> UpdateAsync(int id, UpdateRoomStatusRequest request)
+    public async Task<ApiResponse<RoomStatusResponse>> UpdateAsync(int id, UpdateRoomStatusRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<RoomStatusResponse>.Fail("Not found.");
-        await _repo.UpdateAsync(new RoomStatus { Id = id, Name = request.Name.Trim() });
+        await _repo.UpdateAsync(new RoomStatus { Id = id, Name = request.Name.Trim(), UpdatedBy = userId });
         var rs = await _repo.GetByIdAsync(id);
         return ApiResponse<RoomStatusResponse>.Ok(new RoomStatusResponse { Id = rs!.Id, Name = rs.Name }, "Updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 }

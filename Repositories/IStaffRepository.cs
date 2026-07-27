@@ -10,7 +10,7 @@ public interface IStaffRepository
     Task<Staff?> GetByUsernameAsync(string username);
     Task<int>    CreateAsync(Staff staff);
     Task<bool>   UpdateAsync(Staff staff);
-    Task<bool>   DeleteAsync(int id);
+    Task<bool>   DeleteAsync(int id, int? deletedBy = null);
     Task<bool>   ExistsAsync(int id);
     Task<bool>   UsernameExistsAsync(string username, int? excludeId = null);
     Task<object> GetStatsAsync();

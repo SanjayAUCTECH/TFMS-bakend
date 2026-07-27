@@ -19,4 +19,8 @@ public class AppUser
     public bool      IsAdmin      { get; set; }
     public DateTime  CreatedAt    { get; set; }
     public DateTime  UpdatedAt    { get; set; }
+    // Audit
+    public int?  AddedBy   { get; set; }
+    public int?  UpdatedBy { get; set; }
+    public bool  IsDeleted { get; set; }
 }

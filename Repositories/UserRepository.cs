@@ -46,7 +46,7 @@ public class UserRepository : IUserRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT * FROM AppUsers WHERE Username=@Username", conn);
+        await using var cmd = new SqlCommand("SELECT * FROM AppUsers WHERE Username=@Username AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Username", username);
         await using var r = await cmd.ExecuteReaderAsync();
         return await r.ReadAsync() ? MapUser(r) : null;
@@ -69,6 +69,7 @@ public class UserRepository : IUserRepository
         cmd.Parameters.AddWithValue("@LoginAccess",  user.LoginAccess);
         cmd.Parameters.AddWithValue("@Status",       user.Status);
         cmd.Parameters.AddWithValue("@MenuAccess",   user.MenuAccess);
+        cmd.Parameters.AddWithValue("@AddedBy",      (object?)user.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -91,6 +92,7 @@ public class UserRepository : IUserRepository
         cmd.Parameters.AddWithValue("@LoginAccess", user.LoginAccess);
         cmd.Parameters.AddWithValue("@Status",      user.Status);
         cmd.Parameters.AddWithValue("@MenuAccess",  user.MenuAccess);
+        cmd.Parameters.AddWithValue("@UpdatedBy",   (object?)user.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -127,12 +129,13 @@ public class UserRepository : IUserRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteUser", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -140,7 +143,7 @@ public class UserRepository : IUserRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM AppUsers WHERE Id=@Id", conn);
+        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM AppUsers WHERE Id=@Id AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Id", id);
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }
@@ -155,7 +158,7 @@ public class UserRepository : IUserRepository
                 SUM(CASE WHEN Status='Active'   THEN 1 ELSE 0 END) AS ActiveUsers,
                 SUM(CASE WHEN Status!='Active'  THEN 1 ELSE 0 END) AS InactiveUsers,
                 COUNT(DISTINCT NULLIF(LTRIM(RTRIM(Role)),''))     AS RolesAssigned
-            FROM AppUsers", conn);
+            FROM AppUsers WHERE IsDeleted=0", conn);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return new UserStatsResponse();
         return new UserStatsResponse
@@ -172,8 +175,8 @@ public class UserRepository : IUserRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         var sql = excludeId.HasValue
-            ? "SELECT COUNT(1) FROM AppUsers WHERE Username=@Username AND Id<>@ExcludeId"
-            : "SELECT COUNT(1) FROM AppUsers WHERE Username=@Username";
+            ? "SELECT COUNT(1) FROM AppUsers WHERE Username=@Username AND Id<>@ExcludeId AND IsDeleted=0"
+            : "SELECT COUNT(1) FROM AppUsers WHERE Username=@Username AND IsDeleted=0";
         await using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@Username", username);
         if (excludeId.HasValue) cmd.Parameters.AddWithValue("@ExcludeId", excludeId.Value);

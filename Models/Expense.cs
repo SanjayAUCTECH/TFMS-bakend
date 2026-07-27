@@ -19,4 +19,8 @@ public class Expense
     public string   Purpose       { get; set; } = string.Empty;
     public DateTime CreatedAt     { get; set; }
     public DateTime UpdatedAt     { get; set; }
+    // Audit
+    public int?  AddedBy   { get; set; }
+    public int?  UpdatedBy { get; set; }
+    public bool  IsDeleted { get; set; }
 }

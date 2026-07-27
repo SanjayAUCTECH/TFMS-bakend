@@ -65,7 +65,7 @@ public class FundPoolsController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateFundPoolRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Insert, ActivityModule.FundPools, $"Created FundPool #{r.Data!.Id}", r.Data!.Id.ToString(), "FundPool");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
@@ -75,7 +75,7 @@ public class FundPoolsController : BaseApiController
     public async Task<IActionResult> Update(int id, [FromBody] UpdateFundPoolRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Update, ActivityModule.FundPools, $"Updated FundPool #{id}", id.ToString(), "FundPool");
         return r.Success ? Ok(r) : NotFound(r);
@@ -84,7 +84,7 @@ public class FundPoolsController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var r = await _service.DeleteAsync(id);
+        var r = await _service.DeleteAsync(id, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Delete, ActivityModule.FundPools, $"Deleted FundPool #{id}", id.ToString(), "FundPool");
         return r.Success ? Ok(r) : NotFound(r);

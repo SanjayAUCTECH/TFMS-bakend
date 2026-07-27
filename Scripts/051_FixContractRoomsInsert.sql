@@ -97,7 +97,7 @@ BEGIN
         ContractPropertyUsage, ContractBuildingName, ContractPropertyType,
         ContractLocation, ContractPropertyNo, ContractPropertyArea,
         ContractPremisesNo, ContractPaymentMode, ContractPlotNo, ContractMakaniNo,
-        Status, CreatedAt, UpdatedAt
+        Status, IsDeleted, CreatedAt, UpdatedAt
     )
     VALUES (
         @NewContractId, @TenantId, @StartDate, @Months, @EndDate,
@@ -107,7 +107,7 @@ BEGIN
         @ContractPropertyUsage, @ContractBuildingName, @ContractPropertyType,
         @ContractLocation, @ContractPropertyNo, @ContractPropertyArea,
         @ContractPremisesNo, @ContractPaymentMode, @ContractPlotNo, @ContractMakaniNo,
-        'Active', GETUTCDATE(), GETUTCDATE()
+        'Active', 0, GETUTCDATE(), GETUTCDATE()
     );
 
     -- ── Link rooms — with CampId, TotalAmount, Balance ───────────────────────

@@ -34,7 +34,7 @@ public class ExpenseService : IExpenseService
             : ApiResponse<ExpenseResponse>.Ok(ToResponse(item));
     }
 
-    public async Task<ApiResponse<ExpenseResponse>> CreateAsync(CreateExpenseRequest request)
+    public async Task<ApiResponse<ExpenseResponse>> CreateAsync(CreateExpenseRequest request, int? userId = null)
     {
         var fp = await _fundRepo.GetByIdAsync(request.FundPoolId ?? 0);
         if (fp == null) return ApiResponse<ExpenseResponse>.Fail("Fund Pool not found.");
@@ -62,6 +62,7 @@ public class ExpenseService : IExpenseService
             RecipientId   = request.RecipientId.HasValue && request.RecipientId.Value > 0 ? request.RecipientId : null,
             RecipientName = request.RecipientName?.Trim() ?? "",
             Purpose       = request.Purpose?.Trim() ?? "",
+            AddedBy       = userId,
         };
 
         var id = await _repo.CreateAsync(expense);
@@ -69,7 +70,7 @@ public class ExpenseService : IExpenseService
         return ApiResponse<ExpenseResponse>.Ok(ToResponse(created!), "Expense created successfully.");
     }
 
-    public async Task<ApiResponse<ExpenseResponse>> UpdateAsync(int id, UpdateExpenseRequest request)
+    public async Task<ApiResponse<ExpenseResponse>> UpdateAsync(int id, UpdateExpenseRequest request, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id))
             return ApiResponse<ExpenseResponse>.Fail("Expense record not found.");
@@ -101,17 +102,18 @@ public class ExpenseService : IExpenseService
             RecipientId   = request.RecipientId.HasValue && request.RecipientId.Value > 0 ? request.RecipientId : null,
             RecipientName = request.RecipientName?.Trim() ?? "",
             Purpose       = request.Purpose?.Trim() ?? "",
+            UpdatedBy     = userId,
         });
 
         var updated = await _repo.GetByIdAsync(id);
         return ApiResponse<ExpenseResponse>.Ok(ToResponse(updated!), "Expense updated successfully.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id))
             return ApiResponse<bool>.Fail("Expense record not found.");
-        return await _repo.DeleteAsync(id)
+        return await _repo.DeleteAsync(id, userId)
             ? ApiResponse<bool>.Ok(true, "Expense deleted.")
             : ApiResponse<bool>.Fail("Delete failed.");
     }

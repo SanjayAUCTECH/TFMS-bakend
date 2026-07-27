@@ -34,7 +34,7 @@ public class FloorRepository : IFloorRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT Id,Name,Number,Status,CreatedAt,UpdatedAt FROM Floors WHERE Status='Active' ORDER BY Number", conn);
+        await using var cmd = new SqlCommand("SELECT Id,Name,Number,Status,CreatedAt,UpdatedAt FROM Floors WHERE Status='Active' AND IsDeleted=0 ORDER BY Number", conn);
         var list = new List<Floor>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(Map(r));
@@ -59,6 +59,7 @@ public class FloorRepository : IFloorRepository
         cmd.Parameters.AddWithValue("@Name",   f.Name);
         cmd.Parameters.AddWithValue("@Number", f.Number);
         cmd.Parameters.AddWithValue("@Status", f.Status);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)f.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -70,19 +71,21 @@ public class FloorRepository : IFloorRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateFloor", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",     f.Id);
-        cmd.Parameters.AddWithValue("@Name",   f.Name);
-        cmd.Parameters.AddWithValue("@Number", f.Number);
-        cmd.Parameters.AddWithValue("@Status", f.Status);
+        cmd.Parameters.AddWithValue("@Id",       f.Id);
+        cmd.Parameters.AddWithValue("@Name",     f.Name);
+        cmd.Parameters.AddWithValue("@Number",   f.Number);
+        cmd.Parameters.AddWithValue("@Status",   f.Status);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)f.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteFloor", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 

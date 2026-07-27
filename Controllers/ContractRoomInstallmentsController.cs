@@ -142,7 +142,7 @@ public class ContractRoomInstallmentsController : ControllerBase
         };
         cmd.Parameters.AddWithValue("@ContractId", contractId);
         await cmd.ExecuteNonQueryAsync();
-        return Ok(ApiResponse<object>.Ok(null, $"Room installments regenerated for {contractId}."));
+        return Ok(ApiResponse<object?>.Ok(null, $"Room installments regenerated for {contractId}."));
     }
 }
 

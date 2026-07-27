@@ -25,23 +25,27 @@ public class TenantService : ITenantService
         return t == null ? ApiResponse<TenantResponse>.Fail("Tenant not found.") : ApiResponse<TenantResponse>.Ok(ToResponse(t));
     }
 
-    public async Task<ApiResponse<TenantResponse>> CreateAsync(CreateTenantRequest request)
+    public async Task<ApiResponse<TenantResponse>> CreateAsync(CreateTenantRequest request, int? userId = null)
     {
-        var newId = await _repo.CreateAsync(FromRequest(request));
+        var tenant = FromRequest(request);
+        tenant.AddedBy = userId;
+        var newId = await _repo.CreateAsync(tenant);
         return ApiResponse<TenantResponse>.Ok(ToResponse((await _repo.GetByIdAsync(newId))!), "Tenant created.");
     }
 
-    public async Task<ApiResponse<TenantResponse>> UpdateAsync(int id, UpdateTenantRequest request)
+    public async Task<ApiResponse<TenantResponse>> UpdateAsync(int id, UpdateTenantRequest request, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<TenantResponse>.Fail("Tenant not found.");
-        await _repo.UpdateAsync(FromRequest(request, id));
+        var tenant = FromRequest(request, id);
+        tenant.UpdatedBy = userId;
+        await _repo.UpdateAsync(tenant);
         return ApiResponse<TenantResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Tenant updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<bool>.Fail("Tenant not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Tenant deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Tenant deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static Tenant FromRequest(CreateTenantRequest r, int id = 0) => new()

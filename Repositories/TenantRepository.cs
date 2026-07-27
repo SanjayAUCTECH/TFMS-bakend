@@ -49,6 +49,7 @@ public class TenantRepository : ITenantRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateTenant", conn) { CommandType = CommandType.StoredProcedure };
         AddParams(cmd, t);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)t.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -62,6 +63,7 @@ public class TenantRepository : ITenantRepository
         await using var cmd = new SqlCommand("sp_UpdateTenant", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", t.Id);
         AddParams(cmd, t);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)t.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -85,7 +87,7 @@ public class TenantRepository : ITenantRepository
                 SUM(CASE WHEN Status='Active'   THEN 1 ELSE 0 END)           AS active,
                 SUM(CASE WHEN Status='Inactive' THEN 1 ELSE 0 END)           AS inactive,
                 SUM(CASE WHEN Type='Company'    THEN 1 ELSE 0 END)           AS companies
-            FROM Tenants", conn);
+            FROM Tenants WHERE IsDeleted=0", conn);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return new { total=0, active=0, inactive=0, companies=0 };
         return new {
@@ -100,7 +102,7 @@ public class TenantRepository : ITenantRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Tenants WHERE Id=@Id", conn);
+        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Tenants WHERE Id=@Id AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Id", id);
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }

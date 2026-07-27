@@ -8,10 +8,11 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class AccountsHeadsController : ControllerBase
+public class AccountsHeadsController : BaseApiController
 {
     private readonly IAccountsHeadService _service;
-    public AccountsHeadsController(IAccountsHeadService service) => _service = service;
+    public AccountsHeadsController(IAccountsHeadService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
     /// <summary>GET api/accountsheads?PageNumber=1&PageSize=10&Type=Asset&Status=Active</summary>
     [HttpGet]
@@ -25,13 +26,19 @@ public class AccountsHeadsController : ControllerBase
     public async Task<IActionResult> GetAllActive() => Ok(await _service.GetAllActiveAsync());
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id) { var r = await _service.GetByIdAsync(id); return r.Success ? Ok(r) : NotFound(r); }
+    public async Task<IActionResult> GetById(int id)
+    {
+        var r = await _service.GetByIdAsync(id);
+        return r.Success ? Ok(r) : NotFound(r);
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateAccountsHeadRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.AccountsHeads, $"Created AccountsHead #{r.Data!.Id}", r.Data!.Id.ToString(), "AccountsHead");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -39,10 +46,18 @@ public class AccountsHeadsController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateAccountsHeadRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.AccountsHeads, $"Updated AccountsHead #{id}", id.ToString(), "AccountsHead");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id) { var r = await _service.DeleteAsync(id); return r.Success ? Ok(r) : NotFound(r); }
+    public async Task<IActionResult> Delete(int id)
+    {
+        var r = await _service.DeleteAsync(id, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.AccountsHeads, $"Deleted AccountsHead #{id}", id.ToString(), "AccountsHead");
+        return r.Success ? Ok(r) : NotFound(r);
+    }
 }

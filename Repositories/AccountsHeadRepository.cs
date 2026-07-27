@@ -35,7 +35,7 @@ public class AccountsHeadRepository : IAccountsHeadRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT Id,Code,Name,Type,Status,CreatedAt,UpdatedAt FROM AccountsHeads WHERE Status='Active' ORDER BY Name", conn);
+        await using var cmd = new SqlCommand("SELECT Id,Code,Name,Type,Status,CreatedAt,UpdatedAt FROM AccountsHeads WHERE Status='Active' AND IsDeleted=0 ORDER BY Name", conn);
         var list = new List<AccountsHead>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(Map(r));
@@ -57,9 +57,10 @@ public class AccountsHeadRepository : IAccountsHeadRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateAccountsHead", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Name",   ah.Name);
-        cmd.Parameters.AddWithValue("@Type",   ah.Type);
-        cmd.Parameters.AddWithValue("@Status", ah.Status);
+        cmd.Parameters.AddWithValue("@Name",    ah.Name);
+        cmd.Parameters.AddWithValue("@Type",    ah.Type);
+        cmd.Parameters.AddWithValue("@Status",  ah.Status);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)ah.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -71,19 +72,21 @@ public class AccountsHeadRepository : IAccountsHeadRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateAccountsHead", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",     ah.Id);
-        cmd.Parameters.AddWithValue("@Name",   ah.Name);
-        cmd.Parameters.AddWithValue("@Type",   ah.Type);
-        cmd.Parameters.AddWithValue("@Status", ah.Status);
+        cmd.Parameters.AddWithValue("@Id",       ah.Id);
+        cmd.Parameters.AddWithValue("@Name",     ah.Name);
+        cmd.Parameters.AddWithValue("@Type",     ah.Type);
+        cmd.Parameters.AddWithValue("@Status",   ah.Status);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)ah.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteAccountsHead", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 

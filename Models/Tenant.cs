@@ -3,7 +3,7 @@ namespace TFMS_software_api.Models;
 public class Tenant
 {
     public int      Id                  { get; set; }
-    public string   Type                { get; set; } = "Individual";   // Individual | Company
+    public string   Type                { get; set; } = "Individual";
     public string   Name                { get; set; } = string.Empty;
     public string   Passport            { get; set; } = string.Empty;
     public string   Nationality         { get; set; } = string.Empty;
@@ -29,4 +29,8 @@ public class Tenant
     public string   LessorPhone         { get; set; } = string.Empty;
     public DateTime CreatedAt           { get; set; }
     public DateTime UpdatedAt           { get; set; }
+    // Audit
+    public int?     AddedBy             { get; set; }
+    public int?     UpdatedBy           { get; set; }
+    public bool     IsDeleted           { get; set; }
 }

@@ -9,6 +9,6 @@ public interface IOwnerRepository
     Task<Owner?>  GetByIdAsync(int id);
     Task<int>     CreateAsync(Owner owner);
     Task<bool>    UpdateAsync(Owner owner);
-    Task<bool>    DeleteAsync(int id);
+    Task<bool>    DeleteAsync(int id, int? deletedBy = null);
     Task<bool>    ExistsAsync(int id);
 }

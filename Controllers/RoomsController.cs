@@ -39,7 +39,7 @@ public class RoomsController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateRoomRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Insert, ActivityModule.Rooms, $"Created Room #{r.Data!.Id}", r.Data!.Id.ToString(), "Room");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
@@ -63,7 +63,7 @@ public class RoomsController : BaseApiController
     public async Task<IActionResult> Update(int id, [FromBody] UpdateRoomRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Update, ActivityModule.Rooms, $"Updated Room #{id}", id.ToString(), "Room");
         return r.Success ? Ok(r) : NotFound(r);
@@ -72,7 +72,7 @@ public class RoomsController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var r = await _service.DeleteAsync(id);
+        var r = await _service.DeleteAsync(id, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Delete, ActivityModule.Rooms, $"Deleted Room #{id}", id.ToString(), "Room");
         return r.Success ? Ok(r) : NotFound(r);

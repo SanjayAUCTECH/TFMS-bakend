@@ -33,7 +33,7 @@ public class IncomeService : IIncomeService
             : ApiResponse<IncomeResponse>.Ok(ToResponse(item));
     }
 
-    public async Task<ApiResponse<IncomeResponse>> CreateAsync(CreateIncomeRequest request)
+    public async Task<ApiResponse<IncomeResponse>> CreateAsync(CreateIncomeRequest request, int? userId = null)
     {
         var fp = await _fundRepo.GetByIdAsync(request.FundPoolId ?? 0);
         if (fp == null) return ApiResponse<IncomeResponse>.Fail("Fund Pool not found.");
@@ -53,6 +53,7 @@ public class IncomeService : IIncomeService
             CampName     = request.CampName?.Trim()    ?? "",
             PartnerId    = request.PartnerId,
             PartnerName  = request.PartnerName?.Trim() ?? "",
+            AddedBy      = userId,
         };
 
         var id = await _repo.CreateAsync(income);
@@ -60,7 +61,7 @@ public class IncomeService : IIncomeService
         return ApiResponse<IncomeResponse>.Ok(ToResponse(created!), "Income created successfully.");
     }
 
-    public async Task<ApiResponse<IncomeResponse>> UpdateAsync(int id, UpdateIncomeRequest request)
+    public async Task<ApiResponse<IncomeResponse>> UpdateAsync(int id, UpdateIncomeRequest request, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id))
             return ApiResponse<IncomeResponse>.Fail("Income record not found.");
@@ -84,17 +85,18 @@ public class IncomeService : IIncomeService
             CampName     = request.CampName?.Trim()    ?? "",
             PartnerId    = request.PartnerId,
             PartnerName  = request.PartnerName?.Trim() ?? "",
+            UpdatedBy    = userId,
         });
 
         var updated = await _repo.GetByIdAsync(id);
         return ApiResponse<IncomeResponse>.Ok(ToResponse(updated!), "Income updated successfully.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id))
             return ApiResponse<bool>.Fail("Income record not found.");
-        return await _repo.DeleteAsync(id)
+        return await _repo.DeleteAsync(id, userId)
             ? ApiResponse<bool>.Ok(true, "Income deleted.")
             : ApiResponse<bool>.Fail("Delete failed.");
     }

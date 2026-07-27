@@ -24,24 +24,24 @@ public class OwnerService : IOwnerService
         return o == null ? ApiResponse<OwnerResponse>.Fail("Owner not found.") : ApiResponse<OwnerResponse>.Ok(ToResponse(o));
     }
 
-    public async Task<ApiResponse<OwnerResponse>> CreateAsync(CreateOwnerRequest request)
+    public async Task<ApiResponse<OwnerResponse>> CreateAsync(CreateOwnerRequest request, int? userId = null)
     {
-        var o = new Owner { Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status };
+        var o = new Owner { Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status, AddedBy = userId };
         var id = await _repo.CreateAsync(o);
         return ApiResponse<OwnerResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Owner created.");
     }
 
-    public async Task<ApiResponse<OwnerResponse>> UpdateAsync(int id, UpdateOwnerRequest request)
+    public async Task<ApiResponse<OwnerResponse>> UpdateAsync(int id, UpdateOwnerRequest request, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<OwnerResponse>.Fail("Owner not found.");
-        await _repo.UpdateAsync(new Owner { Id = id, Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status });
+        await _repo.UpdateAsync(new Owner { Id = id, Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status, UpdatedBy = userId });
         return ApiResponse<OwnerResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Owner updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<bool>.Fail("Owner not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Owner deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Owner deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static OwnerResponse ToResponse(Owner o) => new()

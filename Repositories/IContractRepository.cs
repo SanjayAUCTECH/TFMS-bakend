@@ -10,7 +10,7 @@ public interface IContractRepository
     Task<Contract?>  GetByContractIdAsync(string contractId);
     Task<string>     CreateAsync(Contract contract, List<ContractRoomItem>? rooms = null);   // returns ContractId
     Task<bool>       UpdateStatusAsync(string contractId, string status);
-    Task<bool>       DeleteAsync(int id);
+    Task<bool>       DeleteAsync(int id, int? deletedBy = null);
     Task<bool>       UpdateScheduleAsync(string contractId, string scheduleJson);
     Task<bool>       UpdateContractAsync(UpdateContractRequest request);
     Task<ContractDocResponse?> GetDocumentAsync(string contractId);

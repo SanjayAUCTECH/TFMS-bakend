@@ -13,7 +13,7 @@ public interface IUserRepository
     Task<bool>     UpdatePasswordAsync(int id, string password);
     Task<bool>     UpdateMenuAccessAsync(int id, string menuAccess);
     Task<bool>     UpdateLoginAccessAsync(int id, string loginAccess);
-    Task<bool>     DeleteAsync(int id);
+    Task<bool>     DeleteAsync(int id, int? deletedBy = null);
     Task<bool>     ExistsAsync(int id);
     Task<bool>     UsernameExistsAsync(string username, int? excludeId = null);
     Task<UserStatsResponse> GetStatsAsync();

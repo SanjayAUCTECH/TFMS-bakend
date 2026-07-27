@@ -51,6 +51,7 @@ public class OwnerRepository : IOwnerRepository
         cmd.Parameters.AddWithValue("@Contact", o.Contact);
         cmd.Parameters.AddWithValue("@Email",   o.Email);
         cmd.Parameters.AddWithValue("@Status",  o.Status);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)o.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -62,20 +63,22 @@ public class OwnerRepository : IOwnerRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateOwner", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",      o.Id);
-        cmd.Parameters.AddWithValue("@Name",    o.Name);
-        cmd.Parameters.AddWithValue("@Contact", o.Contact);
-        cmd.Parameters.AddWithValue("@Email",   o.Email);
-        cmd.Parameters.AddWithValue("@Status",  o.Status);
+        cmd.Parameters.AddWithValue("@Id",        o.Id);
+        cmd.Parameters.AddWithValue("@Name",      o.Name);
+        cmd.Parameters.AddWithValue("@Contact",   o.Contact);
+        cmd.Parameters.AddWithValue("@Email",     o.Email);
+        cmd.Parameters.AddWithValue("@Status",    o.Status);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)o.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteOwner", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -83,7 +86,7 @@ public class OwnerRepository : IOwnerRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Owners WHERE Id=@Id", conn);
+        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Owners WHERE Id=@Id AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Id", id);
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }

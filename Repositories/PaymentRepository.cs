@@ -52,7 +52,7 @@ public class PaymentRepository : IPaymentRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT * FROM ContractInstallments WHERE ContractId=@ContractId ORDER BY InstallmentNo", conn);
+        await using var cmd = new SqlCommand("SELECT * FROM ContractInstallments WHERE ContractId=@ContractId AND ISNULL(IsDeleted,0)=0 ORDER BY InstallmentNo", conn);
         cmd.Parameters.AddWithValue("@ContractId", contractId);
         var list = new List<Payment>();
         await using var r = await cmd.ExecuteReaderAsync();
@@ -79,7 +79,10 @@ public class PaymentRepository : IPaymentRepository
         cmd.Parameters.AddWithValue("@FundPoolId",      p.FundPoolId ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@FundPoolName",    p.FundPoolName);
         cmd.Parameters.AddWithValue("@IssuedBy",        p.IssuedBy);
-        // SP uses SET NOCOUNT ON — ExecuteNonQuery returns -1, use try/catch instead
+        cmd.Parameters.AddWithValue("@AddedBy",         (object?)p.AddedBy ?? DBNull.Value);
+        var txnIdOut = new SqlParameter("@NewTxnRecordId", System.Data.SqlDbType.Int)
+            { Direction = System.Data.ParameterDirection.Output };
+        cmd.Parameters.Add(txnIdOut);
         try {
             await cmd.ExecuteNonQueryAsync();
             return true;
@@ -200,7 +203,20 @@ public class PaymentRepository : IPaymentRepository
         FundPoolId      = r.IsDBNull(r.GetOrdinal("FundPoolId"))      ? null : r.GetInt32(r.GetOrdinal("FundPoolId")),
         FundPoolName    = r.IsDBNull(r.GetOrdinal("FundPoolName"))    ? "" : r.GetString(r.GetOrdinal("FundPoolName")),
         IssuedBy        = r.IsDBNull(r.GetOrdinal("IssuedBy"))        ? "" : r.GetString(r.GetOrdinal("IssuedBy")),
+        AddedBy         = r.IsDBNull(r.GetOrdinal("AddedBy"))         ? null : r.GetInt32(r.GetOrdinal("AddedBy")),
     };
+
+    /// <summary>Soft-delete a payment installment (sets IsDeleted=1, DeletedBy)</summary>
+    public async Task<bool> SoftDeleteAsync(int id, int? deletedBy = null)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            "UPDATE ContractInstallments SET IsDeleted=1, DeletedBy=@DeletedBy, UpdatedAt=GETUTCDATE() WHERE Id=@Id", conn);
+        cmd.Parameters.AddWithValue("@Id",        id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
 
     public async Task<bool> RecordPaymentWithRoomsAsync(Payment p, string roomPaymentsJson)
     {
@@ -229,6 +245,7 @@ public class PaymentRepository : IPaymentRepository
             cmd.Parameters.AddWithValue("@FundPoolId",      p.FundPoolId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@FundPoolName",    p.FundPoolName);
             cmd.Parameters.AddWithValue("@IssuedBy",        p.IssuedBy);
+            cmd.Parameters.AddWithValue("@AddedBy",         (object?)p.AddedBy ?? DBNull.Value);
 
             // ✅ Get TxnRecordId from SCOPE_IDENTITY via OUTPUT param (no race condition)
             var txnIdParam = new SqlParameter("@NewTxnRecordId", SqlDbType.Int) { Direction = ParameterDirection.Output };

@@ -9,7 +9,7 @@ public interface ITenantRepository
     Task<Tenant?> GetByIdAsync(int id);
     Task<int>  CreateAsync(Tenant tenant);
     Task<bool> UpdateAsync(Tenant tenant);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? userId = null);
     Task<bool> ExistsAsync(int id);
     Task<object> GetStatsAsync();
 }

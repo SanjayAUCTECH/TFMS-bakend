@@ -28,31 +28,33 @@ public class RoomService : IRoomService
         return r == null ? ApiResponse<RoomResponse>.Fail("Not found.") : ApiResponse<RoomResponse>.Ok(ToResponse(r));
     }
 
-    public async Task<ApiResponse<RoomResponse>> CreateAsync(CreateRoomRequest request)
+    public async Task<ApiResponse<RoomResponse>> CreateAsync(CreateRoomRequest request, int? userId = null)
     {
         var id = await _repo.CreateAsync(new Room
         {
             RoomNo = request.RoomNo.Trim(), CampId = request.CampId ?? 0, FloorId = request.FloorId ?? 0,
-            MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails.Trim()
+            MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails.Trim(),
+            AddedBy = userId,
         });
         return ApiResponse<RoomResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Room created.");
     }
 
-    public async Task<ApiResponse<RoomResponse>> UpdateAsync(int id, UpdateRoomRequest request)
+    public async Task<ApiResponse<RoomResponse>> UpdateAsync(int id, UpdateRoomRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<RoomResponse>.Fail("Not found.");
         await _repo.UpdateAsync(new Room
         {
             Id = id, RoomNo = request.RoomNo.Trim(), CampId = request.CampId ?? 0, FloorId = request.FloorId ?? 0,
-            MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails.Trim()
+            MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails.Trim(),
+            UpdatedBy = userId,
         });
         return ApiResponse<RoomResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Room updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static RoomResponse ToResponse(Room r) => new()

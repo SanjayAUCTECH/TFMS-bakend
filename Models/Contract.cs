@@ -45,6 +45,10 @@ public class Contract
     // ─────────────────────────────────────────────────────────────────────
     public DateTime      CreatedAt       { get; set; }
     public DateTime      UpdatedAt       { get; set; }
+    // Audit
+    public int?  AddedBy   { get; set; }
+    public int?  UpdatedBy { get; set; }
+    public bool  IsDeleted { get; set; }
     public List<int>     RoomIds         { get; set; } = new();
     public List<ContractRoomData> RoomDetails { get; set; } = new();
     public List<Payment> Payments        { get; set; } = new();

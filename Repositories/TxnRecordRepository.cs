@@ -52,6 +52,7 @@ public class TxnRecordRepository : ITxnRecordRepository
         cmd.Parameters.AddWithValue("@ReceivedBy",    t.ReceivedBy     ?? "");
         cmd.Parameters.AddWithValue("@ChequeNumber",  t.ChequeNumber   ?? "");
         cmd.Parameters.AddWithValue("@InstallmentNo", (object?)t.InstallmentNo ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@AddedBy",       (object?)t.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -196,12 +197,13 @@ public class TxnRecordRepository : ITxnRecordRepository
         return true;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteTxnRecord", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync();
         return true;
     }

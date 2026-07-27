@@ -22,24 +22,24 @@ public class PaymentModeService : IPaymentModeService
         return pm == null ? ApiResponse<PaymentModeResponse>.Fail("Not found.") : ApiResponse<PaymentModeResponse>.Ok(new PaymentModeResponse { Id = pm.Id, Name = pm.Name, Status = pm.Status });
     }
 
-    public async Task<ApiResponse<PaymentModeResponse>> CreateAsync(CreatePaymentModeRequest request)
+    public async Task<ApiResponse<PaymentModeResponse>> CreateAsync(CreatePaymentModeRequest request, int? userId = null)
     {
-        var id = await _repo.CreateAsync(new PaymentMode { Name = request.Name?.Trim() ?? "", Status = request.Status });
+        var id = await _repo.CreateAsync(new PaymentMode { Name = request.Name?.Trim() ?? "", Status = request.Status, AddedBy = userId });
         var pm = await _repo.GetByIdAsync(id);
         return ApiResponse<PaymentModeResponse>.Ok(new PaymentModeResponse { Id = pm!.Id, Name = pm.Name, Status = pm.Status }, "Payment Mode created.");
     }
 
-    public async Task<ApiResponse<PaymentModeResponse>> UpdateAsync(int id, UpdatePaymentModeRequest request)
+    public async Task<ApiResponse<PaymentModeResponse>> UpdateAsync(int id, UpdatePaymentModeRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<PaymentModeResponse>.Fail("Not found.");
-        await _repo.UpdateAsync(new PaymentMode { Id = id, Name = request.Name.Trim(), Status = request.Status });
+        await _repo.UpdateAsync(new PaymentMode { Id = id, Name = request.Name.Trim(), Status = request.Status, UpdatedBy = userId });
         var pm = await _repo.GetByIdAsync(id);
         return ApiResponse<PaymentModeResponse>.Ok(new PaymentModeResponse { Id = pm!.Id, Name = pm.Name, Status = pm.Status }, "Updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 }

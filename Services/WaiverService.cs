@@ -30,7 +30,7 @@ public class WaiverService : IWaiverService
         return w == null ? ApiResponse<WaiverResponse>.Fail("Waiver not found.") : ApiResponse<WaiverResponse>.Ok(ToResponse(w));
     }
 
-    public async Task<ApiResponse<WaiverResponse>> CreateAsync(CreateWaiverRequest request)
+    public async Task<ApiResponse<WaiverResponse>> CreateAsync(CreateWaiverRequest request, int? userId = null)
     {
         if (!await _tenantRepo.ExistsAsync(request.TenantId ?? 0))
             return ApiResponse<WaiverResponse>.Fail("Tenant not found.");
@@ -62,6 +62,7 @@ public class WaiverService : IWaiverService
                 Remark         = request.Remark,
                 WaiverDate     = request.WaiverDate,
                 CreatedBy      = request.CreatedBy,
+                AddedBy        = userId,
             }, roomWaiversJson);
             return ApiResponse<WaiverResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id2))!), "Waiver created.");
         }
@@ -78,14 +79,15 @@ public class WaiverService : IWaiverService
             Remark         = request.Remark,
             WaiverDate     = request.WaiverDate,
             CreatedBy      = request.CreatedBy,
+            AddedBy        = userId,
         });
         return ApiResponse<WaiverResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Waiver created.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Waiver not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static WaiverResponse ToResponse(Waiver w) => new()

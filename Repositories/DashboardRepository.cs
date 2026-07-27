@@ -46,8 +46,8 @@ public class DashboardRepository : IDashboardRepository
             }
         }
 
-        var campWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.Id=@CampId" : "WHERE c.Status='Active'";
-        await using (var cmd2 = new SqlCommand($@"SELECT c.Name CampName,COUNT(r.Id) TotalRooms,SUM(CASE WHEN r.Status='Occupied' THEN 1 ELSE 0 END) Occupied,SUM(CASE WHEN r.Status='Vacant' THEN 1 ELSE 0 END) Vacant FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id {campWhere} GROUP BY c.Id,c.Name ORDER BY c.Name", conn))
+        var campWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.IsDeleted=0 AND c.Id=@CampId" : "WHERE c.Status='Active' AND c.IsDeleted=0";
+        await using (var cmd2 = new SqlCommand($@"SELECT c.Name CampName,COUNT(r.Id) TotalRooms,SUM(CASE WHEN r.Status='Occupied' THEN 1 ELSE 0 END) Occupied,SUM(CASE WHEN r.Status='Vacant' THEN 1 ELSE 0 END) Vacant FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id AND r.IsDeleted=0 {campWhere} GROUP BY c.Id,c.Name ORDER BY c.Name", conn))
         {
             if (campId.HasValue) cmd2.Parameters.AddWithValue("@CampId", campId.Value);
             await using var r2 = await cmd2.ExecuteReaderAsync();
@@ -70,8 +70,8 @@ public class DashboardRepository : IDashboardRepository
             var mNames = new[]{"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
             for (int i=1;i<=12;i++) stats.MonthlyCollections.Add(new DashMonthlyCollection{Month=mNames[i-1],Collected=monthMap.TryGetValue(i,out var v)?v:0});
         }
-        var revWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.Id=@CampId" : "WHERE c.Status='Active'";
-        await using (var cmd4 = new SqlCommand($"SELECT c.Name CampName,ISNULL(SUM(r.MonthlyPrice),0) MonthlyRevenue FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id AND r.Status='Occupied' {revWhere} GROUP BY c.Id,c.Name ORDER BY c.Name", conn))
+        var revWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.IsDeleted=0 AND c.Id=@CampId" : "WHERE c.Status='Active' AND c.IsDeleted=0";
+        await using (var cmd4 = new SqlCommand($"SELECT c.Name CampName,ISNULL(SUM(r.MonthlyPrice),0) MonthlyRevenue FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id AND r.Status='Occupied' AND r.IsDeleted=0 {revWhere} GROUP BY c.Id,c.Name ORDER BY c.Name", conn))
         {
             if (campId.HasValue) cmd4.Parameters.AddWithValue("@CampId", campId.Value);
             await using var r4 = await cmd4.ExecuteReaderAsync();
@@ -94,7 +94,7 @@ public class DashboardRepository : IDashboardRepository
         var ctWhere  = new List<string>();
         if (campId.HasValue)   ctWhere.Add("Id IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
         if (tenantId.HasValue) ctWhere.Add("TenantId=@TenantId");
-        var ctFilter = ctWhere.Count>0 ? "WHERE "+string.Join(" AND ",ctWhere) : "";
+        var ctFilter = ctWhere.Count>0 ? "WHERE IsDeleted=0 AND "+string.Join(" AND ",ctWhere) : "WHERE IsDeleted=0";
         await using (var cmd6 = new SqlCommand($"SELECT SUM(CASE WHEN Status='Active' THEN 1 ELSE 0 END) Active,SUM(CASE WHEN Status='Completed' THEN 1 ELSE 0 END) Completed FROM Contracts {ctFilter}", conn))
         {
             if (campId.HasValue)   cmd6.Parameters.AddWithValue("@CampId",   campId.Value);
@@ -109,7 +109,7 @@ public class DashboardRepository : IDashboardRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT * FROM AppUsers WHERE Username=@Username AND LoginAccess='enabled' AND Status='Active'", conn);
+        await using var cmd = new SqlCommand("SELECT * FROM AppUsers WHERE Username=@Username AND IsDeleted=0 AND LoginAccess='enabled' AND Status='Active'", conn);
         cmd.Parameters.AddWithValue("@Username", username);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return null;

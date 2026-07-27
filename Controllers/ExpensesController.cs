@@ -32,7 +32,7 @@ public class ExpensesController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateExpenseRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Insert, ActivityModule.Expenses, $"Created Expense '{request.Head}' #{r.Data!.Id}", r.Data!.Id.ToString(), "Expense");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
@@ -42,7 +42,7 @@ public class ExpensesController : BaseApiController
     public async Task<IActionResult> Update(int id, [FromBody] UpdateExpenseRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Update, ActivityModule.Expenses, $"Updated Expense #{id}", id.ToString(), "Expense");
         return r.Success ? Ok(r) : NotFound(r);
@@ -51,7 +51,7 @@ public class ExpensesController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var r = await _service.DeleteAsync(id);
+        var r = await _service.DeleteAsync(id, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Delete, ActivityModule.Expenses, $"Deleted Expense #{id}", id.ToString(), "Expense");
         return r.Success ? Ok(r) : NotFound(r);

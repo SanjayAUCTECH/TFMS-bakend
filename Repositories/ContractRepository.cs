@@ -148,6 +148,7 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@ContractPaymentMode",   contract.ContractPaymentMode);
         cmd.Parameters.AddWithValue("@ContractPlotNo",        contract.ContractPlotNo);
         cmd.Parameters.AddWithValue("@ContractMakaniNo",      contract.ContractMakaniNo);
+        cmd.Parameters.AddWithValue("@AddedBy",               (object?)contract.AddedBy ?? DBNull.Value);
         var newContractId = new SqlParameter("@NewContractId", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newContractId);
         await cmd.ExecuteNonQueryAsync();
@@ -170,7 +171,7 @@ public class ContractRepository : IContractRepository
         return true;   // SP handles room status update; rowcount unreliable
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
@@ -180,6 +181,7 @@ public class ContractRepository : IContractRepository
         if ((int)(await chk.ExecuteScalarAsync())! == 0) return false;
         await using var cmd = new SqlCommand("sp_DeleteContract", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync();
         return true;  // SP handles SET NOCOUNT ON; rowcount unreliable
     }
@@ -485,15 +487,15 @@ public class ContractRepository : IContractRepository
                 -- Payment summary
                 ISNULL((SELECT SUM(PaidAmount) FROM ContractInstallments WHERE ContractId=c.ContractId),0) TotalPaid,
                 c.ContractTotal - ISNULL((SELECT SUM(PaidAmount) FROM ContractInstallments WHERE ContractId=c.ContractId),0) TotalDue,
-                ISNULL((SELECT SUM(w.WaiverAmount) FROM Waivers w WHERE w.ContractId=c.ContractId),0) TotalWaived,
+                ISNULL((SELECT SUM(w.WaiverAmount) FROM Waivers w WHERE w.ContractId=c.ContractId AND w.IsDeleted=0),0) TotalWaived,
                 (SELECT COUNT(*) FROM ContractInstallments WHERE ContractId=c.ContractId) TotalInstallments,
                 (SELECT COUNT(*) FROM ContractInstallments WHERE ContractId=c.ContractId AND Status='Paid') PaidInstallments,
                 (SELECT COUNT(*) FROM ContractInstallments WHERE ContractId=c.ContractId AND Status IN('Pending','Partial','Overdue')) PendingInstallments,
-                (SELECT TOP 1 Amount FROM TxnRecords WHERE ContractId=c.ContractId AND TxnType='CR' ORDER BY PaidDate DESC, Id DESC) LastPaymentAmount,
-                (SELECT TOP 1 PaidDate FROM TxnRecords WHERE ContractId=c.ContractId AND TxnType='CR' ORDER BY PaidDate DESC, Id DESC) LastPaymentDate
+                (SELECT TOP 1 Amount FROM TxnRecords WHERE ContractId=c.ContractId AND TxnType='CR' AND IsDeleted=0 ORDER BY PaidDate DESC, Id DESC) LastPaymentAmount,
+                (SELECT TOP 1 PaidDate FROM TxnRecords WHERE ContractId=c.ContractId AND TxnType='CR' AND IsDeleted=0 ORDER BY PaidDate DESC, Id DESC) LastPaymentDate
             FROM Contracts c
-            JOIN Tenants t  ON t.Id  = c.TenantId
-            WHERE c.ContractId = @ContractId", conn))
+            JOIN Tenants t  ON t.Id  = c.TenantId AND t.IsDeleted=0
+            WHERE c.ContractId = @ContractId AND c.IsDeleted=0", conn))
         {
             cmd.Parameters.AddWithValue("@ContractId", contractId);
             await using var r = await cmd.ExecuteReaderAsync();

@@ -24,7 +24,7 @@ public class OtherPersonService : IOtherPersonService
         return o == null ? ApiResponse<OtherPersonResponse>.Fail("Not found.") : ApiResponse<OtherPersonResponse>.Ok(ToResponse(o));
     }
 
-    public async Task<ApiResponse<OtherPersonResponse>> CreateAsync(CreateOtherPersonRequest request)
+    public async Task<ApiResponse<OtherPersonResponse>> CreateAsync(CreateOtherPersonRequest request, int? userId = null)
     {
         var op = new OtherPerson
         {
@@ -38,12 +38,13 @@ public class OtherPersonService : IOtherPersonService
             Pincode     = request.Pincode.Trim(),
             Remarks     = request.Remarks.Trim(),
             Status      = request.Status,
+            AddedBy     = userId,
         };
         var id = await _repo.CreateAsync(op);
         return ApiResponse<OtherPersonResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Other Person created.");
     }
 
-    public async Task<ApiResponse<OtherPersonResponse>> UpdateAsync(int id, UpdateOtherPersonRequest request)
+    public async Task<ApiResponse<OtherPersonResponse>> UpdateAsync(int id, UpdateOtherPersonRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<OtherPersonResponse>.Fail("Not found.");
         await _repo.UpdateAsync(new OtherPerson
@@ -59,14 +60,15 @@ public class OtherPersonService : IOtherPersonService
             Pincode     = request.Pincode.Trim(),
             Remarks     = request.Remarks.Trim(),
             Status      = request.Status,
+            UpdatedBy   = userId,
         });
         return ApiResponse<OtherPersonResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static OtherPersonResponse ToResponse(OtherPerson o) => new()

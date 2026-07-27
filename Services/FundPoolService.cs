@@ -27,23 +27,23 @@ public class FundPoolService : IFundPoolService
         return f == null ? ApiResponse<FundPoolResponse>.Fail("Not found.") : ApiResponse<FundPoolResponse>.Ok(ToResponse(f));
     }
 
-    public async Task<ApiResponse<FundPoolResponse>> CreateAsync(CreateFundPoolRequest request)
+    public async Task<ApiResponse<FundPoolResponse>> CreateAsync(CreateFundPoolRequest request, int? userId = null)
     {
-        var id = await _repo.CreateAsync(new FundPool { Name = request.Name?.Trim() ?? "", Balance = request.Balance, Status = request.Status });
+        var id = await _repo.CreateAsync(new FundPool { Name = request.Name?.Trim() ?? "", Balance = request.Balance, Status = request.Status, AddedBy = userId });
         return ApiResponse<FundPoolResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Fund Pool created.");
     }
 
-    public async Task<ApiResponse<FundPoolResponse>> UpdateAsync(int id, UpdateFundPoolRequest request)
+    public async Task<ApiResponse<FundPoolResponse>> UpdateAsync(int id, UpdateFundPoolRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<FundPoolResponse>.Fail("Not found.");
-        await _repo.UpdateAsync(new FundPool { Id = id, Name = request.Name.Trim(), Balance = request.Balance, Status = request.Status });
+        await _repo.UpdateAsync(new FundPool { Id = id, Name = request.Name.Trim(), Balance = request.Balance, Status = request.Status, UpdatedBy = userId });
         return ApiResponse<FundPoolResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static FundPoolResponse ToResponse(FundPool f) => new()

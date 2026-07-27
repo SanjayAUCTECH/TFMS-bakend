@@ -54,6 +54,7 @@ public class WaiverRepository : IWaiverRepository
         cmd.Parameters.AddWithValue("@WaiverAmount",  w.WaiverAmount);
         cmd.Parameters.AddWithValue("@Remark",        w.Remark);
         cmd.Parameters.AddWithValue("@WaiverDate",    w.WaiverDate);
+        cmd.Parameters.AddWithValue("@AddedBy",       (object?)w.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -79,12 +80,13 @@ public class WaiverRepository : IWaiverRepository
         return (int)newId.Value;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteWaiver", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 

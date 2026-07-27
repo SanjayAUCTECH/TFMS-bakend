@@ -10,5 +10,5 @@ public interface IDesignationRepository
     Task<Designation?> GetByIdAsync(int id);
     Task<int>  CreateAsync(Designation d);
     Task<bool> UpdateAsync(Designation d);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? deletedBy = null);
 }

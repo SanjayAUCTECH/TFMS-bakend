@@ -27,23 +27,23 @@ public class DesignationService : IDesignationService
         return d == null ? ApiResponse<DesignationResponse>.Fail("Not found.") : ApiResponse<DesignationResponse>.Ok(ToResponse(d));
     }
 
-    public async Task<ApiResponse<DesignationResponse>> CreateAsync(CreateDesignationRequest request)
+    public async Task<ApiResponse<DesignationResponse>> CreateAsync(CreateDesignationRequest request, int? userId = null)
     {
-        var id = await _repo.CreateAsync(new Designation { Name = request.Name?.Trim() ?? "", Status = request.Status });
+        var id = await _repo.CreateAsync(new Designation { Name = request.Name?.Trim() ?? "", Status = request.Status, AddedBy = userId });
         return ApiResponse<DesignationResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Designation created.");
     }
 
-    public async Task<ApiResponse<DesignationResponse>> UpdateAsync(int id, UpdateDesignationRequest request)
+    public async Task<ApiResponse<DesignationResponse>> UpdateAsync(int id, UpdateDesignationRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<DesignationResponse>.Fail("Not found.");
-        await _repo.UpdateAsync(new Designation { Id = id, Name = request.Name.Trim(), Status = request.Status });
+        await _repo.UpdateAsync(new Designation { Id = id, Name = request.Name.Trim(), Status = request.Status, UpdatedBy = userId });
         return ApiResponse<DesignationResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static DesignationResponse ToResponse(Designation d) => new()

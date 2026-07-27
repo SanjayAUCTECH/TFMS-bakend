@@ -38,6 +38,17 @@ public static class ActivityModule
     public const string Users            = "Users";
     public const string Reports          = "Reports";
     public const string Waivers          = "Waivers";
+    public const string Roles            = "Roles";
+    public const string Floors           = "Floors";
+    public const string AccountsHeads    = "AccountsHeads";
+    public const string OtherPersons     = "OtherPersons";
+    public const string PaymentModes     = "PaymentModes";
+    public const string Designations     = "Designations";
+    public const string Staff            = "Staff";
+    public const string Owners           = "Owners";
+    public const string OwnerContracts   = "OwnerContracts";
+    public const string CompanyAssets    = "CompanyAssets";
+    public const string TxnRecords       = "TxnRecords";
 }
 
 // ── IActivityLogService ──────────────────────────────────────────────────────

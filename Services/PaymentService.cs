@@ -82,6 +82,7 @@ public class PaymentService : IPaymentService
             FundPoolId      = request.FundPoolId,
             FundPoolName    = fundPoolName,
             IssuedBy        = request.IssuedBy,
+            AddedBy         = request.AddedBy,
         };
 
         bool result;

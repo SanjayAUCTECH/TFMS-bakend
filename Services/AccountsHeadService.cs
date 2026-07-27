@@ -28,25 +28,25 @@ public class AccountsHeadService : IAccountsHeadService
         return a == null ? ApiResponse<AccountsHeadResponse>.Fail("Not found.") : ApiResponse<AccountsHeadResponse>.Ok(ToResponse(a));
     }
 
-    public async Task<ApiResponse<AccountsHeadResponse>> CreateAsync(CreateAccountsHeadRequest request)
+    public async Task<ApiResponse<AccountsHeadResponse>> CreateAsync(CreateAccountsHeadRequest request, int? userId = null)
     {
         if (!ValidTypes.Contains(request.Type)) return ApiResponse<AccountsHeadResponse>.Fail("Invalid account type.");
-        var id = await _repo.CreateAsync(new AccountsHead { Name = request.Name?.Trim() ?? "", Type = request.Type, Status = request.Status });
+        var id = await _repo.CreateAsync(new AccountsHead { Name = request.Name?.Trim() ?? "", Type = request.Type, Status = request.Status, AddedBy = userId });
         return ApiResponse<AccountsHeadResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Accounts Head created.");
     }
 
-    public async Task<ApiResponse<AccountsHeadResponse>> UpdateAsync(int id, UpdateAccountsHeadRequest request)
+    public async Task<ApiResponse<AccountsHeadResponse>> UpdateAsync(int id, UpdateAccountsHeadRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<AccountsHeadResponse>.Fail("Not found.");
         if (!ValidTypes.Contains(request.Type)) return ApiResponse<AccountsHeadResponse>.Fail("Invalid account type.");
-        await _repo.UpdateAsync(new AccountsHead { Id = id, Name = request.Name.Trim(), Type = request.Type, Status = request.Status });
+        await _repo.UpdateAsync(new AccountsHead { Id = id, Name = request.Name.Trim(), Type = request.Type, Status = request.Status, UpdatedBy = userId });
         return ApiResponse<AccountsHeadResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static AccountsHeadResponse ToResponse(AccountsHead a) => new()

@@ -93,18 +93,20 @@ public class OwnerContractRepository : IOwnerContractRepository
         cmd.Parameters.AddWithValue("@StartDate",        contract.StartDate.ToString("yyyy-MM-dd"));
         cmd.Parameters.AddWithValue("@InstallmentsJson", installmentsJson);
         cmd.Parameters.AddWithValue("@MonthlyInstallmentsJson", monthlyInstallmentsJson);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)contract.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
         return (int)newId.Value;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteOwnerContract", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync();
         return true;
     }

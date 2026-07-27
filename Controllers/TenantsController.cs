@@ -32,7 +32,7 @@ public class TenantsController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateTenantRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Insert, ActivityModule.Tenants, $"Created Tenant '{request.Name}' #{r.Data!.Id}", r.Data!.Id.ToString(), "Tenant");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
@@ -42,7 +42,7 @@ public class TenantsController : BaseApiController
     public async Task<IActionResult> Update(int id, [FromBody] UpdateTenantRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Update, ActivityModule.Tenants, $"Updated Tenant #{id}", id.ToString(), "Tenant");
         return r.Success ? Ok(r) : NotFound(r);
@@ -51,7 +51,7 @@ public class TenantsController : BaseApiController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var r = await _service.DeleteAsync(id);
+        var r = await _service.DeleteAsync(id, CurrentUserId);
         if (r.Success)
             await Log(ActivityType.Delete, ActivityModule.Tenants, $"Deleted Tenant #{id}", id.ToString(), "Tenant");
         return r.Success ? Ok(r) : NotFound(r);

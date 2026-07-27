@@ -8,5 +8,5 @@ public interface IPaymentModeRepository
     Task<PaymentMode?> GetByIdAsync(int id);
     Task<int>  CreateAsync(PaymentMode pm);
     Task<bool> UpdateAsync(PaymentMode pm);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? deletedBy = null);
 }

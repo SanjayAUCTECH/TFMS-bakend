@@ -12,12 +12,14 @@ public class ContractService : IContractService
     private readonly ICampRepository      _campRepo;
     private readonly IRoomRepository      _roomRepo;
     private readonly ITxnRecordRepository _txnRepo;
+    private readonly ILogger<ContractService> _logger;
 
     public ContractService(IContractRepository repo, ITenantRepository tenantRepo,
-        ICampRepository campRepo, IRoomRepository roomRepo, ITxnRecordRepository txnRepo)
+        ICampRepository campRepo, IRoomRepository roomRepo, ITxnRecordRepository txnRepo,
+        ILogger<ContractService> logger)
     {
         _repo = repo; _tenantRepo = tenantRepo; _campRepo = campRepo;
-        _roomRepo = roomRepo; _txnRepo = txnRepo;
+        _roomRepo = roomRepo; _txnRepo = txnRepo; _logger = logger;
     }
 
     public async Task<ApiResponse<IEnumerable<ContractResponse>>> GetAllAsync(ContractListRequest request)
@@ -40,7 +42,7 @@ public class ContractService : IContractService
         return c == null ? ApiResponse<ContractResponse>.Fail("Contract not found.") : ApiResponse<ContractResponse>.Ok(ToResponse(c));
     }
 
-    public async Task<ApiResponse<ContractResponse>> CreateAsync(CreateContractRequest request)
+    public async Task<ApiResponse<ContractResponse>> CreateAsync(CreateContractRequest request, int? userId = null)
     {
         if (request.TenantId.HasValue && request.TenantId > 0)
         {
@@ -83,6 +85,7 @@ public class ContractService : IContractService
             ContractPaymentMode    = request.ContractPaymentMode    ?? "",
             ContractPlotNo         = request.ContractPlotNo         ?? "",
             ContractMakaniNo       = request.ContractMakaniNo       ?? "",
+            AddedBy                = userId,
         }, request.Rooms);
 
         var created = await _repo.GetByContractIdAsync(contractId);
@@ -126,12 +129,12 @@ public class ContractService : IContractService
         return result ? ApiResponse<bool>.Ok(true, "Contract status updated.") : ApiResponse<bool>.Fail("Contract not found.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         var contract = await _repo.GetByIdAsync(id);
         if (contract == null) return ApiResponse<bool>.Fail("Contract not found.");
         if (contract.Status == "Active") return ApiResponse<bool>.Fail("Cannot delete an active contract.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     public async Task<ApiResponse<ContractResponse>> UpdateContractAsync(UpdateContractRequest request)

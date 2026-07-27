@@ -64,6 +64,7 @@ public class ExpenseRepository : IExpenseRepository
         cmd.Parameters.AddWithValue("@RecipientId",   (object?)expense.RecipientId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RecipientName", expense.RecipientName);
         cmd.Parameters.AddWithValue("@Purpose",       expense.Purpose);
+        cmd.Parameters.AddWithValue("@AddedBy",       (object?)expense.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -87,15 +88,17 @@ public class ExpenseRepository : IExpenseRepository
         cmd.Parameters.AddWithValue("@RecipientId",   (object?)expense.RecipientId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RecipientName", expense.RecipientName);
         cmd.Parameters.AddWithValue("@Purpose",       expense.Purpose);
+        cmd.Parameters.AddWithValue("@UpdatedBy",     (object?)expense.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteExpense", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync();
         return true;   // SP handles its own transaction; rowcount unreliable with COMMIT
     }
@@ -104,7 +107,7 @@ public class ExpenseRepository : IExpenseRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Expenses WHERE Id=@Id", conn);
+        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Expenses WHERE Id=@Id AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Id", id);
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }
@@ -121,7 +124,7 @@ public class ExpenseRepository : IExpenseRepository
                 ISNULL(SUM(CASE WHEN RecipientRole='Partner' THEN Amount ELSE 0 END),0)     AS partnerPayments,
                 ISNULL(SUM(CASE WHEN Nature='Camp'           THEN Amount ELSE 0 END),0)     AS campExpenses,
                 ISNULL(SUM(CASE WHEN Nature='HO'            THEN Amount ELSE 0 END),0)      AS hoExpenses
-            FROM Expenses", conn);
+            FROM Expenses WHERE IsDeleted=0", conn);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return new { totalEntries=0, totalAmount=0m, ownerPayments=0m, partnerPayments=0m, campExpenses=0m, hoExpenses=0m };
         return new {

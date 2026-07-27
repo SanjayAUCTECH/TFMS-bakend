@@ -37,7 +37,7 @@ public class RoomRepository : IRoomRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT r.Id,r.RoomNo,r.CampId,c.Name CampName,r.FloorId,f.Name FloorName,r.Occupied,r.MonthlyPrice,r.Status,r.OtherDetails,r.CreatedAt,r.UpdatedAt FROM Rooms r JOIN Camps c ON c.Id=r.CampId JOIN Floors f ON f.Id=r.FloorId WHERE r.CampId=@CampId AND r.Occupied=0 ORDER BY r.RoomNo", conn);
+        await using var cmd = new SqlCommand("SELECT r.Id,r.RoomNo,r.CampId,c.Name CampName,r.FloorId,f.Name FloorName,r.Occupied,r.MonthlyPrice,r.Status,r.OtherDetails,r.CreatedAt,r.UpdatedAt FROM Rooms r JOIN Camps c ON c.Id=r.CampId JOIN Floors f ON f.Id=r.FloorId WHERE r.CampId=@CampId AND r.Occupied=0 AND r.IsDeleted=0 ORDER BY r.RoomNo", conn);
         cmd.Parameters.AddWithValue("@CampId", campId);
         var list = new List<Room>();
         await using var r = await cmd.ExecuteReaderAsync();
@@ -66,6 +66,7 @@ public class RoomRepository : IRoomRepository
         cmd.Parameters.AddWithValue("@MonthlyPrice", room.MonthlyPrice);
         cmd.Parameters.AddWithValue("@Status",       room.Status);
         cmd.Parameters.AddWithValue("@OtherDetails", room.OtherDetails);
+        cmd.Parameters.AddWithValue("@AddedBy",      (object?)room.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -84,15 +85,17 @@ public class RoomRepository : IRoomRepository
         cmd.Parameters.AddWithValue("@MonthlyPrice", room.MonthlyPrice);
         cmd.Parameters.AddWithValue("@Status",       room.Status);
         cmd.Parameters.AddWithValue("@OtherDetails", room.OtherDetails);
+        cmd.Parameters.AddWithValue("@UpdatedBy",    (object?)room.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteRoom", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -107,7 +110,7 @@ public class RoomRepository : IRoomRepository
                 SUM(CASE WHEN Status='Vacant'      THEN 1 ELSE 0 END)        AS vacant,
                 SUM(CASE WHEN Status='Reserved'    THEN 1 ELSE 0 END)        AS reserved,
                 SUM(CASE WHEN Status='Maintenance' THEN 1 ELSE 0 END)        AS maintenance
-            FROM Rooms", conn);
+            FROM Rooms WHERE IsDeleted=0", conn);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return new { totalRooms=0, occupied=0, vacant=0, reserved=0, maintenance=0 };
         var total = r.IsDBNull(0) ? 0 : r.GetInt32(0);

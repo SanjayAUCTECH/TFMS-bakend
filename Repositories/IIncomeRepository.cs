@@ -9,7 +9,7 @@ public interface IIncomeRepository
     Task<Income?> GetByIdAsync(int id);
     Task<int>     CreateAsync(Income income);
     Task<bool>    UpdateAsync(Income income);
-    Task<bool>    DeleteAsync(int id);
+    Task<bool>    DeleteAsync(int id, int? deletedBy = null);
     Task<bool>    ExistsAsync(int id);
     Task<object>  GetStatsAsync();
 }

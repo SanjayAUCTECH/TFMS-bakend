@@ -7,6 +7,6 @@ public interface IOwnerContractRepository
     Task<IEnumerable<OwnerContract>>     GetByCampAsync(int? campId);
     Task<OwnerContract?>                 GetByIdAsync(int id);
     Task<int>                            CreateAsync(OwnerContract contract, string installmentsJson, string monthlyInstallmentsJson);
-    Task<bool>                           DeleteAsync(int id);
+    Task<bool>                           DeleteAsync(int id, int? deletedBy = null);
     Task<IEnumerable<OwnerTransaction>>  GetTransactionsByContractIdAsync(int ownerContractId);
 }

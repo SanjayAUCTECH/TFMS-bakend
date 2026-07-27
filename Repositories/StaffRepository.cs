@@ -44,7 +44,7 @@ public class StaffRepository : IStaffRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT * FROM Staff WHERE Username=@Username", conn);
+        await using var cmd = new SqlCommand("SELECT * FROM Staff WHERE Username=@Username AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Username", username);
         await using var r = await cmd.ExecuteReaderAsync();
         return await r.ReadAsync() ? MapStaff(r) : null;
@@ -56,6 +56,7 @@ public class StaffRepository : IStaffRepository
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreateStaff", conn) { CommandType = CommandType.StoredProcedure };
         AddCommonParams(cmd, staff);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)staff.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -69,15 +70,17 @@ public class StaffRepository : IStaffRepository
         await using var cmd = new SqlCommand("sp_UpdateStaff", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", staff.Id);
         AddCommonParams(cmd, staff);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)staff.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteStaff", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -91,7 +94,7 @@ public class StaffRepository : IStaffRepository
                 SUM(CASE WHEN Status='Active'        THEN 1 ELSE 0 END)          AS active,
                 SUM(CASE WHEN Status='Inactive'      THEN 1 ELSE 0 END)          AS inactive,
                 SUM(CASE WHEN LoginAccess='enabled'  THEN 1 ELSE 0 END)          AS withAccess
-            FROM Staff", conn);
+            FROM Staff WHERE IsDeleted=0", conn);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return new { total=0, active=0, inactive=0, withAccess=0 };
         return new {
@@ -106,7 +109,7 @@ public class StaffRepository : IStaffRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Staff WHERE Id=@Id", conn);
+        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM Staff WHERE Id=@Id AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Id", id);
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }
@@ -116,8 +119,8 @@ public class StaffRepository : IStaffRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         var sql = excludeId.HasValue
-            ? "SELECT COUNT(1) FROM Staff WHERE Username=@Username AND Id<>@ExcludeId"
-            : "SELECT COUNT(1) FROM Staff WHERE Username=@Username";
+            ? "SELECT COUNT(1) FROM Staff WHERE Username=@Username AND Id<>@ExcludeId AND IsDeleted=0"
+            : "SELECT COUNT(1) FROM Staff WHERE Username=@Username AND IsDeleted=0";
         await using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@Username", username);
         if (excludeId.HasValue) cmd.Parameters.AddWithValue("@ExcludeId", excludeId.Value);

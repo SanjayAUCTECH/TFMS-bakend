@@ -28,7 +28,7 @@ public class CampService : ICampService
         return c == null ? ApiResponse<CampResponse>.Fail("Not found.") : ApiResponse<CampResponse>.Ok(ToResponse(c));
     }
 
-    public async Task<ApiResponse<CampResponse>> CreateAsync(CreateCampRequest request)
+    public async Task<ApiResponse<CampResponse>> CreateAsync(CreateCampRequest request, int? userId = null)
     {
         var camp = new Camp
         {
@@ -47,12 +47,13 @@ public class CampService : ICampService
             CampMakaniNo       = request.CampMakaniNo?.Trim()      ?? "",
             Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
             Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
+            AddedBy  = userId,
         };
         var id = await _repo.CreateAsync(camp);
         return ApiResponse<CampResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Camp created.");
     }
 
-    public async Task<ApiResponse<CampResponse>> UpdateAsync(int id, UpdateCampRequest request)
+    public async Task<ApiResponse<CampResponse>> UpdateAsync(int id, UpdateCampRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<CampResponse>.Fail("Not found.");
         var camp = new Camp
@@ -73,15 +74,16 @@ public class CampService : ICampService
             CampMakaniNo       = request.CampMakaniNo?.Trim()      ?? "",
             Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
             Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
+            UpdatedBy = userId,
         };
         await _repo.UpdateAsync(camp);
         return ApiResponse<CampResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Camp updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static CampResponse ToResponse(Camp c) => new()

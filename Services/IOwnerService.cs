@@ -7,7 +7,7 @@ public interface IOwnerService
 {
     Task<ApiResponse<IEnumerable<OwnerResponse>>> GetAllAsync(OwnerListRequest request);
     Task<ApiResponse<OwnerResponse>>              GetByIdAsync(int id);
-    Task<ApiResponse<OwnerResponse>>              CreateAsync(CreateOwnerRequest request);
-    Task<ApiResponse<OwnerResponse>>              UpdateAsync(int id, UpdateOwnerRequest request);
-    Task<ApiResponse<bool>>                       DeleteAsync(int id);
+    Task<ApiResponse<OwnerResponse>>              CreateAsync(CreateOwnerRequest request, int? userId = null);
+    Task<ApiResponse<OwnerResponse>>              UpdateAsync(int id, UpdateOwnerRequest request, int? userId = null);
+    Task<ApiResponse<bool>>                       DeleteAsync(int id, int? userId = null);
 }

@@ -126,7 +126,7 @@ public class AuthService : IAuthService
 
     private async Task<string> GetOwnerCodeAsync(IDbConnection conn, int ownerId)
     {
-        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM Owners WHERE Id = @Id", (SqlConnection)conn);
+        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM Owners WHERE Id = @Id AND IsDeleted=0", (SqlConnection)conn);
         cmd.Parameters.AddWithValue("@Id", ownerId);
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString() ?? string.Empty;
@@ -134,7 +134,7 @@ public class AuthService : IAuthService
 
     private async Task<string> GetPartnerCodeAsync(IDbConnection conn, int partnerId)
     {
-        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM Partners WHERE Id = @Id", (SqlConnection)conn);
+        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM Partners WHERE Id = @Id AND IsDeleted=0", (SqlConnection)conn);
         cmd.Parameters.AddWithValue("@Id", partnerId);
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString() ?? string.Empty;
@@ -142,7 +142,7 @@ public class AuthService : IAuthService
 
     private async Task<string> GetOtherPersonCodeAsync(IDbConnection conn, int otherPersonId)
     {
-        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM OtherPersons WHERE Id = @Id", (SqlConnection)conn);
+        await using var cmd = new SqlCommand("SELECT ISNULL(Code, '') FROM OtherPersons WHERE Id = @Id AND IsDeleted=0", (SqlConnection)conn);
         cmd.Parameters.AddWithValue("@Id", otherPersonId);
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString() ?? string.Empty;

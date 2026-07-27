@@ -7,7 +7,7 @@ public interface IStaffService
 {
     Task<ApiResponse<IEnumerable<StaffResponse>>> GetAllAsync(StaffListRequest request);
     Task<ApiResponse<StaffResponse>>              GetByIdAsync(int id);
-    Task<ApiResponse<StaffResponse>>              CreateAsync(CreateStaffRequest request);
-    Task<ApiResponse<StaffResponse>>              UpdateAsync(int id, UpdateStaffRequest request);
-    Task<ApiResponse<bool>>                       DeleteAsync(int id);
+    Task<ApiResponse<StaffResponse>>              CreateAsync(CreateStaffRequest request, int? userId = null);
+    Task<ApiResponse<StaffResponse>>              UpdateAsync(int id, UpdateStaffRequest request, int? userId = null);
+    Task<ApiResponse<bool>>                       DeleteAsync(int id, int? userId = null);
 }

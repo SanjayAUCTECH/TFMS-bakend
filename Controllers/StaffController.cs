@@ -8,15 +8,16 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class StaffController : ControllerBase
+public class StaffController : BaseApiController
 {
     private readonly IStaffService      _service;
     private readonly ICloudinaryService _cloudinary;
 
-    public StaffController(IStaffService service, ICloudinaryService cloudinary)
+    public StaffController(IStaffService service, ICloudinaryService cloudinary, IActivityLogService log)
     {
         _service    = service;
         _cloudinary = cloudinary;
+        _activityLog = log;
     }
 
     /// <summary>GET api/staff?Status=Active&amp;SearchText=john</summary>
@@ -41,7 +42,9 @@ public class StaffController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         await UploadDocuments(request);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Staff, $"Created Staff #{r.Data!.Id}", r.Data!.Id.ToString(), "Staff");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -51,7 +54,9 @@ public class StaffController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         await UploadDocuments(request);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Staff, $"Updated Staff #{id}", id.ToString(), "Staff");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
@@ -59,7 +64,9 @@ public class StaffController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var r = await _service.DeleteAsync(id);
+        var r = await _service.DeleteAsync(id, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Staff, $"Deleted Staff #{id}", id.ToString(), "Staff");
         return r.Success ? Ok(r) : NotFound(r);
     }
 

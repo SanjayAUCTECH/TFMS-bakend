@@ -34,7 +34,7 @@ public class DesignationRepository : IDesignationRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT Id,Code,Name,Status,CreatedAt,UpdatedAt FROM Designations WHERE Status='Active' ORDER BY Name", conn);
+        await using var cmd = new SqlCommand("SELECT Id,Code,Name,Status,CreatedAt,UpdatedAt FROM Designations WHERE Status='Active' AND IsDeleted=0 ORDER BY Name", conn);
         var list = new List<Designation>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(Map(r));
@@ -58,6 +58,7 @@ public class DesignationRepository : IDesignationRepository
         await using var cmd = new SqlCommand("sp_CreateDesignation", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Name",   d.Name);
         cmd.Parameters.AddWithValue("@Status", d.Status);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)d.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -69,18 +70,20 @@ public class DesignationRepository : IDesignationRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateDesignation", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",     d.Id);
-        cmd.Parameters.AddWithValue("@Name",   d.Name);
-        cmd.Parameters.AddWithValue("@Status", d.Status);
+        cmd.Parameters.AddWithValue("@Id",       d.Id);
+        cmd.Parameters.AddWithValue("@Name",     d.Name);
+        cmd.Parameters.AddWithValue("@Status",   d.Status);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)d.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteDesignation", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 

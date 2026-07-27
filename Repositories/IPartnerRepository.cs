@@ -10,7 +10,7 @@ public interface IPartnerRepository
     Task<Partner?>                                       GetByIdAsync(int id);
     Task<int>                                            CreateAsync(Partner partner);
     Task<bool>                                           UpdateAsync(Partner partner);
-    Task<bool>                                           DeleteAsync(int id);
+    Task<bool>                                           DeleteAsync(int id, int? deletedBy = null);
     Task<bool>   ExistsAsync(int id);
     Task<object> GetStatsAsync();
 }

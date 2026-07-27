@@ -38,8 +38,9 @@ public class PaymentModeRepository : IPaymentModeRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_CreatePaymentMode", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Name",   pm.Name);
-        cmd.Parameters.AddWithValue("@Status", pm.Status);
+        cmd.Parameters.AddWithValue("@Name",    pm.Name);
+        cmd.Parameters.AddWithValue("@Status",  pm.Status);
+        cmd.Parameters.AddWithValue("@AddedBy", (object?)pm.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -51,18 +52,20 @@ public class PaymentModeRepository : IPaymentModeRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdatePaymentMode", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",     pm.Id);
-        cmd.Parameters.AddWithValue("@Name",   pm.Name);
-        cmd.Parameters.AddWithValue("@Status", pm.Status);
+        cmd.Parameters.AddWithValue("@Id",       pm.Id);
+        cmd.Parameters.AddWithValue("@Name",     pm.Name);
+        cmd.Parameters.AddWithValue("@Status",   pm.Status);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)pm.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeletePaymentMode", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 }

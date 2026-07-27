@@ -10,15 +10,16 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class CompanyAssetsController : ControllerBase
+public class CompanyAssetsController : BaseApiController
 {
     private readonly ICompanyAssetRepository _repo;
     private readonly ICloudinaryService      _cloudinary;
 
-    public CompanyAssetsController(ICompanyAssetRepository repo, ICloudinaryService cloudinary)
+    public CompanyAssetsController(ICompanyAssetRepository repo, ICloudinaryService cloudinary, IActivityLogService log)
     {
-        _repo       = repo;
-        _cloudinary = cloudinary;
+        _repo        = repo;
+        _cloudinary  = cloudinary;
+        _activityLog = log;
     }
 
     /// <summary>GET api/companyassets?PageNumber=1&amp;PageSize=20&amp;SearchText=&amp;Status=Active</summary>
@@ -50,11 +51,11 @@ public class CompanyAssetsController : ControllerBase
         if (req.Document != null)
         {
             var uploadedUrl = await _cloudinary.UploadFileAsync(req.Document, "company-assets");
-            // Append uploaded URL to existing URLs (comma-separated)
             docUrl = string.IsNullOrWhiteSpace(docUrl) ? uploadedUrl : $"{docUrl},{uploadedUrl}";
         }
-        var newId = await _repo.CreateAsync(req, docUrl);
+        var newId = await _repo.CreateAsync(req, docUrl, CurrentUserId);
         var created = await _repo.GetByIdAsync(newId);
+        await Log(ActivityType.Insert, ActivityModule.CompanyAssets, $"Created CompanyAsset #{newId}", newId.ToString(), "CompanyAsset");
         return CreatedAtAction(nameof(GetById), new { id = newId },
             ApiResponse<CompanyAssetResponse>.Ok(created!, "Asset created successfully."));
     }
@@ -70,11 +71,11 @@ public class CompanyAssetsController : ControllerBase
         if (req.Document != null)
         {
             var uploadedUrl = await _cloudinary.UploadFileAsync(req.Document, "company-assets");
-            // Append uploaded URL to existing URLs (comma-separated)
             docUrl = string.IsNullOrWhiteSpace(docUrl) ? uploadedUrl : $"{docUrl},{uploadedUrl}";
         }
         await _repo.UpdateAsync(id, req, docUrl);
         var updated = await _repo.GetByIdAsync(id);
+        await Log(ActivityType.Update, ActivityModule.CompanyAssets, $"Updated CompanyAsset #{id}", id.ToString(), "CompanyAsset");
         return Ok(ApiResponse<CompanyAssetResponse>.Ok(updated!, "Asset updated successfully."));
     }
 
@@ -84,7 +85,8 @@ public class CompanyAssetsController : ControllerBase
     {
         if (!await _repo.ExistsAsync(id))
             return NotFound(ApiResponse<object>.Fail("Asset not found."));
-        await _repo.DeleteAsync(id);
+        await _repo.DeleteAsync(id, CurrentUserId);
+        await Log(ActivityType.Delete, ActivityModule.CompanyAssets, $"Deleted CompanyAsset #{id}", id.ToString(), "CompanyAsset");
         return Ok(ApiResponse<bool>.Ok(true, "Asset deleted."));
     }
 }

@@ -10,5 +10,5 @@ public interface IFloorRepository
     Task<Floor?>  GetByIdAsync(int id);
     Task<int>     CreateAsync(Floor floor);
     Task<bool>    UpdateAsync(Floor floor);
-    Task<bool>    DeleteAsync(int id);
+    Task<bool>    DeleteAsync(int id, int? deletedBy = null);
 }

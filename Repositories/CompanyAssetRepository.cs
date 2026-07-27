@@ -37,7 +37,7 @@ public class CompanyAssetRepository : ICompanyAssetRepository
         return await r.ReadAsync() ? Map(r) : null;
     }
 
-    public async Task<int> CreateAsync(CreateCompanyAssetRequest req, string? documentUrl)
+    public async Task<int> CreateAsync(CreateCompanyAssetRequest req, string? documentUrl, int? addedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
@@ -50,6 +50,7 @@ public class CompanyAssetRepository : ICompanyAssetRepository
         cmd.Parameters.AddWithValue("@Status",       req.Status ?? "Active");
         cmd.Parameters.AddWithValue("@DocumentUrl",  (object?)documentUrl ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Remarks",      req.Remarks?.Trim() ?? "");
+        cmd.Parameters.AddWithValue("@AddedBy",      (object?)addedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -73,12 +74,13 @@ public class CompanyAssetRepository : ICompanyAssetRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteCompanyAsset", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -86,7 +88,7 @@ public class CompanyAssetRepository : ICompanyAssetRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM CompanyAssets WHERE Id=@Id", conn);
+        await using var cmd = new SqlCommand("SELECT COUNT(1) FROM CompanyAssets WHERE Id=@Id AND IsDeleted=0", conn);
         cmd.Parameters.AddWithValue("@Id", id);
         return (int)(await cmd.ExecuteScalarAsync())! > 0;
     }

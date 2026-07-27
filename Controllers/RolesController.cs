@@ -8,10 +8,11 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class RolesController : ControllerBase
+public class RolesController : BaseApiController
 {
     private readonly IRoleService _service;
-    public RolesController(IRoleService service) => _service = service;
+    public RolesController(IRoleService service, IActivityLogService log)
+    { _service = service; _activityLog = log; }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] RoleListRequest request)
@@ -24,13 +25,19 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> GetAllActive() => Ok(await _service.GetAllActiveAsync());
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id) { var r = await _service.GetByIdAsync(id); return r.Success ? Ok(r) : NotFound(r); }
+    public async Task<IActionResult> GetById(int id)
+    {
+        var r = await _service.GetByIdAsync(id);
+        return r.Success ? Ok(r) : NotFound(r);
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateRoleRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.CreateAsync(request);
+        var r = await _service.CreateAsync(request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Roles, $"Created Role #{r.Data!.Id}", r.Data!.Id.ToString(), "Role");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -38,10 +45,18 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateRoleRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var r = await _service.UpdateAsync(id, request);
+        var r = await _service.UpdateAsync(id, request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Roles, $"Updated Role #{id}", id.ToString(), "Role");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id) { var r = await _service.DeleteAsync(id); return r.Success ? Ok(r) : NotFound(r); }
+    public async Task<IActionResult> Delete(int id)
+    {
+        var r = await _service.DeleteAsync(id, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Roles, $"Deleted Role #{id}", id.ToString(), "Role");
+        return r.Success ? Ok(r) : NotFound(r);
+    }
 }

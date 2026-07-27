@@ -36,7 +36,7 @@ public class UserService : IUserService
             : ApiResponse<UserResponse>.Ok(ToResponse(user));
     }
 
-    public async Task<ApiResponse<UserResponse>> CreateAsync(CreateUserRequest request)
+    public async Task<ApiResponse<UserResponse>> CreateAsync(CreateUserRequest request, int? userId = null)
     {
         if (await _repo.UsernameExistsAsync(request.Username?.Trim() ?? ""))
             return ApiResponse<UserResponse>.Fail("Username already exists.");
@@ -55,6 +55,7 @@ public class UserService : IUserService
             LoginAccess  = request.LoginAccess,
             Status       = request.Status,
             MenuAccess   = request.MenuAccess,
+            AddedBy      = userId,
         };
 
         var id = await _repo.CreateAsync(user);
@@ -62,7 +63,7 @@ public class UserService : IUserService
         return ApiResponse<UserResponse>.Ok(ToResponse(created!), "User created successfully.");
     }
 
-    public async Task<ApiResponse<UserResponse>> UpdateAsync(int id, UpdateUserRequest request)
+    public async Task<ApiResponse<UserResponse>> UpdateAsync(int id, UpdateUserRequest request, int? userId = null)
     {
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return ApiResponse<UserResponse>.Fail("User not found.");
@@ -77,6 +78,7 @@ public class UserService : IUserService
         existing.LoginAccess = request.LoginAccess;
         existing.Status      = request.Status;
         existing.MenuAccess  = request.MenuAccess;
+        existing.UpdatedBy   = userId;
 
         await _repo.UpdateAsync(existing);
         var updated = await _repo.GetByIdAsync(id);
@@ -116,10 +118,10 @@ public class UserService : IUserService
         return ApiResponse<bool>.Ok(true, $"Login access {access} successfully.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<bool>.Fail("User not found.");
-        return await _repo.DeleteAsync(id)
+        return await _repo.DeleteAsync(id, userId)
             ? ApiResponse<bool>.Ok(true, "User deleted.")
             : ApiResponse<bool>.Fail("Delete failed.");
     }

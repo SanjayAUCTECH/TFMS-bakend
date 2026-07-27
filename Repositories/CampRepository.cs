@@ -84,7 +84,7 @@ public class CampRepository : ICampRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT Id,Code,Name,Rooms,Floors,Status,CreatedAt,UpdatedAt FROM Camps WHERE Status='Active' ORDER BY Name", conn);
+        await using var cmd = new SqlCommand("SELECT Id,Code,Name,Rooms,Floors,Status,CreatedAt,UpdatedAt FROM Camps WHERE Status='Active' AND IsDeleted=0 ORDER BY Name", conn);
         var list = new List<Camp>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(MapCamp(r));
@@ -165,6 +165,7 @@ public class CampRepository : ICampRepository
         var ownersJson   = System.Text.Json.JsonSerializer.Serialize(camp.Owners.Select(o => new { o.OwnerId, o.ShareType, o.ShareValue }));
         cmd.Parameters.AddWithValue("@PartnersJson", partnersJson);
         cmd.Parameters.AddWithValue("@OwnersJson",   ownersJson);
+        cmd.Parameters.AddWithValue("@AddedBy",      (object?)camp.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -194,6 +195,7 @@ public class CampRepository : ICampRepository
         var ownersJson   = System.Text.Json.JsonSerializer.Serialize(camp.Owners.Select(o => new { o.OwnerId, o.ShareType, o.ShareValue }));
         cmd.Parameters.AddWithValue("@PartnersJson", partnersJson);
         cmd.Parameters.AddWithValue("@OwnersJson",   ownersJson);
+        cmd.Parameters.AddWithValue("@UpdatedBy",    (object?)camp.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -205,9 +207,9 @@ public class CampRepository : ICampRepository
             SELECT
                 COUNT(*)                                            AS total,
                 SUM(CASE WHEN Status='Active'   THEN 1 ELSE 0 END) AS active,
-                (SELECT COUNT(*) FROM Rooms)                        AS totalRooms,
-                CASE WHEN COUNT(*)>0 THEN (SELECT COUNT(*) FROM Rooms)/COUNT(*) ELSE 0 END AS avgRooms
-            FROM Camps", conn);
+                (SELECT COUNT(*) FROM Rooms WHERE IsDeleted=0)                        AS totalRooms,
+                CASE WHEN COUNT(*)>0 THEN (SELECT COUNT(*) FROM Rooms WHERE IsDeleted=0)/COUNT(*) ELSE 0 END AS avgRooms
+            FROM Camps WHERE IsDeleted=0", conn);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return new { total=0, active=0, totalRooms=0, avgRooms=0 };
         return new {
@@ -218,12 +220,13 @@ public class CampRepository : ICampRepository
         };
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteCamp", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 

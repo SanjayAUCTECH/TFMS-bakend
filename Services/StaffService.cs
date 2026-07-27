@@ -27,7 +27,7 @@ public class StaffService : IStaffService
             : ApiResponse<StaffResponse>.Ok(ToResponse(item));
     }
 
-    public async Task<ApiResponse<StaffResponse>> CreateAsync(CreateStaffRequest request)
+    public async Task<ApiResponse<StaffResponse>> CreateAsync(CreateStaffRequest request, int? userId = null)
     {
         var uname = request.Username?.Trim().ToLower() ?? "";
         if (!string.IsNullOrWhiteSpace(uname) && await _repo.UsernameExistsAsync(uname))
@@ -70,6 +70,7 @@ public class StaffService : IStaffService
             LabourCardDocument = request.LabourCardDocumentUrl ?? "",
             IloeDocument       = request.IloeDocumentUrl       ?? "",
             InsuranceDocument  = request.InsuranceDocumentUrl  ?? "",
+            AddedBy            = userId,
         };
 
         var id = await _repo.CreateAsync(staff);
@@ -77,7 +78,7 @@ public class StaffService : IStaffService
         return ApiResponse<StaffResponse>.Ok(ToResponse(created!), "Staff member created successfully.");
     }
 
-    public async Task<ApiResponse<StaffResponse>> UpdateAsync(int id, UpdateStaffRequest request)
+    public async Task<ApiResponse<StaffResponse>> UpdateAsync(int id, UpdateStaffRequest request, int? userId = null)
     {
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return ApiResponse<StaffResponse>.Fail("Staff member not found.");
@@ -124,16 +125,17 @@ public class StaffService : IStaffService
         if (!string.IsNullOrWhiteSpace(request.Password))
             existing.Password = request.Password;
 
+        existing.UpdatedBy = userId;
         await _repo.UpdateAsync(existing);
         var updated = await _repo.GetByIdAsync(id);
         return ApiResponse<StaffResponse>.Ok(ToResponse(updated!), "Staff member updated successfully.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id))
             return ApiResponse<bool>.Fail("Staff member not found.");
-        return await _repo.DeleteAsync(id)
+        return await _repo.DeleteAsync(id, userId)
             ? ApiResponse<bool>.Ok(true, "Staff member deleted.")
             : ApiResponse<bool>.Fail("Delete failed.");
     }

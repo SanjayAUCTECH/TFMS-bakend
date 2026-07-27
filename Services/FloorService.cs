@@ -27,23 +27,23 @@ public class FloorService : IFloorService
         return f == null ? ApiResponse<FloorResponse>.Fail("Floor not found.") : ApiResponse<FloorResponse>.Ok(ToResponse(f));
     }
 
-    public async Task<ApiResponse<FloorResponse>> CreateAsync(CreateFloorRequest request)
+    public async Task<ApiResponse<FloorResponse>> CreateAsync(CreateFloorRequest request, int? userId = null)
     {
-        var id = await _repo.CreateAsync(new Floor { Name = request.Name.Trim(), Number = request.Number ?? 0, Status = request.Status });
+        var id = await _repo.CreateAsync(new Floor { Name = request.Name.Trim(), Number = request.Number ?? 0, Status = request.Status, AddedBy = userId });
         return ApiResponse<FloorResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Floor created.");
     }
 
-    public async Task<ApiResponse<FloorResponse>> UpdateAsync(int id, UpdateFloorRequest request)
+    public async Task<ApiResponse<FloorResponse>> UpdateAsync(int id, UpdateFloorRequest request, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<FloorResponse>.Fail("Floor not found.");
-        await _repo.UpdateAsync(new Floor { Id = id, Name = request.Name.Trim(), Number = request.Number ?? 0, Status = request.Status });
+        await _repo.UpdateAsync(new Floor { Id = id, Name = request.Name.Trim(), Number = request.Number ?? 0, Status = request.Status, UpdatedBy = userId });
         return ApiResponse<FloorResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Floor updated.");
     }
 
-    public async Task<ApiResponse<bool>> DeleteAsync(int id)
+    public async Task<ApiResponse<bool>> DeleteAsync(int id, int? userId = null)
     {
         if (await _repo.GetByIdAsync(id) == null) return ApiResponse<bool>.Fail("Floor not found.");
-        return await _repo.DeleteAsync(id) ? ApiResponse<bool>.Ok(true, "Floor deleted.") : ApiResponse<bool>.Fail("Delete failed.");
+        return await _repo.DeleteAsync(id, userId) ? ApiResponse<bool>.Ok(true, "Floor deleted.") : ApiResponse<bool>.Fail("Delete failed.");
     }
 
     private static FloorResponse ToResponse(Floor f) => new()

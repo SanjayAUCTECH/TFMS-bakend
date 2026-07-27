@@ -10,5 +10,5 @@ public interface IAccountsHeadRepository
     Task<AccountsHead?> GetByIdAsync(int id);
     Task<int>  CreateAsync(AccountsHead ah);
     Task<bool> UpdateAsync(AccountsHead ah);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int? deletedBy = null);
 }

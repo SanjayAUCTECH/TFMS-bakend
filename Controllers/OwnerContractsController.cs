@@ -5,16 +5,18 @@ using TFMS_software_api.Common;
 using TFMS_software_api.DTOs;
 using TFMS_software_api.Models;
 using TFMS_software_api.Repositories;
+using TFMS_software_api.Services;
 
 namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class OwnerContractsController : ControllerBase
+public class OwnerContractsController : BaseApiController
 {
     private readonly IOwnerContractRepository _repo;
-    public OwnerContractsController(IOwnerContractRepository repo) => _repo = repo;
+    public OwnerContractsController(IOwnerContractRepository repo, IActivityLogService log)
+    { _repo = repo; _activityLog = log; }
 
     /// <summary>GET api/ownercontracts?campId=1  — get all contracts, optionally filtered by camp</summary>
     [HttpGet]
@@ -68,6 +70,7 @@ public class OwnerContractsController : ControllerBase
             PaymentType = request.PaymentType,
             TotalAmount = request.TotalAmount,
             StartDate   = DateTime.Parse(request.StartDate),
+            AddedBy     = CurrentUserId,
         };
 
         var newId = await _repo.CreateAsync(contract, installmentsJson, monthlyInstallmentsJson);
@@ -82,7 +85,8 @@ public class OwnerContractsController : ControllerBase
     {
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return NotFound(ApiResponse<bool>.Fail("Contract not found."));
-        await _repo.DeleteAsync(id);
+        await _repo.DeleteAsync(id, CurrentUserId);
+        await Log(ActivityType.Delete, ActivityModule.OwnerContracts, $"Deleted OwnerContract #{id}", id.ToString(), "OwnerContract");
         return Ok(ApiResponse<bool>.Ok(true, "Owner contract deleted successfully."));
     }
 

@@ -24,6 +24,10 @@ public class Camp
     public DateTime         UpdatedAt          { get; set; }
     public List<CampPartner> Partners          { get; set; } = new();
     public List<CampOwner>   Owners            { get; set; } = new();
+    // Audit
+    public int?     AddedBy            { get; set; }
+    public int?     UpdatedBy          { get; set; }
+    public bool     IsDeleted          { get; set; }
 }
 
 public class CampPartner

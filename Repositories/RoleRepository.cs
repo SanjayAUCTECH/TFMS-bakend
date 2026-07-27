@@ -34,7 +34,7 @@ public class RoleRepository : IRoleRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("SELECT Id,RoleCode,RoleName,Status,CreatedAt,UpdatedAt FROM Roles WHERE Status='Active' ORDER BY RoleName", conn);
+        await using var cmd = new SqlCommand("SELECT Id,RoleCode,RoleName,Status,CreatedAt,UpdatedAt FROM Roles WHERE Status='Active' AND IsDeleted=0 ORDER BY RoleName", conn);
         var list = new List<Role>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(Map(r));
@@ -58,6 +58,7 @@ public class RoleRepository : IRoleRepository
         await using var cmd = new SqlCommand("sp_CreateRole", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@RoleName", role.RoleName);
         cmd.Parameters.AddWithValue("@Status",   role.Status);
+        cmd.Parameters.AddWithValue("@AddedBy",  (object?)role.AddedBy ?? DBNull.Value);
         var newId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(newId);
         await cmd.ExecuteNonQueryAsync();
@@ -69,18 +70,20 @@ public class RoleRepository : IRoleRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdateRole", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@Id",       role.Id);
-        cmd.Parameters.AddWithValue("@RoleName", role.RoleName);
-        cmd.Parameters.AddWithValue("@Status",   role.Status);
+        cmd.Parameters.AddWithValue("@Id",        role.Id);
+        cmd.Parameters.AddWithValue("@RoleName",  role.RoleName);
+        cmd.Parameters.AddWithValue("@Status",    role.Status);
+        cmd.Parameters.AddWithValue("@UpdatedBy", (object?)role.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int? deletedBy = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_DeleteRole", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -93,8 +96,8 @@ public class RoleRepository : IRoleRepository
                 COUNT(*)                                            AS total,
                 SUM(CASE WHEN Status='Active'   THEN 1 ELSE 0 END) AS active,
                 SUM(CASE WHEN Status='Inactive' THEN 1 ELSE 0 END) AS inactive,
-                (SELECT COUNT(DISTINCT NULLIF(LTRIM(RTRIM(Role)),'')) FROM AppUsers) AS usersAssigned
-            FROM Roles", conn);
+                (SELECT COUNT(DISTINCT NULLIF(LTRIM(RTRIM(Role)),'')) FROM AppUsers WHERE IsDeleted=0) AS usersAssigned
+            FROM Roles WHERE IsDeleted=0", conn);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return new { total=0, active=0, inactive=0, usersAssigned=0 };
         return new {
