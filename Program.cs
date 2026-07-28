@@ -34,12 +34,30 @@ builder.Services.AddSwaggerGen(c =>
 // ── CORS ─────────────────────────────────────────────────────────────────────
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:3000", "http://localhost:5173", "http://localhost:9001" };
+
+// If "*" is in the list → allow any origin (no credentials)
+// Otherwise → use specific origins with credentials
+var hasWildcard = allowedOrigins.Any(o => o == "*");
+
 builder.Services.AddCors(options =>
-    options.AddPolicy("AllowAll", p => p
-        .WithOrigins(allowedOrigins)
-        .AllowAnyMethod()
-        .AllowAnyHeader()
-        .AllowCredentials()));
+    options.AddPolicy("AllowAll", p =>
+    {
+        if (hasWildcard)
+        {
+            // Allow any origin — used in production where frontend domain may vary
+            p.SetIsOriginAllowed(_ => true)
+             .AllowAnyMethod()
+             .AllowAnyHeader()
+             .AllowCredentials();
+        }
+        else
+        {
+            p.WithOrigins(allowedOrigins)
+             .AllowAnyMethod()
+             .AllowAnyHeader()
+             .AllowCredentials();
+        }
+    }));
 
 // ── JWT Auth ─────────────────────────────────────────────────────────────────
 var jwtKey = builder.Configuration["Jwt:Key"]!;
