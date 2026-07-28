@@ -105,22 +105,19 @@ public class TxnRecordRepository : ITxnRecordRepository
                 reverseCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
                 await reverseCmd.ExecuteNonQueryAsync();
 
-                // Step B: Revert ContractRoomInstallments
+                // Step B: Revert ContractRoomInstallments — EXACT via CriId only
                 await using var reverseCriCmd = new SqlCommand(@"
                     UPDATE cri
-                    SET cri.PaidAmount = CASE WHEN ISNULL(cri.PaidAmount,0)-rt.TotalAmt<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-rt.TotalAmt END,
-                        cri.Balance    = cri.InstallAmount-(CASE WHEN ISNULL(cri.PaidAmount,0)-rt.TotalAmt<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-rt.TotalAmt END),
-                        cri.Status     = CASE WHEN (CASE WHEN ISNULL(cri.PaidAmount,0)-rt.TotalAmt<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-rt.TotalAmt END)=0 THEN 'Pending'
-                                              WHEN (CASE WHEN ISNULL(cri.PaidAmount,0)-rt.TotalAmt<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-rt.TotalAmt END)>=cri.InstallAmount THEN 'Paid'
+                    SET cri.PaidAmount = CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END,
+                        cri.Balance    = cri.InstallAmount-(CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END),
+                        cri.Status     = CASE WHEN (CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END)=0 THEN 'Pending'
+                                              WHEN (CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END)>=cri.InstallAmount THEN 'Paid'
                                               ELSE 'Partial' END,
-                        cri.PaidDate   = NULL, cri.UpdatedAt=GETDATE()
+                        cri.PaidDate   = CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<=0 THEN NULL ELSE cri.PaidDate END,
+                        cri.UpdatedAt  = GETDATE()
                     FROM ContractRoomInstallments cri
-                    INNER JOIN (
-                        SELECT RoomId, SUM(Amount) TotalAmt FROM ContractRoomsTrns
-                        WHERE TxnRecordId=@TxnRecordId AND TxnType='CR' AND ContractId=@ContractId
-                        GROUP BY RoomId
-                    ) rt ON rt.RoomId=cri.RoomId
-                    WHERE cri.ContractId=@ContractId", conn, txn);
+                    INNER JOIN ContractRoomsTrns crt ON crt.CriId=cri.Id
+                    WHERE crt.TxnRecordId=@TxnRecordId AND crt.TxnType='CR'", conn, txn);
                 reverseCriCmd.Parameters.AddWithValue("@TxnRecordId", id);
                 reverseCriCmd.Parameters.AddWithValue("@ContractId", r.ContractId);
                 await reverseCriCmd.ExecuteNonQueryAsync();
