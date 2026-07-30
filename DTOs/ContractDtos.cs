@@ -51,6 +51,7 @@ public class UpdateContractRequest
 {
     public string?   ContractId      { get; set; } = string.Empty;
     public int?      TenantId        { get; set; }
+    public int?      UpdatedBy       { get; set; }
     // CampId removed — use CampIds array only
     public List<int> CampIds         { get; set; } = new();
     public DateTime? StartDate       { get; set; }

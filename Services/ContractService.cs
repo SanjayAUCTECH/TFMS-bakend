@@ -141,9 +141,14 @@ public class ContractService : IContractService
     {
         var existing = await _repo.GetByContractIdAsync(request.ContractId ?? "");
         if (existing == null) return ApiResponse<ContractResponse>.Fail("Contract not found.");
-        await _repo.UpdateContractAsync(request);
+
+        var (_, paymentStarted) = await _repo.UpdateContractAsync(request);
+
         var updated = await _repo.GetByContractIdAsync(request.ContractId ?? "");
-        return ApiResponse<ContractResponse>.Ok(ToResponse(updated!), "Contract updated successfully.");
+        var msg = paymentStarted
+            ? "Contract basic info updated. Rooms/installments unchanged (payment already received)."
+            : "Contract updated successfully.";
+        return ApiResponse<ContractResponse>.Ok(ToResponse(updated!), msg);
     }
 
     public async Task<ApiResponse<ContractDocResponse>> GetDocumentAsync(string contractId)

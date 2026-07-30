@@ -186,7 +186,7 @@ public class ContractRepository : IContractRepository
         return true;  // SP handles SET NOCOUNT ON; rowcount unreliable
     }
 
-    public async Task<bool> UpdateContractAsync(UpdateContractRequest request)
+    public async Task<(bool Success, bool PaymentStarted)> UpdateContractAsync(UpdateContractRequest request)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
@@ -195,17 +195,14 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@TenantId",      (object?)request.TenantId    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@StartDate",     (object?)request.StartDate   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Months",        (object?)request.Months      ?? DBNull.Value);
-        // CampIds JSON (CampId column removed from table — array only)
         var campIdsJson = (request.CampIds != null && request.CampIds.Count > 0)
             ? System.Text.Json.JsonSerializer.Serialize(request.CampIds)
             : null;
         cmd.Parameters.AddWithValue("@CampIdsJson",   (object?)campIdsJson         ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@ContractType",  (object?)request.ContractType ?? DBNull.Value);
-        // RoomIds — use rich format if Rooms provided
         string? roomJson;
         if (request.Rooms != null && request.Rooms.Count > 0)
         {
-            // Serialize full rich format so SP gets monthlyAmount + campId
             roomJson = System.Text.Json.JsonSerializer.Serialize(
                 request.Rooms,
                 new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
@@ -233,30 +230,17 @@ public class ContractRepository : IContractRepository
         cmd.Parameters.AddWithValue("@ContractPaymentMode",    string.IsNullOrEmpty(request.ContractPaymentMode)    ? (object)DBNull.Value : request.ContractPaymentMode);
         cmd.Parameters.AddWithValue("@ContractPlotNo",         string.IsNullOrEmpty(request.ContractPlotNo)         ? (object)DBNull.Value : request.ContractPlotNo);
         cmd.Parameters.AddWithValue("@ContractMakaniNo",       string.IsNullOrEmpty(request.ContractMakaniNo)       ? (object)DBNull.Value : request.ContractMakaniNo);
+        cmd.Parameters.AddWithValue("@UpdatedBy",     (object?)request.UpdatedBy   ?? DBNull.Value);
+
+        // OUTPUT: PaymentStarted flag
+        var paymentStartedParam = new SqlParameter("@PaymentStarted", SqlDbType.Bit)
+            { Direction = ParameterDirection.Output, Value = false };
+        cmd.Parameters.Add(paymentStartedParam);
+
         await cmd.ExecuteNonQueryAsync();
 
-        // Update ContractRooms with amounts if rooms array provided
-        if (request.Rooms != null && request.Rooms.Count > 0 && !string.IsNullOrEmpty(request.ContractId))
-        {
-            var months = request.Months ?? 12;
-            foreach (var room in request.Rooms)
-            {
-                var total = room.TotalAmount ?? (room.MonthlyAmount ?? 0) * months;
-                await using var updCmd = new SqlCommand(@"
-                    UPDATE ContractRooms
-                    SET CampId = @CampId, MonthlyAmount = @MonthlyAmount, TotalAmount = @TotalAmount,
-                        Balance = @TotalAmount - ISNULL(PaidAmount, 0)
-                    WHERE ContractId = @ContractId AND RoomId = @RoomId", conn);
-                updCmd.Parameters.AddWithValue("@ContractId", request.ContractId);
-                updCmd.Parameters.AddWithValue("@RoomId", room.RoomId);
-                updCmd.Parameters.AddWithValue("@CampId", room.CampId ?? 0);
-                updCmd.Parameters.AddWithValue("@MonthlyAmount", room.MonthlyAmount ?? 0);
-                updCmd.Parameters.AddWithValue("@TotalAmount", total);
-                await updCmd.ExecuteNonQueryAsync();
-            }
-        }
-
-        return true;
+        bool paymentStarted = paymentStartedParam.Value != DBNull.Value && (bool)paymentStartedParam.Value;
+        return (true, paymentStarted);
     }
 
     public async Task<bool> UpdateScheduleAsync(string contractId, string scheduleJson)
