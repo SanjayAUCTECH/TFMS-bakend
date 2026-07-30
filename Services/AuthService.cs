@@ -105,11 +105,12 @@ public class AuthService : IAuthService
 
         string code = string.IsNullOrEmpty(role) ? sourceId.Value.ToString() : role.ToLower() switch
         {
-            "staff" => await GetStaffCodeAsync(conn, sourceId.Value),
-            "tenant" => sourceId.Value.ToString(),
-            "owner" => await GetOwnerCodeAsync(conn, sourceId.Value),
+            "staff"   => await GetStaffCodeAsync(conn, sourceId.Value),
+            "tenant"  => sourceId.Value.ToString(),
+            "owner"   => await GetOwnerCodeAsync(conn, sourceId.Value),
             "partner" => await GetPartnerCodeAsync(conn, sourceId.Value),
-            "admin" => sourceId.Value.ToString(),
+            "admin"   => sourceId.Value.ToString(),
+            "superadmin" => sourceId.Value.ToString(),
             _ => await GetOtherPersonCodeAsync(conn, sourceId.Value)
         };
 

@@ -9,7 +9,7 @@ public interface IDashboardRepository
     Task<StaffExpiryAlertResponse>   GetStaffExpiryAlertsAsync(int daysAhead = 30);
     Task<OwnerPaymentAlertResponse>  GetOwnerPaymentAlertsAsync(int daysAhead = 2);
     Task<OwnerMonthSummaryResponse>  GetOwnerMonthSummaryAsync(string? month = null);
-    Task<TenantPaymentAlertResponse> GetTenantPaymentAlertsAsync(int daysAhead = 2);
+    Task<TenantPaymentAlertResponse> GetTenantPaymentAlertsAsync(int daysAhead = 2, int? tenantId = null);
     Task<TenantMonthSummaryResponse> GetTenantMonthSummaryAsync(string? month = null);
     Task<CompanyAssetAlertResponse>  GetCompanyAssetAlertsAsync(int daysAhead = 30);
     Task<AppUser?> GetUserByUsernameAsync(string username);

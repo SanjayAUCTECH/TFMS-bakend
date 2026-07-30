@@ -68,9 +68,9 @@ public class DashboardController : ControllerBase
 
     /// <summary>GET api/dashboard/tenant-payment-alerts — due within daysAhead (default 2)</summary>
     [HttpGet("tenant-payment-alerts")]
-    public async Task<IActionResult> GetTenantPaymentAlerts([FromQuery] int daysAhead = 2)
+    public async Task<IActionResult> GetTenantPaymentAlerts([FromQuery] int daysAhead = 2, [FromQuery] int? tenantId = null)
     {
-        var result = await _service.GetTenantPaymentAlertsAsync(daysAhead);
+        var result = await _service.GetTenantPaymentAlertsAsync(daysAhead, tenantId);
         return Ok(result);
     }
 

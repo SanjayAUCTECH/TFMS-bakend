@@ -237,13 +237,14 @@ public class DashboardRepository : IDashboardRepository
         return result;
     }
 
-    public async Task<TenantPaymentAlertResponse> GetTenantPaymentAlertsAsync(int daysAhead = 2)
+    public async Task<TenantPaymentAlertResponse> GetTenantPaymentAlertsAsync(int daysAhead = 2, int? tenantId = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         var rows = new List<TenantPaymentAlertRow>();
         await using var cmd = new SqlCommand("sp_GetTenantPaymentAlerts", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@DaysAhead", daysAhead);
+        cmd.Parameters.AddWithValue("@TenantId", (object?)tenantId ?? DBNull.Value);
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync())
         {

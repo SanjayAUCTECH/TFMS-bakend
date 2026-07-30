@@ -36,9 +36,9 @@ public class DashboardService : IDashboardService
             $"Owner payment summary for {summary.Month} retrieved.");
     }
 
-    public async Task<ApiResponse<TenantPaymentAlertResponse>> GetTenantPaymentAlertsAsync(int daysAhead = 2)
+    public async Task<ApiResponse<TenantPaymentAlertResponse>> GetTenantPaymentAlertsAsync(int daysAhead = 2, int? tenantId = null)
     {
-        var alerts = await _repo.GetTenantPaymentAlertsAsync(daysAhead);
+        var alerts = await _repo.GetTenantPaymentAlertsAsync(daysAhead, tenantId);
         return ApiResponse<TenantPaymentAlertResponse>.Ok(alerts,
             $"Found {alerts.TotalAlerts} tenant payment alert(s) due within {daysAhead} day(s).");
     }
