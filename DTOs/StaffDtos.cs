@@ -24,6 +24,13 @@ public class CreateStaffRequest
     public string? MoveInDate  { get; set; }
     public string? VisaExpiry  { get; set; }
 
+    // 5 New Fields
+    public string? LabourCardNo    { get; set; }
+    public string? DateOfBirth     { get; set; }
+    public string? FitnessExpireDM { get; set; }
+    public string? IloeNo          { get; set; }
+    public string? InsuranceNo     { get; set; }
+
     // Document dates
     public string? EmiratesIdIssueDate    { get; set; }
     public string? EmiratesIdExpiryDate   { get; set; }
@@ -49,6 +56,9 @@ public class CreateStaffRequest
     public string? LabourCardDocumentUrl  { get; set; }
     public string? IloeDocumentUrl        { get; set; }
     public string? InsuranceDocumentUrl   { get; set; }
+
+    // Company
+    public int? CompanyId { get; set; }
 }
 
 /// <summary>PUT api/staff/{id} — all fields optional, multipart/form-data</summary>
@@ -72,6 +82,13 @@ public class UpdateStaffRequest
     public string? JobTitle    { get; set; }
     public string? MoveInDate  { get; set; }
     public string? VisaExpiry  { get; set; }
+
+    // 5 New Fields
+    public string? LabourCardNo    { get; set; }
+    public string? DateOfBirth     { get; set; }
+    public string? FitnessExpireDM { get; set; }
+    public string? IloeNo          { get; set; }
+    public string? InsuranceNo     { get; set; }
 
     // Document dates
     public string? EmiratesIdIssueDate    { get; set; }
@@ -98,9 +115,15 @@ public class UpdateStaffRequest
     public string? LabourCardDocumentUrl  { get; set; }
     public string? IloeDocumentUrl        { get; set; }
     public string? InsuranceDocumentUrl   { get; set; }
+
+    // Company
+    public int? CompanyId { get; set; }
 }
 
-public class StaffListRequest : PagedRequest { }
+public class StaffListRequest : PagedRequest
+{
+    public int? CompanyId { get; set; }   // optional company filter
+}
 
 public class StaffResponse
 {
@@ -125,6 +148,13 @@ public class StaffResponse
     public string? MoveInDate  { get; set; }
     public string? VisaExpiry  { get; set; }
 
+    // 5 New Fields
+    public string? LabourCardNo    { get; set; }
+    public string? DateOfBirth     { get; set; }
+    public string? FitnessExpireDM { get; set; }
+    public string? IloeNo          { get; set; }
+    public string? InsuranceNo     { get; set; }
+
     // Document dates
     public string? EmiratesIdIssueDate    { get; set; }
     public string? EmiratesIdExpiryDate   { get; set; }
@@ -143,6 +173,10 @@ public class StaffResponse
     public string? LabourCardDocument  { get; set; }
     public string? IloeDocument        { get; set; }
     public string? InsuranceDocument   { get; set; }
+
+    // Company
+    public int?    CompanyId   { get; set; }
+    public string? CompanyName { get; set; }
 
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }

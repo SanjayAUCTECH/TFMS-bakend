@@ -49,6 +49,7 @@ public static class ActivityModule
     public const string OwnerContracts   = "OwnerContracts";
     public const string CompanyAssets    = "CompanyAssets";
     public const string TxnRecords       = "TxnRecords";
+    public const string Companies        = "Companies";
 }
 
 // ── IActivityLogService ──────────────────────────────────────────────────────

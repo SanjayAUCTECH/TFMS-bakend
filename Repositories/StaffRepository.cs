@@ -21,6 +21,7 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@SortBy",        (object?)request.SortBy     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortDirection", request.ResolvedSortDir);
         cmd.Parameters.AddWithValue("@Status",        (object?)request.Status     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CompanyId",     (object?)request.CompanyId  ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(total);
         var list = new List<Staff>();
@@ -148,6 +149,13 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@MoveInDate",  (object?)s.MoveInDate  ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@VisaExpiry",  (object?)s.VisaExpiry  ?? DBNull.Value);
 
+        // 5 New Fields
+        cmd.Parameters.AddWithValue("@LabourCardNo",    string.IsNullOrEmpty(s.LabourCardNo) ? (object)DBNull.Value : s.LabourCardNo);
+        cmd.Parameters.AddWithValue("@DateOfBirth",     (object?)s.DateOfBirth     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FitnessExpireDM", (object?)s.FitnessExpireDM ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@IloeNo",          string.IsNullOrEmpty(s.IloeNo)       ? (object)DBNull.Value : s.IloeNo);
+        cmd.Parameters.AddWithValue("@InsuranceNo",     string.IsNullOrEmpty(s.InsuranceNo)   ? (object)DBNull.Value : s.InsuranceNo);
+
         // Document dates
         cmd.Parameters.AddWithValue("@EmiratesIdIssueDate",  (object?)s.EmiratesIdIssueDate  ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@EmiratesIdExpiryDate", (object?)s.EmiratesIdExpiryDate ?? DBNull.Value);
@@ -166,6 +174,7 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@LabourCardDocument", string.IsNullOrEmpty(s.LabourCardDocument) ? (object)DBNull.Value : s.LabourCardDocument);
         cmd.Parameters.AddWithValue("@IloeDocument",       string.IsNullOrEmpty(s.IloeDocument)       ? (object)DBNull.Value : s.IloeDocument);
         cmd.Parameters.AddWithValue("@InsuranceDocument",  string.IsNullOrEmpty(s.InsuranceDocument)  ? (object)DBNull.Value : s.InsuranceDocument);
+        cmd.Parameters.AddWithValue("@CompanyId",          (object?)s.CompanyId ?? DBNull.Value);
     }
 
     // ── Mapper ────────────────────────────────────────────────────────────────
@@ -192,6 +201,12 @@ public class StaffRepository : IStaffRepository
         MoveInDate  = SafeDate(r, "MoveInDate"),
         VisaExpiry  = SafeDate(r, "VisaExpiry"),
 
+        LabourCardNo    = SafeStr(r, "LabourCardNo"),
+        DateOfBirth     = SafeDate(r, "DateOfBirth"),
+        FitnessExpireDM = SafeDate(r, "FitnessExpireDM"),
+        IloeNo          = SafeStr(r, "IloeNo"),
+        InsuranceNo     = SafeStr(r, "InsuranceNo"),
+
         EmiratesIdIssueDate  = SafeDate(r, "EmiratesIdIssueDate"),
         EmiratesIdExpiryDate = SafeDate(r, "EmiratesIdExpiryDate"),
         PassportIssueDate    = SafeDate(r, "PassportIssueDate"),
@@ -209,6 +224,9 @@ public class StaffRepository : IStaffRepository
         IloeDocument       = SafeStr(r, "IloeDocument"),
         InsuranceDocument  = SafeStr(r, "InsuranceDocument"),
 
+        CompanyId   = SafeInt(r, "CompanyId"),
+        CompanyName = SafeStr(r, "CompanyName"),
+
         CreatedAt   = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt   = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
     };
@@ -221,5 +239,10 @@ public class StaffRepository : IStaffRepository
     private static DateTime? SafeDate(SqlDataReader r, string col)
     {
         try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? null : r.GetDateTime(o); } catch { return null; }
+    }
+
+    private static int? SafeInt(SqlDataReader r, string col)
+    {
+        try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? null : r.GetInt32(o); } catch { return null; }
     }
 }

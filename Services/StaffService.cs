@@ -52,6 +52,13 @@ public class StaffService : IStaffService
             MoveInDate  = ParseDate(request.MoveInDate),
             VisaExpiry  = ParseDate(request.VisaExpiry),
 
+            // 5 New Fields
+            LabourCardNo    = request.LabourCardNo?.Trim() ?? "",
+            DateOfBirth     = ParseDate(request.DateOfBirth),
+            FitnessExpireDM = ParseDate(request.FitnessExpireDM),
+            IloeNo          = request.IloeNo?.Trim() ?? "",
+            InsuranceNo     = request.InsuranceNo?.Trim() ?? "",
+
             // Document dates
             EmiratesIdIssueDate  = ParseDate(request.EmiratesIdIssueDate),
             EmiratesIdExpiryDate = ParseDate(request.EmiratesIdExpiryDate),
@@ -71,6 +78,7 @@ public class StaffService : IStaffService
             IloeDocument       = request.IloeDocumentUrl       ?? "",
             InsuranceDocument  = request.InsuranceDocumentUrl  ?? "",
             AddedBy            = userId,
+            CompanyId          = request.CompanyId,
         };
 
         var id = await _repo.CreateAsync(staff);
@@ -103,6 +111,13 @@ public class StaffService : IStaffService
         existing.MoveInDate  = ParseDate(request.MoveInDate);
         existing.VisaExpiry  = ParseDate(request.VisaExpiry);
 
+        // 5 New Fields
+        existing.LabourCardNo    = request.LabourCardNo?.Trim() ?? existing.LabourCardNo;
+        existing.DateOfBirth     = ParseDate(request.DateOfBirth) ?? existing.DateOfBirth;
+        existing.FitnessExpireDM = ParseDate(request.FitnessExpireDM) ?? existing.FitnessExpireDM;
+        existing.IloeNo          = request.IloeNo?.Trim() ?? existing.IloeNo;
+        existing.InsuranceNo     = request.InsuranceNo?.Trim() ?? existing.InsuranceNo;
+
         // Document dates
         existing.EmiratesIdIssueDate  = ParseDate(request.EmiratesIdIssueDate);
         existing.EmiratesIdExpiryDate = ParseDate(request.EmiratesIdExpiryDate);
@@ -121,6 +136,10 @@ public class StaffService : IStaffService
         if (request.LabourCardDocumentUrl != null) existing.LabourCardDocument = request.LabourCardDocumentUrl;
         if (request.IloeDocumentUrl       != null) existing.IloeDocument       = request.IloeDocumentUrl;
         if (request.InsuranceDocumentUrl  != null) existing.InsuranceDocument  = request.InsuranceDocumentUrl;
+
+        // CompanyId — update if provided (including null to unset)
+        if (request.CompanyId.HasValue || request.CompanyId == null)
+            existing.CompanyId = request.CompanyId;
 
         if (!string.IsNullOrWhiteSpace(request.Password))
             existing.Password = request.Password;
@@ -166,6 +185,12 @@ public class StaffService : IStaffService
         MoveInDate  = s.MoveInDate?.ToString("yyyy-MM-dd"),
         VisaExpiry  = s.VisaExpiry?.ToString("yyyy-MM-dd"),
 
+        LabourCardNo    = string.IsNullOrEmpty(s.LabourCardNo)  ? null : s.LabourCardNo,
+        DateOfBirth     = s.DateOfBirth?.ToString("yyyy-MM-dd"),
+        FitnessExpireDM = s.FitnessExpireDM?.ToString("yyyy-MM-dd"),
+        IloeNo          = string.IsNullOrEmpty(s.IloeNo)        ? null : s.IloeNo,
+        InsuranceNo     = string.IsNullOrEmpty(s.InsuranceNo)   ? null : s.InsuranceNo,
+
         EmiratesIdIssueDate  = s.EmiratesIdIssueDate?.ToString("yyyy-MM-dd"),
         EmiratesIdExpiryDate = s.EmiratesIdExpiryDate?.ToString("yyyy-MM-dd"),
         PassportIssueDate    = s.PassportIssueDate?.ToString("yyyy-MM-dd"),
@@ -182,6 +207,9 @@ public class StaffService : IStaffService
         LabourCardDocument = string.IsNullOrEmpty(s.LabourCardDocument) ? null : s.LabourCardDocument,
         IloeDocument       = string.IsNullOrEmpty(s.IloeDocument)       ? null : s.IloeDocument,
         InsuranceDocument  = string.IsNullOrEmpty(s.InsuranceDocument)  ? null : s.InsuranceDocument,
+
+        CompanyId   = s.CompanyId,
+        CompanyName = string.IsNullOrEmpty(s.CompanyName) ? null : s.CompanyName,
 
         CreatedAt   = s.CreatedAt,
         UpdatedAt   = s.UpdatedAt,

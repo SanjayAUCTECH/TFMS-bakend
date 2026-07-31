@@ -17,12 +17,19 @@ public class Staff
     public string   Remarks     { get; set; } = string.Empty;
 
     // Identity & Employment
-    public string    EmiratesId  { get; set; } = string.Empty;
-    public string    PassportNo  { get; set; } = string.Empty;
-    public string    Nationality { get; set; } = string.Empty;
-    public string    JobTitle    { get; set; } = string.Empty;
-    public DateTime? MoveInDate  { get; set; }
-    public DateTime? VisaExpiry  { get; set; }
+    public string    EmiratesId    { get; set; } = string.Empty;
+    public string    PassportNo    { get; set; } = string.Empty;
+    public string    Nationality   { get; set; } = string.Empty;
+    public string    JobTitle      { get; set; } = string.Empty;
+    public DateTime? MoveInDate    { get; set; }
+    public DateTime? VisaExpiry    { get; set; }
+
+    // 5 New Fields
+    public string    LabourCardNo    { get; set; } = string.Empty;
+    public DateTime? DateOfBirth     { get; set; }
+    public DateTime? FitnessExpireDM { get; set; }
+    public string    IloeNo          { get; set; } = string.Empty;
+    public string    InsuranceNo     { get; set; } = string.Empty;
 
     // Document dates
     public DateTime? EmiratesIdIssueDate    { get; set; }
@@ -42,6 +49,10 @@ public class Staff
     public string LabourCardDocument  { get; set; } = string.Empty;
     public string IloeDocument        { get; set; } = string.Empty;
     public string InsuranceDocument   { get; set; } = string.Empty;
+
+    // Company
+    public int?   CompanyId   { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
 
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }
