@@ -1,14 +1,9 @@
 -- ============================================================
--- 122: Update sp_RenewContract
--- Change: SecurityDeposit logged in ContractRenewals =
---         SUM of 5% of each room TotalAmount (auto-calculated)
---         NOT from @SecurityDeposit user input param
---
--- sp_CreateContract (Script 120) already handles 5% per room.
--- This script fixes the ContractRenewals log entry to record
--- the correct auto-calculated SecurityDeposit value.
---
--- @SecurityDeposit param kept for backward compatibility but ignored.
+-- 123: Fix sp_RenewContract — TxnId NULL error
+-- Problem: INSERT into TxnRecords was missing TxnId column,
+--          causing "Cannot insert NULL into TxnId" error.
+-- Fix: Generate TxnId before INSERT (same pattern as other SPs)
+-- Date: July 31, 2026
 -- ============================================================
 USE TFMS_TestSoftwareDB;
 GO
@@ -46,8 +41,6 @@ BEGIN
     SET NOCOUNT ON;
 
     -- ── Step 1: Create new contract via sp_CreateContract ─────────────────
-    -- sp_CreateContract (Script 120) auto-calculates SecurityDeposit = 5%
-    -- @SecurityDeposit param is passed but ignored inside sp_CreateContract
     EXEC sp_CreateContract
         @TenantId              = @TenantId,
         @CampIdsJson           = @CampIdsJson,
@@ -82,25 +75,25 @@ BEGIN
 
     SELECT
         @NewEndDate     = EndDate,
-        @ActualSecurity = SecurityDeposit,   -- ← 5% auto-calc value from sp_CreateContract
+        @ActualSecurity = SecurityDeposit,
         @ActualMonthly  = MonthlyTotal,
         @ActualTotal    = ContractTotal
     FROM Contracts
     WHERE ContractId = @NewContractId;
 
-    -- ── Step 3: Log renewal with ACTUAL security deposit (5% auto-calc) ───
+    -- ── Step 3: Log renewal ───────────────────────────────────────────────
     INSERT INTO ContractRenewals (
         OriginalContractId, NewContractId, RenewalType, RenewalDate,
         NewStartDate, NewEndDate, NewMonths,
         NewMonthlyTotal, NewContractTotal,
-        SecurityDeposit,        -- ← actual auto-calculated value
+        SecurityDeposit,
         Notes, RenewedBy, Status
     )
     VALUES (
         @OriginalContractId, @NewContractId, @RenewalType, GETDATE(),
         @StartDate, @NewEndDate, @Months,
         @ActualMonthly, @ActualTotal,
-        @ActualSecurity,        -- ← NOT @SecurityDeposit from user
+        @ActualSecurity,
         @Notes, @IssuedBy, 'Active'
     );
 
@@ -118,6 +111,7 @@ BEGIN
     DECLARE @CampId INT = 0;
     SELECT TOP 1 @CampId = CampId FROM ContractCamps WHERE ContractId = @NewContractId;
 
+    -- Generate TxnId (same pattern used across all other SPs)
     DECLARE @TxnId NVARCHAR(MAX) =
         'TXN-' + CONVERT(NVARCHAR(MAX), @StartDate, 112) + '-' +
         RIGHT('000000' + CAST((SELECT ISNULL(MAX(Id), 0) + 1 FROM TxnRecords) AS NVARCHAR), 6);
@@ -137,5 +131,5 @@ BEGIN
 END
 GO
 
-PRINT '✅ 122 - sp_RenewContract: SecurityDeposit in ContractRenewals = 5% auto-calc (from sp_CreateContract)';
+PRINT '✅ 123 - sp_RenewContract: Fixed TxnId NULL error in TxnRecords INSERT';
 GO

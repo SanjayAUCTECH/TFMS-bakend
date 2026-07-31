@@ -28,6 +28,7 @@ public class ContractRenewalsController : BaseApiController
     /// Optionally expires the old contract.
     /// </summary>
     [HttpPost("renew")]
+    [HttpPost("renewRequest")]   // alias – frontend may call either route
     public async Task<IActionResult> Renew([FromBody] RenewContractRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.OriginalContractId))
