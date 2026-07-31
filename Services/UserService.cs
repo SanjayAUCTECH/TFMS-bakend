@@ -139,6 +139,7 @@ public class UserService : IUserService
         Contact     = u.Contact,
         Email       = u.Email,
         IsAdmin     = u.IsAdmin,
+        Designation = u.Designation,
         LoginAccess = u.LoginAccess,
         Status      = u.Status,
         MenuAccess  = u.MenuAccess,

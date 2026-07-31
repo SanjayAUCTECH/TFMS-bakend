@@ -20,9 +20,10 @@ public class UserRepository : IUserRepository
         cmd.Parameters.AddWithValue("@SearchText",    (object?)request.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortBy",        (object?)request.SortBy     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortDirection", request.ResolvedSortDir);
-        cmd.Parameters.AddWithValue("@Role",          (object?)request.Role       ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@Source",        (object?)request.Source     ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@Status",        (object?)request.Status     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Role",          (object?)request.Role        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Source",        (object?)request.Source      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status",        (object?)request.Status      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Designation",   (object?)request.Designation ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(total);
         var list = new List<AppUser>();
@@ -196,6 +197,7 @@ public class UserRepository : IUserRepository
         Contact      = r.IsDBNull(r.GetOrdinal("Contact"))     ? "" : r.GetString(r.GetOrdinal("Contact")),
         Email        = r.IsDBNull(r.GetOrdinal("Email"))       ? "" : r.GetString(r.GetOrdinal("Email")),
         IsAdmin      = r.GetBoolean(r.GetOrdinal("IsAdmin")),
+        Designation  = r.IsDBNull(r.GetOrdinal("Designation")) ? "" : r.GetString(r.GetOrdinal("Designation")),
         LoginAccess  = r.GetString(r.GetOrdinal("LoginAccess")),
         Status       = r.GetString(r.GetOrdinal("Status")),
         MenuAccess   = r.IsDBNull(r.GetOrdinal("MenuAccess"))  ? "{}" : r.GetString(r.GetOrdinal("MenuAccess")),

@@ -17,6 +17,7 @@ public class AppUser
     public DateTime? LastLogin    { get; set; }
     public string    MenuAccess   { get; set; } = "{}";
     public bool      IsAdmin      { get; set; }
+    public string    Designation  { get; set; } = string.Empty;
     public DateTime  CreatedAt    { get; set; }
     public DateTime  UpdatedAt    { get; set; }
     // Audit
