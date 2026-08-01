@@ -47,26 +47,39 @@ public class OwnerContractRepository : IOwnerContractRepository
 
     public async Task<OwnerContract?> GetByIdAsync(int id)
     {
-        var all = await GetByCampAsync(null);
-        var contract = all.FirstOrDefault(c => c.Id == id);
-        if (contract == null) return null;
-
-        // Load installments — SP requires @OcId and @TotalRecords OUTPUT
+        // Direct query by Id — GetByCampAsync se nahi (woh sab laata hai)
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("sp_GetOwnerInstallments", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@OcId", id);
-        cmd.Parameters.AddWithValue("@PageNumber", 1);
-        cmd.Parameters.AddWithValue("@PageSize", 500);
-        var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
-        cmd.Parameters.Add(totalParam);
+        await using var cmd = new SqlCommand("sp_GetOwnerContracts", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@CampId",  DBNull.Value);
+        cmd.Parameters.AddWithValue("@OwnerId", DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status",  DBNull.Value);
+        OwnerContract? contract = null;
         await using var r = await cmd.ExecuteReaderAsync();
-        while (await r.ReadAsync()) contract.Installments.Add(MapInstallment(r));
+        while (await r.ReadAsync())
+        {
+            var c = MapContract(r);
+            if (c.Id == id) { contract = c; break; }
+        }
+        await r.CloseAsync();
+        if (contract == null) return null;
 
-        // Load transactions
+        // Installments
+        await using var connI = _factory.CreateConnection();
+        await connI.OpenAsync();
+        await using var cmdI = new SqlCommand("sp_GetOwnerInstallments", connI) { CommandType = CommandType.StoredProcedure };
+        cmdI.Parameters.AddWithValue("@OcId",       id);
+        cmdI.Parameters.AddWithValue("@PageNumber", 1);
+        cmdI.Parameters.AddWithValue("@PageSize",   500);
+        var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmdI.Parameters.Add(totalParam);
+        await using var rI = await cmdI.ExecuteReaderAsync();
+        while (await rI.ReadAsync()) contract.Installments.Add(MapInstallment(rI));
+
+        // Transactions
         contract.Transactions.AddRange(await GetTransactionsByContractIdAsync(id));
 
-        // Load monthly installments
+        // Monthly Installments
         contract.MonthlyInstallments.AddRange(await GetMonthlyInstallmentsByContractIdAsync(id));
 
         return contract;
