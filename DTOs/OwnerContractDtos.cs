@@ -31,6 +31,9 @@ public class CreateOwnerContractRequest
     [SwaggerSchema("Monthly rent amount")]
     public decimal MonthlyRent { get; set; } = 0;
 
+    [SwaggerSchema("Number of months for the contract")]
+    public int NoOfMonths { get; set; } = 0;
+
     [SwaggerSchema("Security deposit amount")]
     public decimal SecurityDeposit { get; set; } = 0;
 
@@ -106,6 +109,7 @@ public class OwnerContractResponse
     public string?  SecurityDepositPaidDate  { get; set; }
     public string?  ContractDate             { get; set; }
     public decimal  MonthlyRent              { get; set; }
+    public int      NoOfMonths               { get; set; }
     public string   Status                   { get; set; } = string.Empty;
     public DateTime CreatedAt                { get; set; }
     public List<OwnerInstallmentResponse>  Installments { get; set; } = new();

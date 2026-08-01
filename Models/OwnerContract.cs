@@ -20,6 +20,7 @@ public class OwnerContract
     public DateTime? SecurityDepositPaidDate { get; set; }
     public string?  ContractDate            { get; set; }
     public decimal  MonthlyRent             { get; set; }
+    public int      NoOfMonths              { get; set; }
     public string   Status      { get; set; } = "Active";
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }

@@ -81,6 +81,7 @@ public class OwnerContractsController : BaseApiController
             SecurityDepositPaidDate  = string.IsNullOrEmpty(request.SecurityDepositPaidDate) ? null : DateTime.Parse(request.SecurityDepositPaidDate),
             ContractDate             = request.ContractDate,
             MonthlyRent              = request.MonthlyRent,
+            NoOfMonths               = request.NoOfMonths,
             AddedBy                  = CurrentUserId,
         };
 
@@ -99,6 +100,42 @@ public class OwnerContractsController : BaseApiController
         await _repo.DeleteAsync(id, CurrentUserId);
         await Log(ActivityType.Delete, ActivityModule.OwnerContracts, $"Deleted OwnerContract #{id}", id.ToString(), "OwnerContract");
         return Ok(ApiResponse<bool>.Ok(true, "Owner contract deleted successfully."));
+    }
+
+    /// <summary>POST api/ownercontracts/{id}/renew — renew an existing owner contract</summary>
+    [HttpPost("{id:int}/renew")]
+    public async Task<IActionResult> Renew(int id, [FromBody] RenewOwnerContractRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var original = await _repo.GetByIdAsync(id);
+        if (original == null)
+            return NotFound(ApiResponse<object>.Fail("Original owner contract not found."));
+        request.OriginalOwnerContractId = id;
+        if (request.TotalAmount <= 0)
+            return BadRequest(ApiResponse<object>.Fail("Total amount must be greater than 0."));
+        if (request.Installments.Count == 0)
+            return BadRequest(ApiResponse<object>.Fail("At least one installment is required."));
+
+        var newId       = await _repo.RenewAsync(request, CurrentUserId);
+        var newContract = await _repo.GetByIdAsync(newId);
+
+        await Log(ActivityType.Insert, ActivityModule.OwnerContracts,
+            $"Renewed OwnerContract #{id} -> New #{newId}", newId.ToString(), "OwnerContract");
+
+        return CreatedAtAction(nameof(GetById), new { id = newId },
+            ApiResponse<object>.Ok(new { newContractId = newId, newContract = ToResponse(newContract!) },
+            "Owner contract renewed successfully."));
+    }
+
+    /// <summary>GET api/ownercontracts/{id}/renewals — renewal history list</summary>
+    [HttpGet("{id:int}/renewals")]
+    public async Task<IActionResult> GetRenewals(int id)
+    {
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null)
+            return NotFound(ApiResponse<object>.Fail("Owner contract not found."));
+        var renewals = await _repo.GetRenewalsAsync(id);
+        return Ok(ApiResponse<IEnumerable<OwnerContractRenewalResponse>>.Ok(renewals, "Renewals retrieved."));
     }
 
     /// <summary>GET api/ownercontracts/{id}/ledger — ledger entries (DR/CR) for an owner contract</summary>
@@ -164,6 +201,7 @@ public class OwnerContractsController : BaseApiController
         SecurityDepositPaidDate  = c.SecurityDepositPaidDate?.ToString("yyyy-MM-dd"),
         ContractDate             = c.ContractDate,
         MonthlyRent              = c.MonthlyRent,
+        NoOfMonths               = c.NoOfMonths,
         Status                   = c.Status,
         CreatedAt                = c.CreatedAt,
         Installments = c.Installments.Select(i => new OwnerInstallmentResponse
