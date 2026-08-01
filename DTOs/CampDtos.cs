@@ -29,6 +29,7 @@ public class CreateCampRequest
     public string  CampPremisesNo     { get; set; } = string.Empty;
     public string  CampPlotNo         { get; set; } = string.Empty;
     public string  CampMakaniNo       { get; set; } = string.Empty;
+    public string  OwnerContractStatus { get; set; } = string.Empty;
     public List<CampPartnerRequest> Partners { get; set; } = new();
     public List<CampOwnerRequest>   Owners   { get; set; } = new();
 }
@@ -48,6 +49,7 @@ public class UpdateCampRequest
     public string  CampPremisesNo     { get; set; } = string.Empty;
     public string  CampPlotNo         { get; set; } = string.Empty;
     public string  CampMakaniNo       { get; set; } = string.Empty;
+    public string  OwnerContractStatus { get; set; } = string.Empty;
     public List<CampPartnerRequest> Partners { get; set; } = new();
     public List<CampOwnerRequest>   Owners   { get; set; } = new();
 }
@@ -95,6 +97,7 @@ public class CampResponse
     public string   CampPremisesNo     { get; set; } = string.Empty;
     public string   CampPlotNo         { get; set; } = string.Empty;
     public string   CampMakaniNo       { get; set; } = string.Empty;
+    public string   OwnerContractStatus { get; set; } = string.Empty;
     public DateTime CreatedAt          { get; set; }
     public DateTime UpdatedAt          { get; set; }
     public List<CampPartnerResponse> Partners { get; set; } = new();

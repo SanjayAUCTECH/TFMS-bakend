@@ -60,17 +60,23 @@ public class OwnerContractsController : BaseApiController
             Status        = m.Status,
             ExpenseId     = m.ExpenseId,
             PaymentMode   = m.PaymentMode,
-            PaymentStatus = m.PaymentStatus
+            PaymentStatus = m.PaymentStatus,
+            ReferenceNo   = m.ReferenceNo,
+            Month         = m.Month
         }));
 
         var contract = new OwnerContract
         {
-            CampId      = request.CampId,
-            OwnerId     = request.OwnerId,
-            PaymentType = request.PaymentType,
-            TotalAmount = request.TotalAmount,
-            StartDate   = DateTime.Parse(request.StartDate),
-            AddedBy     = CurrentUserId,
+            CampId                   = request.CampId,
+            OwnerId                  = request.OwnerId,
+            PaymentType              = request.PaymentType,
+            TotalAmount              = request.TotalAmount,
+            StartDate                = DateTime.Parse(request.StartDate),
+            EndDate                  = string.IsNullOrEmpty(request.EndDate) ? null : DateTime.Parse(request.EndDate),
+            SecurityDeposit          = request.SecurityDeposit,
+            SecurityDepositPaid      = request.SecurityDepositPaid,
+            SecurityDepositPaidDate  = string.IsNullOrEmpty(request.SecurityDepositPaidDate) ? null : DateTime.Parse(request.SecurityDepositPaidDate),
+            AddedBy                  = CurrentUserId,
         };
 
         var newId = await _repo.CreateAsync(contract, installmentsJson, monthlyInstallmentsJson);
@@ -135,20 +141,24 @@ public class OwnerContractsController : BaseApiController
 
     private static OwnerContractResponse ToResponse(OwnerContract c) => new()
     {
-        Id          = c.Id,
-        OcCode      = c.OcCode,
-        CampId      = c.CampId,
-        CampName    = c.CampName,
-        OwnerId     = c.OwnerId,
-        OwnerName   = c.OwnerName,
-        OwnerCode   = c.OwnerCode,
-        PaymentType = c.PaymentType,
-        TotalAmount = c.TotalAmount,
-        PaidAmount  = c.PaidAmount,
-        Balance     = c.Balance,
-        StartDate   = c.StartDate.ToString("yyyy-MM-dd"),
-        Status      = c.Status,
-        CreatedAt   = c.CreatedAt,
+        Id                       = c.Id,
+        OcCode                   = c.OcCode,
+        CampId                   = c.CampId,
+        CampName                 = c.CampName,
+        OwnerId                  = c.OwnerId,
+        OwnerName                = c.OwnerName,
+        OwnerCode                = c.OwnerCode,
+        PaymentType              = c.PaymentType,
+        TotalAmount              = c.TotalAmount,
+        PaidAmount               = c.PaidAmount,
+        Balance                  = c.Balance,
+        StartDate                = c.StartDate.ToString("yyyy-MM-dd"),
+        EndDate                  = c.EndDate?.ToString("yyyy-MM-dd"),
+        SecurityDeposit          = c.SecurityDeposit,
+        SecurityDepositPaid      = c.SecurityDepositPaid,
+        SecurityDepositPaidDate  = c.SecurityDepositPaidDate?.ToString("yyyy-MM-dd"),
+        Status                   = c.Status,
+        CreatedAt                = c.CreatedAt,
         Installments = c.Installments.Select(i => new OwnerInstallmentResponse
         {
             Id              = i.Id,
@@ -160,6 +170,10 @@ public class OwnerContractsController : BaseApiController
             PaidDate        = i.PaidDate?.ToString("yyyy-MM-dd"),
             Status          = i.Status,
             ExpenseId       = i.ExpenseId,
+            PaymentMode     = i.PaymentMode,
+            ReferenceNo     = i.ReferenceNo,
+            Remarks         = i.Remarks,
+            Month           = i.Month,
         }).ToList(),
         Transactions = c.Transactions.Select(t => new OwnerTransactionResponse
         {
@@ -177,6 +191,8 @@ public class OwnerContractsController : BaseApiController
             Description     = t.Description,
             InstallmentNos  = t.InstallmentNos,
             ExpenseId       = t.ExpenseId,
+            ReferenceNo     = t.ReferenceNo,
+            PaymentMode     = t.PaymentMode,
             CreatedAt       = t.CreatedAt,
         }).ToList(),
         MonthlyInstallments = c.MonthlyInstallments.Select(m => new OwnerMonthlyContractInstallmentResponse
@@ -196,6 +212,8 @@ public class OwnerContractsController : BaseApiController
             ExpenseId                    = m.ExpenseId,
             PaymentMode                  = m.PaymentMode,
             PaymentStatus                = m.PaymentStatus,
+            ReferenceNo                  = m.ReferenceNo,
+            Month                        = m.Month,
             CreatedAt                    = m.CreatedAt,
             UpdatedAt                    = m.UpdatedAt,
         }).ToList(),

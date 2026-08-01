@@ -14,6 +14,10 @@ public class OwnerContract
     public decimal  PaidAmount  { get; set; }
     public decimal  Balance     { get; set; }
     public DateTime StartDate   { get; set; }
+    public DateTime? EndDate    { get; set; }
+    public decimal  SecurityDeposit         { get; set; }
+    public decimal  SecurityDepositPaid     { get; set; }
+    public DateTime? SecurityDepositPaidDate { get; set; }
     public string   Status      { get; set; } = "Active";
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }
@@ -37,6 +41,10 @@ public class OwnerInstallment
     public DateTime? PaidDate       { get; set; }
     public string   Status          { get; set; } = "Pending";
     public int?     ExpenseId       { get; set; }
+    public string   PaymentMode     { get; set; } = string.Empty;
+    public string   ReferenceNo     { get; set; } = string.Empty;
+    public string   Remarks         { get; set; } = string.Empty;
+    public string   Month           { get; set; } = string.Empty;
 }
 
 public class OwnerTransaction
@@ -55,6 +63,8 @@ public class OwnerTransaction
     public string   Description     { get; set; } = string.Empty;
     public string   InstallmentNos  { get; set; } = string.Empty;
     public int?     ExpenseId       { get; set; }
+    public string   ReferenceNo     { get; set; } = string.Empty;
+    public string   PaymentMode     { get; set; } = string.Empty;
     public DateTime CreatedAt       { get; set; }
 }
 
@@ -75,6 +85,8 @@ public class OwnerMonthlyContractInstallment
     public int?     ExpenseId                    { get; set; }
     public string   PaymentMode                  { get; set; } = string.Empty;
     public string   PaymentStatus                { get; set; } = "Pending";
+    public string   ReferenceNo                  { get; set; } = string.Empty;
+    public string   Month                        { get; set; } = string.Empty;
     public DateTime CreatedAt                    { get; set; }
     public DateTime UpdatedAt                    { get; set; }
 }

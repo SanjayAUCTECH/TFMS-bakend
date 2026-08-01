@@ -43,12 +43,12 @@ public class Staff
     public DateTime? InsuranceIssueDate     { get; set; }
     public DateTime? InsuranceExpiryDate    { get; set; }
 
-    // Document URLs (Cloudinary)
-    public string EmiratesIdDocument  { get; set; } = string.Empty;
-    public string PassportDocument    { get; set; } = string.Empty;
-    public string LabourCardDocument  { get; set; } = string.Empty;
-    public string IloeDocument        { get; set; } = string.Empty;
-    public string InsuranceDocument   { get; set; } = string.Empty;
+    // Document URLs (Cloudinary) — null means no document
+    public string? EmiratesIdDocument  { get; set; }
+    public string? PassportDocument    { get; set; }
+    public string? LabourCardDocument  { get; set; }
+    public string? IloeDocument        { get; set; }
+    public string? InsuranceDocument   { get; set; }
 
     // Company
     public int?   CompanyId   { get; set; }

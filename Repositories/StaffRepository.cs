@@ -169,11 +169,12 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@InsuranceExpiryDate",  (object?)s.InsuranceExpiryDate  ?? DBNull.Value);
 
         // Document URLs
-        cmd.Parameters.AddWithValue("@EmiratesIdDocument", string.IsNullOrEmpty(s.EmiratesIdDocument) ? (object)DBNull.Value : s.EmiratesIdDocument);
-        cmd.Parameters.AddWithValue("@PassportDocument",   string.IsNullOrEmpty(s.PassportDocument)   ? (object)DBNull.Value : s.PassportDocument);
-        cmd.Parameters.AddWithValue("@LabourCardDocument", string.IsNullOrEmpty(s.LabourCardDocument) ? (object)DBNull.Value : s.LabourCardDocument);
-        cmd.Parameters.AddWithValue("@IloeDocument",       string.IsNullOrEmpty(s.IloeDocument)       ? (object)DBNull.Value : s.IloeDocument);
-        cmd.Parameters.AddWithValue("@InsuranceDocument",  string.IsNullOrEmpty(s.InsuranceDocument)  ? (object)DBNull.Value : s.InsuranceDocument);
+        // Document URLs — null aaye toh DBNull (SP mein CASE se NULL save hoga)
+        cmd.Parameters.AddWithValue("@EmiratesIdDocument", (object?)s.EmiratesIdDocument ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PassportDocument",   (object?)s.PassportDocument   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LabourCardDocument", (object?)s.LabourCardDocument ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@IloeDocument",       (object?)s.IloeDocument       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@InsuranceDocument",  (object?)s.InsuranceDocument  ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CompanyId",          (object?)s.CompanyId ?? DBNull.Value);
     }
 

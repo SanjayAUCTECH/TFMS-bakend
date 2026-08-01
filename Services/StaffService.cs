@@ -71,12 +71,12 @@ public class StaffService : IStaffService
             InsuranceIssueDate   = ParseDate(request.InsuranceIssueDate),
             InsuranceExpiryDate  = ParseDate(request.InsuranceExpiryDate),
 
-            // Document URLs from Cloudinary
-            EmiratesIdDocument = request.EmiratesIdDocumentUrl ?? "",
-            PassportDocument   = request.PassportDocumentUrl   ?? "",
-            LabourCardDocument = request.LabourCardDocumentUrl ?? "",
-            IloeDocument       = request.IloeDocumentUrl       ?? "",
-            InsuranceDocument  = request.InsuranceDocumentUrl  ?? "",
+            // Document URLs — file aaye toh Cloudinary URL, nahi aaye toh null
+            EmiratesIdDocument = request.EmiratesIdDocumentUrl ?? null,
+            PassportDocument   = request.PassportDocumentUrl   ?? null,
+            LabourCardDocument = request.LabourCardDocumentUrl ?? null,
+            IloeDocument       = request.IloeDocumentUrl       ?? null,
+            InsuranceDocument  = request.InsuranceDocumentUrl  ?? null,
             AddedBy            = userId,
             CompanyId          = request.CompanyId,
         };
@@ -91,34 +91,35 @@ public class StaffService : IStaffService
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return ApiResponse<StaffResponse>.Fail("Staff member not found.");
 
-        var uname2 = request.Username?.Trim().ToLower() ?? "";
+        var uname2 = request.Username?.Trim().ToLower();
         if (!string.IsNullOrWhiteSpace(uname2) && await _repo.UsernameExistsAsync(uname2, id))
             return ApiResponse<StaffResponse>.Fail("Username already taken by another staff member.");
 
-        existing.Name        = request.Name?.Trim() ?? existing.Name;
-        existing.Designation = request.Designation?.Trim() ?? existing.Designation;
-        existing.Contact     = request.Contact?.Trim() ?? existing.Contact;
-        existing.Email       = request.Email?.Trim() ?? existing.Email;
-        existing.Address     = request.Address?.Trim() ?? existing.Address;
-        existing.Username    = uname2;
-        existing.LoginAccess = request.LoginAccess ?? existing.LoginAccess;
-        existing.Status      = request.Status ?? existing.Status;
-        existing.Remarks     = request.Remarks?.Trim() ?? existing.Remarks;
-        existing.EmiratesId  = request.EmiratesId?.Trim() ?? existing.EmiratesId;
-        existing.PassportNo  = request.PassportNo?.Trim() ?? existing.PassportNo;
-        existing.Nationality = request.Nationality?.Trim() ?? existing.Nationality;
-        existing.JobTitle    = request.JobTitle?.Trim() ?? existing.JobTitle;
+        // Jo value aayi woh save karo, jo nahi aayi woh null/empty save karo
+        existing.Name        = request.Name?.Trim() ?? "";
+        existing.Designation = request.Designation?.Trim() ?? "";
+        existing.Contact     = request.Contact?.Trim() ?? "";
+        existing.Email       = request.Email?.Trim() ?? "";
+        existing.Address     = request.Address?.Trim() ?? "";
+        existing.Username    = uname2 ?? existing.Username;
+        existing.LoginAccess = request.LoginAccess ?? "enabled";
+        existing.Status      = request.Status ?? "Active";
+        existing.Remarks     = request.Remarks?.Trim() ?? "";
+        existing.EmiratesId  = request.EmiratesId?.Trim() ?? "";
+        existing.PassportNo  = request.PassportNo?.Trim() ?? "";
+        existing.Nationality = request.Nationality?.Trim() ?? "";
+        existing.JobTitle    = request.JobTitle?.Trim() ?? "";
         existing.MoveInDate  = ParseDate(request.MoveInDate);
         existing.VisaExpiry  = ParseDate(request.VisaExpiry);
 
         // 5 New Fields
-        existing.LabourCardNo    = request.LabourCardNo?.Trim() ?? existing.LabourCardNo;
-        existing.DateOfBirth     = ParseDate(request.DateOfBirth) ?? existing.DateOfBirth;
-        existing.FitnessExpireDM = ParseDate(request.FitnessExpireDM) ?? existing.FitnessExpireDM;
-        existing.IloeNo          = request.IloeNo?.Trim() ?? existing.IloeNo;
-        existing.InsuranceNo     = request.InsuranceNo?.Trim() ?? existing.InsuranceNo;
+        existing.LabourCardNo    = request.LabourCardNo?.Trim() ?? "";
+        existing.DateOfBirth     = ParseDate(request.DateOfBirth);
+        existing.FitnessExpireDM = ParseDate(request.FitnessExpireDM);
+        existing.IloeNo          = request.IloeNo?.Trim() ?? "";
+        existing.InsuranceNo     = request.InsuranceNo?.Trim() ?? "";
 
-        // Document dates
+        // Document dates — value aayi toh save, nahi aayi toh null
         existing.EmiratesIdIssueDate  = ParseDate(request.EmiratesIdIssueDate);
         existing.EmiratesIdExpiryDate = ParseDate(request.EmiratesIdExpiryDate);
         existing.PassportIssueDate    = ParseDate(request.PassportIssueDate);
@@ -130,17 +131,17 @@ public class StaffService : IStaffService
         existing.InsuranceIssueDate   = ParseDate(request.InsuranceIssueDate);
         existing.InsuranceExpiryDate  = ParseDate(request.InsuranceExpiryDate);
 
-        // Document URLs — only overwrite if new file was uploaded
-        if (request.EmiratesIdDocumentUrl != null) existing.EmiratesIdDocument = request.EmiratesIdDocumentUrl;
-        if (request.PassportDocumentUrl   != null) existing.PassportDocument   = request.PassportDocumentUrl;
-        if (request.LabourCardDocumentUrl != null) existing.LabourCardDocument = request.LabourCardDocumentUrl;
-        if (request.IloeDocumentUrl       != null) existing.IloeDocument       = request.IloeDocumentUrl;
-        if (request.InsuranceDocumentUrl  != null) existing.InsuranceDocument  = request.InsuranceDocumentUrl;
+        // Document URLs — controller ne upload kiya toh URL, nahi kiya toh null
+        existing.EmiratesIdDocument = request.EmiratesIdDocumentUrl;
+        existing.PassportDocument   = request.PassportDocumentUrl;
+        existing.LabourCardDocument = request.LabourCardDocumentUrl;
+        existing.IloeDocument       = request.IloeDocumentUrl;
+        existing.InsuranceDocument  = request.InsuranceDocumentUrl;
 
-        // CompanyId — update if provided (including null to unset)
-        if (request.CompanyId.HasValue || request.CompanyId == null)
-            existing.CompanyId = request.CompanyId;
+        // CompanyId — jo value aayi woh save karo
+        existing.CompanyId = request.CompanyId;
 
+        // Password — sirf tab update karo jab explicitly bheja gaya ho
         if (!string.IsNullOrWhiteSpace(request.Password))
             existing.Password = request.Password;
 

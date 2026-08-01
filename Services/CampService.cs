@@ -45,6 +45,7 @@ public class CampService : ICampService
             CampPremisesNo     = request.CampPremisesNo?.Trim()    ?? "",
             CampPlotNo         = request.CampPlotNo?.Trim()        ?? "",
             CampMakaniNo       = request.CampMakaniNo?.Trim()      ?? "",
+            OwnerContractStatus = request.OwnerContractStatus?.Trim() ?? "",
             Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
             Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
             AddedBy  = userId,
@@ -72,6 +73,7 @@ public class CampService : ICampService
             CampPremisesNo     = request.CampPremisesNo?.Trim()    ?? "",
             CampPlotNo         = request.CampPlotNo?.Trim()        ?? "",
             CampMakaniNo       = request.CampMakaniNo?.Trim()      ?? "",
+            OwnerContractStatus = request.OwnerContractStatus?.Trim() ?? "",
             Partners = request.Partners.Select(p => new CampPartner { PartnerId = p.PartnerId ?? 0, ShareType = p.ShareType, ShareValue = p.ShareValue }).ToList(),
             Owners   = request.Owners.Select(o => new CampOwner   { OwnerId   = o.OwnerId   ?? 0, ShareType = o.ShareType, ShareValue = o.ShareValue }).ToList(),
             UpdatedBy = userId,
@@ -105,6 +107,7 @@ public class CampService : ICampService
         CampPremisesNo    = c.CampPremisesNo,
         CampPlotNo        = c.CampPlotNo,
         CampMakaniNo      = c.CampMakaniNo,
+        OwnerContractStatus = c.OwnerContractStatus,
         CreatedAt         = c.CreatedAt,
         UpdatedAt         = c.UpdatedAt,
         Partners = c.Partners.Select(p => new CampPartnerResponse

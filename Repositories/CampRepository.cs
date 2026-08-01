@@ -161,6 +161,7 @@ public class CampRepository : ICampRepository
         cmd.Parameters.AddWithValue("@CampPremisesNo",     camp.CampPremisesNo);
         cmd.Parameters.AddWithValue("@CampPlotNo",         camp.CampPlotNo);
         cmd.Parameters.AddWithValue("@CampMakaniNo",       camp.CampMakaniNo);
+        cmd.Parameters.AddWithValue("@OwnerContractStatus", camp.OwnerContractStatus ?? "");
         var partnersJson = System.Text.Json.JsonSerializer.Serialize(camp.Partners.Select(p => new { p.PartnerId, p.ShareType, p.ShareValue }));
         var ownersJson   = System.Text.Json.JsonSerializer.Serialize(camp.Owners.Select(o => new { o.OwnerId, o.ShareType, o.ShareValue }));
         cmd.Parameters.AddWithValue("@PartnersJson", partnersJson);
@@ -191,6 +192,7 @@ public class CampRepository : ICampRepository
         cmd.Parameters.AddWithValue("@CampPremisesNo",     camp.CampPremisesNo);
         cmd.Parameters.AddWithValue("@CampPlotNo",         camp.CampPlotNo);
         cmd.Parameters.AddWithValue("@CampMakaniNo",       camp.CampMakaniNo);
+        cmd.Parameters.AddWithValue("@OwnerContractStatus", camp.OwnerContractStatus ?? "");
         var partnersJson = System.Text.Json.JsonSerializer.Serialize(camp.Partners.Select(p => new { p.PartnerId, p.ShareType, p.ShareValue }));
         var ownersJson   = System.Text.Json.JsonSerializer.Serialize(camp.Owners.Select(o => new { o.OwnerId, o.ShareType, o.ShareValue }));
         cmd.Parameters.AddWithValue("@PartnersJson", partnersJson);
@@ -247,6 +249,7 @@ public class CampRepository : ICampRepository
         CampPremisesNo    = SafeStr(r, "CampPremisesNo"),
         CampPlotNo        = SafeStr(r, "CampPlotNo"),
         CampMakaniNo      = SafeStr(r, "CampMakaniNo"),
+        OwnerContractStatus = SafeStr(r, "OwnerContractStatus"),
         StartDate         = SafeDate(r, "StartDate"),
         EndDate           = SafeDate(r, "EndDate"),
         CreatedAt         = r.GetDateTime(r.GetOrdinal("CreatedAt")),
