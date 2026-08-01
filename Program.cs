@@ -17,6 +17,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "TFMS API", Version = "v1" });
+    c.EnableAnnotations();  // [SwaggerSchema] descriptions enable
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Description = "JWT Bearer token. Format: 'Bearer {token}'",

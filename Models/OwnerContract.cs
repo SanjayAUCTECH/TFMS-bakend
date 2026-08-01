@@ -18,6 +18,8 @@ public class OwnerContract
     public decimal  SecurityDeposit         { get; set; }
     public decimal  SecurityDepositPaid     { get; set; }
     public DateTime? SecurityDepositPaidDate { get; set; }
+    public string?  ContractDate            { get; set; }
+    public decimal  MonthlyRent             { get; set; }
     public string   Status      { get; set; } = "Active";
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }

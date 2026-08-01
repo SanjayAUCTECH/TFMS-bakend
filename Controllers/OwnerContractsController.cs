@@ -79,6 +79,8 @@ public class OwnerContractsController : BaseApiController
             SecurityDeposit          = request.SecurityDeposit,
             SecurityDepositPaid      = request.SecurityDepositPaid,
             SecurityDepositPaidDate  = string.IsNullOrEmpty(request.SecurityDepositPaidDate) ? null : DateTime.Parse(request.SecurityDepositPaidDate),
+            ContractDate             = request.ContractDate,
+            MonthlyRent              = request.MonthlyRent,
             AddedBy                  = CurrentUserId,
         };
 
@@ -160,6 +162,8 @@ public class OwnerContractsController : BaseApiController
         SecurityDeposit          = c.SecurityDeposit,
         SecurityDepositPaid      = c.SecurityDepositPaid,
         SecurityDepositPaidDate  = c.SecurityDepositPaidDate?.ToString("yyyy-MM-dd"),
+        ContractDate             = c.ContractDate,
+        MonthlyRent              = c.MonthlyRent,
         Status                   = c.Status,
         CreatedAt                = c.CreatedAt,
         Installments = c.Installments.Select(i => new OwnerInstallmentResponse

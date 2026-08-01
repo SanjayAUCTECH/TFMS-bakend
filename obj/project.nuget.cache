@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "0u4pn3/msSA=",
+  "dgSpecHash": "GcYvi+HKr7o=",
   "success": true,
   "projectFilePath": "G:\\Sanjay Kumar\\AI project\\TFMS Software\\Tfms-full project\\TFMS-bakend\\TFMS_software_api.csproj",
   "expectedPackageFiles": [
@@ -41,6 +41,7 @@
     "C:\\Users\\Sanjay\\.nuget\\packages\\runtime.ubuntu.16.04-x64.runtime.native.system.security.cryptography.openssl\\4.3.2\\runtime.ubuntu.16.04-x64.runtime.native.system.security.cryptography.openssl.4.3.2.nupkg.sha512",
     "C:\\Users\\Sanjay\\.nuget\\packages\\runtime.ubuntu.16.10-x64.runtime.native.system.security.cryptography.openssl\\4.3.2\\runtime.ubuntu.16.10-x64.runtime.native.system.security.cryptography.openssl.4.3.2.nupkg.sha512",
     "C:\\Users\\Sanjay\\.nuget\\packages\\swashbuckle.aspnetcore\\6.7.3\\swashbuckle.aspnetcore.6.7.3.nupkg.sha512",
+    "C:\\Users\\Sanjay\\.nuget\\packages\\swashbuckle.aspnetcore.annotations\\6.7.3\\swashbuckle.aspnetcore.annotations.6.7.3.nupkg.sha512",
     "C:\\Users\\Sanjay\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.7.3\\swashbuckle.aspnetcore.swagger.6.7.3.nupkg.sha512",
     "C:\\Users\\Sanjay\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.7.3\\swashbuckle.aspnetcore.swaggergen.6.7.3.nupkg.sha512",
     "C:\\Users\\Sanjay\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\6.7.3\\swashbuckle.aspnetcore.swaggerui.6.7.3.nupkg.sha512",

@@ -1,30 +1,71 @@
 using System.ComponentModel.DataAnnotations;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace TFMS_software_api.DTOs;
 
 // ── Request ───────────────────────────────────────────────────────────────────
+/// <summary>Owner Contract create karne ka request payload</summary>
 public class CreateOwnerContractRequest
 {
-    [Required] public int     CampId                   { get; set; }
-    [Required] public int     OwnerId                  { get; set; }
-    [Required] public string  PaymentType              { get; set; } = "monthly";
-    [Required] public decimal TotalAmount              { get; set; }
-    [Required] public string  StartDate                { get; set; } = string.Empty;
-    public string?  EndDate                  { get; set; }
-    public decimal  SecurityDeposit          { get; set; } = 0;
-    public decimal  SecurityDepositPaid      { get; set; } = 0;
-    public string?  SecurityDepositPaidDate  { get; set; }
-    [Required] public List<InstallmentRequest> Installments { get; set; } = new();
+    [Required, SwaggerSchema("Camp ID (required)")]
+    public int     CampId      { get; set; }
+
+    [Required, SwaggerSchema("Owner ID (required)")]
+    public int     OwnerId     { get; set; }
+
+    [Required, SwaggerSchema("Payment type: 'monthly', 'quarterly', 'yearly', 'lumpsum'")]
+    public string  PaymentType { get; set; } = "monthly";
+
+    [Required, SwaggerSchema("Total contract amount")]
+    public decimal TotalAmount { get; set; }
+
+    [Required, SwaggerSchema("Contract start date (yyyy-MM-dd)")]
+    public string  StartDate   { get; set; } = string.Empty;
+
+    [SwaggerSchema("Contract end date (yyyy-MM-dd) — optional")]
+    public string? EndDate     { get; set; }
+
+    [SwaggerSchema("Actual contract/agreement date (yyyy-MM-dd) — optional")]
+    public string? ContractDate { get; set; }
+
+    [SwaggerSchema("Monthly rent amount")]
+    public decimal MonthlyRent { get; set; } = 0;
+
+    [SwaggerSchema("Security deposit amount")]
+    public decimal SecurityDeposit { get; set; } = 0;
+
+    [SwaggerSchema("Security deposit paid amount")]
+    public decimal SecurityDepositPaid { get; set; } = 0;
+
+    [SwaggerSchema("Security deposit paid date (yyyy-MM-dd) — optional")]
+    public string? SecurityDepositPaidDate { get; set; }
+
+    [Required, SwaggerSchema("Installments list (at least one required)")]
+    public List<InstallmentRequest> Installments { get; set; } = new();
+
+    [SwaggerSchema("Monthly installments list — optional")]
     public List<MonthlyContractInstallmentRequest> MonthlyInstallments { get; set; } = new();
 }
 
+/// <summary>Single installment item</summary>
 public class InstallmentRequest
 {
+    [SwaggerSchema("Installment number (1, 2, 3...)")]
     public int     No          { get; set; }
+
+    [SwaggerSchema("Installment amount")]
     public decimal Amount      { get; set; }
+
+    [SwaggerSchema("Due date (yyyy-MM-dd)")]
     public string  DueDate     { get; set; } = string.Empty;
+
+    [SwaggerSchema("Payment mode — e.g. Cash, Cheque, Bank Transfer")]
     public string? PaymentMode { get; set; }
+
+    [SwaggerSchema("Reference/cheque number")]
     public string? ReferenceNo { get; set; }
+
+    [SwaggerSchema("Month label — e.g. 'January 2026'")]
     public string? Month       { get; set; }
 }
 
@@ -63,6 +104,8 @@ public class OwnerContractResponse
     public decimal  SecurityDeposit          { get; set; }
     public decimal  SecurityDepositPaid      { get; set; }
     public string?  SecurityDepositPaidDate  { get; set; }
+    public string?  ContractDate             { get; set; }
+    public decimal  MonthlyRent              { get; set; }
     public string   Status                   { get; set; } = string.Empty;
     public DateTime CreatedAt                { get; set; }
     public List<OwnerInstallmentResponse>  Installments { get; set; } = new();

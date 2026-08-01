@@ -97,6 +97,8 @@ public class OwnerContractRepository : IOwnerContractRepository
         cmd.Parameters.AddWithValue("@SecurityDeposit",  contract.SecurityDeposit);
         cmd.Parameters.AddWithValue("@SecurityDepositPaid", contract.SecurityDepositPaid);
         cmd.Parameters.AddWithValue("@SecurityDepositPaidDate", (object?)contract.SecurityDepositPaidDate?.ToString("yyyy-MM-dd") ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractDate",  (object?)contract.ContractDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@MonthlyRent",   contract.MonthlyRent);
         cmd.Parameters.AddWithValue("@InstallmentsJson", installmentsJson);
         cmd.Parameters.AddWithValue("@MonthlyInstallmentsJson", monthlyInstallmentsJson);
         cmd.Parameters.AddWithValue("@AddedBy", (object?)contract.AddedBy ?? DBNull.Value);
@@ -135,6 +137,8 @@ public class OwnerContractRepository : IOwnerContractRepository
         SecurityDeposit         = SafeDecimal(r, "SecurityDeposit"),
         SecurityDepositPaid     = SafeDecimal(r, "SecurityDepositPaid"),
         SecurityDepositPaidDate = r.IsDBNull(r.GetOrdinal("SecurityDepositPaidDate")) ? null : r.GetDateTime(r.GetOrdinal("SecurityDepositPaidDate")),
+        ContractDate            = SafeStrR(r, "ContractDate"),
+        MonthlyRent             = SafeDecimal(r, "MonthlyRent"),
         Status      = r.GetString(r.GetOrdinal("Status")),
         CreatedAt   = r.GetDateTime(r.GetOrdinal("CreatedAt")),
     };
