@@ -188,3 +188,52 @@ GO
 
 PRINT '✅ 134 - Columns added + sp_CreateOwnerContract fixed: PaymentMode/ReferenceNo/Month save honge';
 GO
+
+-- ── Step 6: sp_GetOwnerContracts — saare new columns include karo ──
+CREATE OR ALTER PROCEDURE sp_GetOwnerContracts
+    @OwnerId INT = NULL,
+    @CampId  INT = NULL,
+    @Status  NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        oc.Id,
+        oc.OcCode,
+        oc.CampId,
+        ISNULL(c.Name, oc.CampName)  AS CampName,
+        oc.OwnerId,
+        ISNULL(o.Name, oc.OwnerName) AS OwnerName,
+        ISNULL(o.Code, oc.OwnerCode) AS OwnerCode,
+        oc.PaymentType,
+        oc.TotalAmount,
+        ISNULL((SELECT SUM(ISNULL(oi.PaidAmount,0))
+                FROM OwnerInstallments oi
+                WHERE oi.OwnerContractId=oc.Id AND ISNULL(oi.IsDeleted,0)=0), 0) AS PaidAmount,
+        oc.TotalAmount - ISNULL((SELECT SUM(ISNULL(oi.PaidAmount,0))
+                FROM OwnerInstallments oi
+                WHERE oi.OwnerContractId=oc.Id AND ISNULL(oi.IsDeleted,0)=0), 0) AS Balance,
+        oc.StartDate,
+        oc.EndDate,
+        ISNULL(oc.SecurityDeposit,     0) AS SecurityDeposit,
+        ISNULL(oc.SecurityDepositPaid, 0) AS SecurityDepositPaid,
+        oc.SecurityDepositPaidDate,
+        oc.Status,
+        oc.CreatedAt,
+        oc.UpdatedAt,
+        oc.AddedBy,
+        oc.UpdatedBy,
+        oc.IsDeleted
+    FROM OwnerContracts oc
+    LEFT JOIN Owners o ON o.Id = oc.OwnerId AND o.IsDeleted = 0
+    LEFT JOIN Camps  c ON c.Id = oc.CampId  AND c.IsDeleted = 0
+    WHERE oc.IsDeleted = 0
+      AND (@OwnerId IS NULL OR oc.OwnerId = @OwnerId)
+      AND (@CampId  IS NULL OR oc.CampId  = @CampId)
+      AND (@Status  IS NULL OR oc.Status  = @Status)
+    ORDER BY oc.CreatedAt DESC;
+END
+GO
+
+PRINT '✅ 134 - sp_GetOwnerContracts updated: EndDate/SecurityDeposit fields ab include hain';
+GO
