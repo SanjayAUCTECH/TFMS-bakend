@@ -79,9 +79,9 @@ public class PartnerRepository : IPartnerRepository
 
         cmd.Parameters.AddWithValue("@Id",        p.Id);
         cmd.Parameters.AddWithValue("@Name",      p.Name);
-        cmd.Parameters.AddWithValue("@Contact",   p.Contact);
-        cmd.Parameters.AddWithValue("@Mobile",    p.Mobile);
-        cmd.Parameters.AddWithValue("@Email",     p.Email);
+        cmd.Parameters.AddWithValue("@Contact",   (object?)p.Contact   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Mobile",    (object?)p.Mobile    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Email",     (object?)p.Email     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",    p.Status);
         cmd.Parameters.AddWithValue("@UpdatedBy", (object?)p.UpdatedBy ?? DBNull.Value);
 

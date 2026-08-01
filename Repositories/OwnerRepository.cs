@@ -65,8 +65,8 @@ public class OwnerRepository : IOwnerRepository
         await using var cmd = new SqlCommand("sp_UpdateOwner", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id",        o.Id);
         cmd.Parameters.AddWithValue("@Name",      o.Name);
-        cmd.Parameters.AddWithValue("@Contact",   o.Contact);
-        cmd.Parameters.AddWithValue("@Email",     o.Email);
+        cmd.Parameters.AddWithValue("@Contact",   (object?)o.Contact   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Email",     (object?)o.Email     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",    o.Status);
         cmd.Parameters.AddWithValue("@UpdatedBy", (object?)o.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;

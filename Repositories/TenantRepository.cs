@@ -111,28 +111,28 @@ public class TenantRepository : ITenantRepository
     {
         cmd.Parameters.AddWithValue("@Type",                t.Type);
         cmd.Parameters.AddWithValue("@Name",                t.Name);
-        cmd.Parameters.AddWithValue("@Passport",            t.Passport);
-        cmd.Parameters.AddWithValue("@Nationality",         t.Nationality);
-        cmd.Parameters.AddWithValue("@EmiratesId",          t.EmiratesId);
-        cmd.Parameters.AddWithValue("@Contact",             t.Contact);
-        cmd.Parameters.AddWithValue("@Whatsapp",            t.Whatsapp);
-        cmd.Parameters.AddWithValue("@Email",               t.Email);
-        cmd.Parameters.AddWithValue("@Address",             t.Address);
+        cmd.Parameters.AddWithValue("@Passport",            (object?)t.Passport            ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Nationality",         (object?)t.Nationality         ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@EmiratesId",          (object?)t.EmiratesId          ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Contact",             (object?)t.Contact             ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Whatsapp",            (object?)t.Whatsapp            ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Email",               (object?)t.Email               ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Address",             (object?)t.Address             ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",              t.Status);
-        cmd.Parameters.AddWithValue("@Company",             t.Company);
-        cmd.Parameters.AddWithValue("@TradeLicense",        t.TradeLicense);
-        cmd.Parameters.AddWithValue("@LicensingAuthority",  t.LicensingAuthority);
-        cmd.Parameters.AddWithValue("@NumberOfCoOccupants", t.NumberOfCoOccupants);
-        cmd.Parameters.AddWithValue("@PlotNo",              t.PlotNo);
-        cmd.Parameters.AddWithValue("@MakaniNo",            t.MakaniNo);
-        cmd.Parameters.AddWithValue("@PropertyArea",        t.PropertyArea);
-        cmd.Parameters.AddWithValue("@PremisesNo",          t.PremisesNo);
-        cmd.Parameters.AddWithValue("@LessorName",          t.LessorName);
-        cmd.Parameters.AddWithValue("@LessorEid",           t.LessorEid);
-        cmd.Parameters.AddWithValue("@LessorLicense",       t.LessorLicense);
-        cmd.Parameters.AddWithValue("@LessorLicAuthority",  t.LessorLicAuthority);
-        cmd.Parameters.AddWithValue("@LessorEmail",         t.LessorEmail);
-        cmd.Parameters.AddWithValue("@LessorPhone",         t.LessorPhone);
+        cmd.Parameters.AddWithValue("@Company",             (object?)t.Company             ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TradeLicense",        (object?)t.TradeLicense        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LicensingAuthority",  (object?)t.LicensingAuthority  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@NumberOfCoOccupants", (object?)t.NumberOfCoOccupants ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PlotNo",              (object?)t.PlotNo              ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@MakaniNo",            (object?)t.MakaniNo            ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PropertyArea",        (object?)t.PropertyArea        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PremisesNo",          (object?)t.PremisesNo          ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LessorName",          (object?)t.LessorName          ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LessorEid",           (object?)t.LessorEid           ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LessorLicense",       (object?)t.LessorLicense       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LessorLicAuthority",  (object?)t.LessorLicAuthority  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LessorEmail",         (object?)t.LessorEmail         ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@LessorPhone",         (object?)t.LessorPhone         ?? DBNull.Value);
     }
 
     private static Tenant Map(SqlDataReader r)

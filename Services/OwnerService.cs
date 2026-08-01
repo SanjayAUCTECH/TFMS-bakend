@@ -34,7 +34,7 @@ public class OwnerService : IOwnerService
     public async Task<ApiResponse<OwnerResponse>> UpdateAsync(int id, UpdateOwnerRequest request, int? userId = null)
     {
         if (!await _repo.ExistsAsync(id)) return ApiResponse<OwnerResponse>.Fail("Owner not found.");
-        await _repo.UpdateAsync(new Owner { Id = id, Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status, UpdatedBy = userId });
+        await _repo.UpdateAsync(new Owner { Id = id, Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim(), Email = request.Email?.Trim(), Status = request.Status, UpdatedBy = userId });
         return ApiResponse<OwnerResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Owner updated.");
     }
 

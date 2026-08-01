@@ -44,9 +44,12 @@ public class OwnerContractsController : BaseApiController
 
         var installmentsJson = JsonSerializer.Serialize(request.Installments.Select(i => new
         {
-            No      = i.No,
-            Amount  = i.Amount,
-            DueDate = i.DueDate
+            No          = i.No,
+            Amount      = i.Amount,
+            DueDate     = i.DueDate,
+            PaymentMode = i.PaymentMode,
+            ReferenceNo = i.ReferenceNo,
+            Month       = i.Month
         }));
 
         var monthlyInstallmentsJson = JsonSerializer.Serialize(request.MonthlyInstallments.Select(m => new

@@ -69,11 +69,11 @@ public class UserService : IUserService
         if (existing == null) return ApiResponse<UserResponse>.Fail("User not found.");
 
         existing.Name        = request.Name?.Trim() ?? "";
-        existing.Role        = request.Role?.Trim() ?? "";
-        existing.Source      = request.Source?.Trim() ?? "";
+        existing.Role        = request.Role?.Trim();
+        existing.Source      = request.Source?.Trim();
         existing.SourceId    = request.SourceId;
-        existing.Contact     = request.Contact?.Trim() ?? "";
-        existing.Email       = request.Email?.Trim() ?? "";
+        existing.Contact     = request.Contact?.Trim();
+        existing.Email       = request.Email?.Trim();
         existing.IsAdmin     = request.IsAdmin;
         existing.LoginAccess = request.LoginAccess;
         existing.Status      = request.Status;

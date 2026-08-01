@@ -12,8 +12,8 @@ public class CreatePartnerRequest
 public class UpdatePartnerRequest
 {
     public string  Name    { get; set; } = string.Empty;
-    public string  Contact { get; set; } = string.Empty;
-    public string  Mobile  { get; set; } = string.Empty;
+    public string? Contact { get; set; }
+    public string? Mobile  { get; set; }
     public string? Email   { get; set; }
     public string  Status  { get; set; } = "Active";
 }

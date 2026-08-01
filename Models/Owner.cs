@@ -5,8 +5,8 @@ public class Owner
     public int      Id        { get; set; }
     public string   Code      { get; set; } = string.Empty;
     public string   Name      { get; set; } = string.Empty;
-    public string   Contact   { get; set; } = string.Empty;
-    public string   Email     { get; set; } = string.Empty;
+    public string?  Contact   { get; set; }
+    public string?  Email     { get; set; }
     public string   Status    { get; set; } = "Active";
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

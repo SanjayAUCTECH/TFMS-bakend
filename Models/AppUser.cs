@@ -8,10 +8,10 @@ public class AppUser
     public string    Username     { get; set; } = string.Empty;
     public string    Password     { get; set; } = string.Empty;
     public string    Role         { get; set; } = string.Empty;
-    public string    Source       { get; set; } = string.Empty;
+    public string?   Source       { get; set; }
     public int?      SourceId     { get; set; }
-    public string    Contact      { get; set; } = string.Empty;
-    public string    Email        { get; set; } = string.Empty;
+    public string?   Contact      { get; set; }
+    public string?   Email        { get; set; }
     public string    LoginAccess  { get; set; } = "enabled";
     public string    Status       { get; set; } = "Active";
     public DateTime? LastLogin    { get; set; }

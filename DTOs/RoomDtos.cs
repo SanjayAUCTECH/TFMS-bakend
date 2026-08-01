@@ -37,7 +37,7 @@ public class UpdateRoomRequest
     public int?    FloorId      { get; set; }
     public decimal MonthlyPrice { get; set; }
     public string  Status       { get; set; } = "Vacant";
-    public string  OtherDetails { get; set; } = string.Empty;
+    public string? OtherDetails { get; set; }
 }
 
 public class RoomListRequest : Common.PagedRequest

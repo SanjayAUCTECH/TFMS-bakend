@@ -20,9 +20,12 @@ public class CreateOwnerContractRequest
 
 public class InstallmentRequest
 {
-    public int     No      { get; set; }
-    public decimal Amount  { get; set; }
-    public string  DueDate { get; set; } = string.Empty;
+    public int     No          { get; set; }
+    public decimal Amount      { get; set; }
+    public string  DueDate     { get; set; } = string.Empty;
+    public string? PaymentMode { get; set; }
+    public string? ReferenceNo { get; set; }
+    public string? Month       { get; set; }
 }
 
 public class MonthlyContractInstallmentRequest

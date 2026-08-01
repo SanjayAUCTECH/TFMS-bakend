@@ -43,8 +43,8 @@ public class PartnerService : IPartnerService
         if (!await _repo.ExistsAsync(id)) return ApiResponse<PartnerResponse>.Fail("Partner not found.");
         await _repo.UpdateAsync(new Partner
         {
-            Id = id, Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim() ?? "",
-            Mobile = request.Mobile?.Trim() ?? "", Email = request.Email?.Trim() ?? "", Status = request.Status, UpdatedBy = userId,
+            Id = id, Name = request.Name?.Trim() ?? "", Contact = request.Contact?.Trim(),
+            Mobile = request.Mobile?.Trim(), Email = request.Email?.Trim(), Status = request.Status, UpdatedBy = userId,
         });
         var updated = await _repo.GetByIdAsync(id);
         return ApiResponse<PartnerResponse>.Ok(ToResponse(updated!), "Partner updated successfully.");

@@ -84,7 +84,7 @@ public class RoomRepository : IRoomRepository
         cmd.Parameters.AddWithValue("@FloorId",      room.FloorId);
         cmd.Parameters.AddWithValue("@MonthlyPrice", room.MonthlyPrice);
         cmd.Parameters.AddWithValue("@Status",       room.Status);
-        cmd.Parameters.AddWithValue("@OtherDetails", room.OtherDetails);
+        cmd.Parameters.AddWithValue("@OtherDetails", (object?)room.OtherDetails ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@UpdatedBy",    (object?)room.UpdatedBy ?? DBNull.Value);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }

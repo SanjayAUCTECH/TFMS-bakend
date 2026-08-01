@@ -11,7 +11,7 @@ public class Room
     public bool     Occupied     { get; set; }
     public decimal  MonthlyPrice { get; set; }
     public string   Status       { get; set; } = "Vacant";
-    public string   OtherDetails { get; set; } = string.Empty;
+    public string?  OtherDetails { get; set; }
     public DateTime CreatedAt    { get; set; }
     public DateTime UpdatedAt    { get; set; }
     // Audit

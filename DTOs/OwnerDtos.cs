@@ -11,7 +11,7 @@ public class CreateOwnerRequest
 public class UpdateOwnerRequest
 {
     public string  Name    { get; set; } = string.Empty;
-    public string  Contact { get; set; } = string.Empty;
+    public string? Contact { get; set; }
     public string? Email   { get; set; }
     public string  Status  { get; set; } = "Active";
 }

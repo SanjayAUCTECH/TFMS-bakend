@@ -45,7 +45,7 @@ public class RoomService : IRoomService
         await _repo.UpdateAsync(new Room
         {
             Id = id, RoomNo = request.RoomNo.Trim(), CampId = request.CampId ?? 0, FloorId = request.FloorId ?? 0,
-            MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails.Trim(),
+            MonthlyPrice = request.MonthlyPrice, Status = request.Status, OtherDetails = request.OtherDetails?.Trim(),
             UpdatedBy = userId,
         });
         return ApiResponse<RoomResponse>.Ok(ToResponse((await _repo.GetByIdAsync(id))!), "Room updated.");

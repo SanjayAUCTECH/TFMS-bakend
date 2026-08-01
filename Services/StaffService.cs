@@ -95,29 +95,29 @@ public class StaffService : IStaffService
         if (!string.IsNullOrWhiteSpace(uname2) && await _repo.UsernameExistsAsync(uname2, id))
             return ApiResponse<StaffResponse>.Fail("Username already taken by another staff member.");
 
-        // Jo value aayi woh save karo, jo nahi aayi woh null/empty save karo
+        // Jo value aayi woh save karo, jo nahi aayi (null/empty) woh NULL save karo
         existing.Name        = request.Name?.Trim() ?? "";
-        existing.Designation = request.Designation?.Trim() ?? "";
-        existing.Contact     = request.Contact?.Trim() ?? "";
-        existing.Email       = request.Email?.Trim() ?? "";
-        existing.Address     = request.Address?.Trim() ?? "";
+        existing.Designation = request.Designation?.Trim();
+        existing.Contact     = request.Contact?.Trim();
+        existing.Email       = request.Email?.Trim();
+        existing.Address     = request.Address?.Trim();
         existing.Username    = uname2 ?? existing.Username;
         existing.LoginAccess = request.LoginAccess ?? "enabled";
         existing.Status      = request.Status ?? "Active";
-        existing.Remarks     = request.Remarks?.Trim() ?? "";
-        existing.EmiratesId  = request.EmiratesId?.Trim() ?? "";
-        existing.PassportNo  = request.PassportNo?.Trim() ?? "";
-        existing.Nationality = request.Nationality?.Trim() ?? "";
-        existing.JobTitle    = request.JobTitle?.Trim() ?? "";
+        existing.Remarks     = request.Remarks?.Trim();
+        existing.EmiratesId  = request.EmiratesId?.Trim();
+        existing.PassportNo  = request.PassportNo?.Trim();
+        existing.Nationality = request.Nationality?.Trim();
+        existing.JobTitle    = request.JobTitle?.Trim();
         existing.MoveInDate  = ParseDate(request.MoveInDate);
         existing.VisaExpiry  = ParseDate(request.VisaExpiry);
 
         // 5 New Fields
-        existing.LabourCardNo    = request.LabourCardNo?.Trim() ?? "";
+        existing.LabourCardNo    = request.LabourCardNo?.Trim();
         existing.DateOfBirth     = ParseDate(request.DateOfBirth);
         existing.FitnessExpireDM = ParseDate(request.FitnessExpireDM);
-        existing.IloeNo          = request.IloeNo?.Trim() ?? "";
-        existing.InsuranceNo     = request.InsuranceNo?.Trim() ?? "";
+        existing.IloeNo          = request.IloeNo?.Trim();
+        existing.InsuranceNo     = request.InsuranceNo?.Trim();
 
         // Document dates — value aayi toh save, nahi aayi toh null
         existing.EmiratesIdIssueDate  = ParseDate(request.EmiratesIdIssueDate);

@@ -6,30 +6,30 @@ public class Staff
     public string   StaffId     { get; set; } = string.Empty;
     public string   Name        { get; set; } = string.Empty;
     public string   Role        { get; set; } = "Staff";
-    public string   Designation { get; set; } = string.Empty;
-    public string   Contact     { get; set; } = string.Empty;
-    public string   Email       { get; set; } = string.Empty;
-    public string   Address     { get; set; } = string.Empty;
-    public string   Username    { get; set; } = string.Empty;
-    public string   Password    { get; set; } = string.Empty;
+    public string?  Designation { get; set; }
+    public string?  Contact     { get; set; }
+    public string?  Email       { get; set; }
+    public string?  Address     { get; set; }
+    public string?  Username    { get; set; }
+    public string?  Password    { get; set; }
     public string   LoginAccess { get; set; } = "enabled";
     public string   Status      { get; set; } = "Active";
-    public string   Remarks     { get; set; } = string.Empty;
+    public string?  Remarks     { get; set; }
 
     // Identity & Employment
-    public string    EmiratesId    { get; set; } = string.Empty;
-    public string    PassportNo    { get; set; } = string.Empty;
-    public string    Nationality   { get; set; } = string.Empty;
-    public string    JobTitle      { get; set; } = string.Empty;
+    public string?   EmiratesId    { get; set; }
+    public string?   PassportNo    { get; set; }
+    public string?   Nationality   { get; set; }
+    public string?   JobTitle      { get; set; }
     public DateTime? MoveInDate    { get; set; }
     public DateTime? VisaExpiry    { get; set; }
 
     // 5 New Fields
-    public string    LabourCardNo    { get; set; } = string.Empty;
+    public string?   LabourCardNo    { get; set; }
     public DateTime? DateOfBirth     { get; set; }
     public DateTime? FitnessExpireDM { get; set; }
-    public string    IloeNo          { get; set; } = string.Empty;
-    public string    InsuranceNo     { get; set; } = string.Empty;
+    public string?   IloeNo          { get; set; }
+    public string?   InsuranceNo     { get; set; }
 
     // Document dates
     public DateTime? EmiratesIdIssueDate    { get; set; }

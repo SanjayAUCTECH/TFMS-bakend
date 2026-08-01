@@ -84,11 +84,11 @@ public class UserRepository : IUserRepository
         await using var cmd = new SqlCommand("sp_UpdateUser", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id",          user.Id);
         cmd.Parameters.AddWithValue("@Name",        user.Name);
-        cmd.Parameters.AddWithValue("@Role",        user.Role);
-        cmd.Parameters.AddWithValue("@Source",      user.Source);
-        cmd.Parameters.AddWithValue("@SourceId",    (object?)user.SourceId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@Contact",     user.Contact);
-        cmd.Parameters.AddWithValue("@Email",       user.Email);
+        cmd.Parameters.AddWithValue("@Role",        (object?)user.Role        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Source",      (object?)user.Source      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SourceId",    (object?)user.SourceId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Contact",     (object?)user.Contact     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Email",       (object?)user.Email       ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@IsAdmin",     user.IsAdmin);
         cmd.Parameters.AddWithValue("@LoginAccess", user.LoginAccess);
         cmd.Parameters.AddWithValue("@Status",      user.Status);

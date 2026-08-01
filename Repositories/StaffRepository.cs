@@ -133,28 +133,28 @@ public class StaffRepository : IStaffRepository
     private static void AddCommonParams(SqlCommand cmd, Staff s)
     {
         cmd.Parameters.AddWithValue("@Name",        s.Name);
-        cmd.Parameters.AddWithValue("@Designation", s.Designation ?? "");
-        cmd.Parameters.AddWithValue("@Contact",     s.Contact);
-        cmd.Parameters.AddWithValue("@Email",       s.Email);
-        cmd.Parameters.AddWithValue("@Address",     s.Address);
+        cmd.Parameters.AddWithValue("@Designation", (object?)s.Designation ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Contact",     (object?)s.Contact     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Email",       (object?)s.Email       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Address",     (object?)s.Address     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Username",    string.IsNullOrWhiteSpace(s.Username) ? (object)DBNull.Value : s.Username);
         cmd.Parameters.AddWithValue("@Password",    (object?)s.Password ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@LoginAccess", s.LoginAccess);
         cmd.Parameters.AddWithValue("@Status",      s.Status);
-        cmd.Parameters.AddWithValue("@Remarks",     s.Remarks);
-        cmd.Parameters.AddWithValue("@EmiratesId",  s.EmiratesId);
-        cmd.Parameters.AddWithValue("@PassportNo",  s.PassportNo);
-        cmd.Parameters.AddWithValue("@Nationality", s.Nationality);
-        cmd.Parameters.AddWithValue("@JobTitle",    s.JobTitle);
+        cmd.Parameters.AddWithValue("@Remarks",     (object?)s.Remarks     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@EmiratesId",  (object?)s.EmiratesId  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PassportNo",  (object?)s.PassportNo  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Nationality", (object?)s.Nationality ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@JobTitle",    (object?)s.JobTitle    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@MoveInDate",  (object?)s.MoveInDate  ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@VisaExpiry",  (object?)s.VisaExpiry  ?? DBNull.Value);
 
         // 5 New Fields
-        cmd.Parameters.AddWithValue("@LabourCardNo",    string.IsNullOrEmpty(s.LabourCardNo) ? (object)DBNull.Value : s.LabourCardNo);
+        cmd.Parameters.AddWithValue("@LabourCardNo",    (object?)s.LabourCardNo    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@DateOfBirth",     (object?)s.DateOfBirth     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@FitnessExpireDM", (object?)s.FitnessExpireDM ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@IloeNo",          string.IsNullOrEmpty(s.IloeNo)       ? (object)DBNull.Value : s.IloeNo);
-        cmd.Parameters.AddWithValue("@InsuranceNo",     string.IsNullOrEmpty(s.InsuranceNo)   ? (object)DBNull.Value : s.InsuranceNo);
+        cmd.Parameters.AddWithValue("@IloeNo",          (object?)s.IloeNo          ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@InsuranceNo",     (object?)s.InsuranceNo     ?? DBNull.Value);
 
         // Document dates
         cmd.Parameters.AddWithValue("@EmiratesIdIssueDate",  (object?)s.EmiratesIdIssueDate  ?? DBNull.Value);
@@ -169,7 +169,6 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@InsuranceExpiryDate",  (object?)s.InsuranceExpiryDate  ?? DBNull.Value);
 
         // Document URLs
-        // Document URLs — null aaye toh DBNull (SP mein CASE se NULL save hoga)
         cmd.Parameters.AddWithValue("@EmiratesIdDocument", (object?)s.EmiratesIdDocument ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@PassportDocument",   (object?)s.PassportDocument   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@LabourCardDocument", (object?)s.LabourCardDocument ?? DBNull.Value);
