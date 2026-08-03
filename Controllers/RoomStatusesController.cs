@@ -15,7 +15,20 @@ public class RoomStatusesController : BaseApiController
     { _service = service; _activityLog = log; }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+    public async Task<IActionResult> GetAll([FromQuery] string? searchText)
+    {
+        var result = await _service.GetAllAsync();
+        if (!result.Success) return Ok(result);
+
+        // C# mein search filter lagao
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.Trim().ToLower();
+            var filtered = result.Data!.Where(r => r.Name.ToLower().Contains(search));
+            return Ok(Common.ApiResponse<IEnumerable<RoomStatusResponse>>.Ok(filtered, result.Message));
+        }
+        return Ok(result);
+    }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)

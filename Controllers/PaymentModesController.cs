@@ -14,9 +14,21 @@ public class PaymentModesController : BaseApiController
     public PaymentModesController(IPaymentModeService service, IActivityLogService log)
     { _service = service; _activityLog = log; }
 
-    /// <summary>GET api/paymentmodes?status=Active</summary>
+    /// <summary>GET api/paymentmodes?status=Active&amp;searchText=cash</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? status = null) => Ok(await _service.GetAllAsync(status));
+    public async Task<IActionResult> GetAll([FromQuery] string? status = null, [FromQuery] string? searchText = null)
+    {
+        var result = await _service.GetAllAsync(status);
+        if (!result.Success) return Ok(result);
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.Trim().ToLower();
+            var filtered = result.Data!.Where(r => r.Name.ToLower().Contains(search));
+            return Ok(Common.ApiResponse<IEnumerable<PaymentModeResponse>>.Ok(filtered, result.Message));
+        }
+        return Ok(result);
+    }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
