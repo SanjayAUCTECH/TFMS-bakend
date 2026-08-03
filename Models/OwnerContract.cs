@@ -22,6 +22,7 @@ public class OwnerContract
     public decimal  MonthlyRent             { get; set; }
     public int      NoOfMonths              { get; set; }
     public string   Status      { get; set; } = "Active";
+    public bool     IsRenewal   { get; set; } = false;   // true = yeh contract renewal hai
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }
     // Audit

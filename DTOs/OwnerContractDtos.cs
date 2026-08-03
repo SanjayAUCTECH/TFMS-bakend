@@ -50,6 +50,55 @@ public class CreateOwnerContractRequest
     public List<MonthlyContractInstallmentRequest> MonthlyInstallments { get; set; } = new();
 }
 
+/// <summary>Owner Contract update karne ka request payload</summary>
+public class UpdateOwnerContractRequest
+{
+    [SwaggerSchema("Camp ID — change karna ho toh bhejo, nahi toh null")]
+    public int?     CampId                  { get; set; }
+
+    [SwaggerSchema("Owner ID — change karna ho toh bhejo, nahi toh null")]
+    public int?     OwnerId                 { get; set; }
+
+    [SwaggerSchema("Payment type: monthly, quarterly, yearly, lumpsum")]
+    public string?  PaymentType             { get; set; }
+
+    [SwaggerSchema("Total contract amount")]
+    public decimal? TotalAmount             { get; set; }
+
+    [SwaggerSchema("Contract start date (yyyy-MM-dd)")]
+    public string?  StartDate               { get; set; }
+
+    [SwaggerSchema("Contract end date (yyyy-MM-dd)")]
+    public string?  EndDate                 { get; set; }
+
+    [SwaggerSchema("Actual contract/agreement date (yyyy-MM-dd)")]
+    public string?  ContractDate            { get; set; }
+
+    [SwaggerSchema("Monthly rent amount")]
+    public decimal? MonthlyRent             { get; set; }
+
+    [SwaggerSchema("Number of months")]
+    public int?     NoOfMonths              { get; set; }
+
+    [SwaggerSchema("Security deposit amount")]
+    public decimal? SecurityDeposit         { get; set; }
+
+    [SwaggerSchema("Security deposit paid amount")]
+    public decimal? SecurityDepositPaid     { get; set; }
+
+    [SwaggerSchema("Security deposit paid date (yyyy-MM-dd)")]
+    public string?  SecurityDepositPaidDate { get; set; }
+
+    [SwaggerSchema("Status: Active, Expired, Cancelled")]
+    public string?  Status                  { get; set; }
+
+    [SwaggerSchema("Installments — null bhejo toh purane rahenge, array bhejo toh replace ho jayenge")]
+    public List<InstallmentRequest>? Installments { get; set; }
+
+    [SwaggerSchema("Monthly installments — null bhejo toh purane rahenge, array bhejo toh replace ho jayenge")]
+    public List<MonthlyContractInstallmentRequest>? MonthlyInstallments { get; set; }
+}
+
 /// <summary>Single installment item</summary>
 public class InstallmentRequest
 {
@@ -111,6 +160,7 @@ public class OwnerContractResponse
     public decimal  MonthlyRent              { get; set; }
     public int      NoOfMonths               { get; set; }
     public string   Status                   { get; set; } = string.Empty;
+    public bool     IsRenewal                { get; set; }
     public DateTime CreatedAt                { get; set; }
     public List<OwnerInstallmentResponse>  Installments { get; set; } = new();
     public List<OwnerTransactionResponse>  Transactions { get; set; } = new();

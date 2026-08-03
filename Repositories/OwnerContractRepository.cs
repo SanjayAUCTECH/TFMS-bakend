@@ -9,12 +9,14 @@ public class OwnerContractRepository : IOwnerContractRepository
     private readonly IDbConnectionFactory _factory;
     public OwnerContractRepository(IDbConnectionFactory factory) => _factory = factory;
 
-    public async Task<IEnumerable<OwnerContract>> GetByCampAsync(int? campId)
+    public async Task<IEnumerable<OwnerContract>> GetByCampAsync(int? campId, int? ownerId = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_GetOwnerContracts", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@CampId", (object?)campId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId",  (object?)campId  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@OwnerId", (object?)ownerId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status",  DBNull.Value);
         var list = new List<OwnerContract>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(MapContract(r));
@@ -94,7 +96,7 @@ public class OwnerContractRepository : IOwnerContractRepository
             "InstallmentNo, Amount, PaidAmount, Balance, DueDate, PaidDate, " +
             "Status, ExpenseId, PaymentMode, PaymentStatus, " +
             "ISNULL(ReferenceNo,'') AS ReferenceNo, ISNULL(Month,'') AS Month, CreatedAt, UpdatedAt " +
-            "FROM OwnerMonthlyContractInstallments WHERE OwnerContractId = @OwnerContractId ORDER BY InstallmentNo",
+            "FROM OwnerMonthlyContractInstallments WHERE OwnerContractId = @OwnerContractId AND ISNULL(IsDeleted,0)=0 ORDER BY InstallmentNo",
             conn);
         cmd.Parameters.AddWithValue("@OwnerContractId", ownerContractId);
         var list = new List<OwnerMonthlyContractInstallment>();
@@ -156,8 +158,49 @@ public class OwnerContractRepository : IOwnerContractRepository
         return true;
     }
 
-    public async Task<int> RenewAsync(DTOs.RenewOwnerContractRequest request, int? userId)
+    public async Task<bool> UpdateAsync(int id, DTOs.UpdateOwnerContractRequest request, int? userId)
     {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("sp_UpdateOwnerContract", conn) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@Id",                      id);
+        cmd.Parameters.AddWithValue("@CampId",                  (object?)request.CampId                  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@OwnerId",                 (object?)request.OwnerId                 ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PaymentType",             (object?)request.PaymentType             ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TotalAmount",             (object?)request.TotalAmount             ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@StartDate",               (object?)request.StartDate               ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@EndDate",                 (object?)request.EndDate                 ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractDate",            (object?)request.ContractDate            ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@MonthlyRent",             (object?)request.MonthlyRent             ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@NoOfMonths",              (object?)request.NoOfMonths              ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SecurityDeposit",         (object?)request.SecurityDeposit         ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SecurityDepositPaid",     (object?)request.SecurityDepositPaid     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SecurityDepositPaidDate", (object?)request.SecurityDepositPaidDate ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status",                  (object?)request.Status                  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@UpdatedBy",               (object?)userId                          ?? DBNull.Value);
+
+        // Installments JSON — null bheja toh skip, array bheja toh replace
+        var installmentsJson = request.Installments != null
+            ? System.Text.Json.JsonSerializer.Serialize(request.Installments.Select(i => new {
+                No = i.No, Amount = i.Amount, DueDate = i.DueDate,
+                PaymentMode = i.PaymentMode, ReferenceNo = i.ReferenceNo, Month = i.Month }))
+            : null;
+        cmd.Parameters.AddWithValue("@InstallmentsJson", (object?)installmentsJson ?? DBNull.Value);
+
+        // MonthlyInstallments JSON — null bheja toh skip, array bheja toh replace
+        var monthlyJson = request.MonthlyInstallments != null
+            ? System.Text.Json.JsonSerializer.Serialize(request.MonthlyInstallments.Select(m => new {
+                InstallmentNo = m.InstallmentNo, Amount = m.Amount, PaidAmount = m.PaidAmount,
+                Balance = m.Balance, DueDate = m.DueDate, PaidDate = m.PaidDate,
+                Status = m.Status, PaymentMode = m.PaymentMode, PaymentStatus = m.PaymentStatus,
+                ReferenceNo = m.ReferenceNo, Month = m.Month }))
+            : null;
+        cmd.Parameters.AddWithValue("@MonthlyInstallmentsJson", (object?)monthlyJson ?? DBNull.Value);
+
+        return await cmd.ExecuteNonQueryAsync() >= 0;
+    }
+
+    public async Task<int> RenewAsync(DTOs.RenewOwnerContractRequest request, int? userId)    {
         var installmentsJson = System.Text.Json.JsonSerializer.Serialize(
             request.Installments.Select(i => new {
                 No = i.No, Amount = i.Amount, DueDate = i.DueDate,
@@ -256,6 +299,7 @@ public class OwnerContractRepository : IOwnerContractRepository
         MonthlyRent             = SafeDecimal(r, "MonthlyRent"),
         NoOfMonths              = r.IsDBNull(r.GetOrdinal("NoOfMonths")) ? 0 : r.GetInt32(r.GetOrdinal("NoOfMonths")),
         Status      = r.GetString(r.GetOrdinal("Status")),
+        IsRenewal   = SafeInt(r, "IsRenewal") == 1,
         CreatedAt   = r.GetDateTime(r.GetOrdinal("CreatedAt")),
     };
 
@@ -327,5 +371,9 @@ public class OwnerContractRepository : IOwnerContractRepository
     private static decimal SafeDecimal(SqlDataReader r, string col)
     {
         try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? 0 : r.GetDecimal(o); } catch { return 0; }
+    }
+    private static int SafeInt(SqlDataReader r, string col)
+    {
+        try { var o = r.GetOrdinal(col); return r.IsDBNull(o) ? 0 : r.GetInt32(o); } catch { return 0; }
     }
 }

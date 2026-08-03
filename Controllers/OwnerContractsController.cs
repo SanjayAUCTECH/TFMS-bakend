@@ -18,12 +18,47 @@ public class OwnerContractsController : BaseApiController
     public OwnerContractsController(IOwnerContractRepository repo, IActivityLogService log)
     { _repo = repo; _activityLog = log; }
 
-    /// <summary>GET api/ownercontracts?campId=1  — get all contracts, optionally filtered by camp</summary>
+    /// <summary>
+    /// GET api/ownercontracts
+    /// Query params:
+    ///   campId       — filter by camp
+    ///   ownerId      — filter by owner
+    ///   contractType — new | renewal | cancelled | all (default: all)
+    ///   fromDate     — contract date from (yyyy-MM-dd)
+    ///   toDate       — contract date to (yyyy-MM-dd)
+    /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? campId)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int?    campId,
+        [FromQuery] int?    ownerId,
+        [FromQuery] string? contractType,
+        [FromQuery] string? fromDate,
+        [FromQuery] string? toDate)
     {
-        var data = await _repo.GetByCampAsync(campId);
-        return Ok(ApiResponse<IEnumerable<OwnerContractResponse>>.Ok(data.Select(ToResponse), "Owner contracts retrieved."));
+        var data = await _repo.GetByCampAsync(campId, ownerId);
+
+        // contractType filter
+        var filtered = (contractType?.ToLower()) switch
+        {
+            "new"       => data.Where(c => !c.IsRenewal && c.Status != "Cancelled"),
+            "renewal"   => data.Where(c => c.IsRenewal),
+            "cancelled" => data.Where(c => c.Status == "Cancelled"),
+            _           => data
+        };
+
+        // fromDate / toDate filter — ContractDate pe apply karo
+        if (!string.IsNullOrEmpty(fromDate) && DateTime.TryParse(fromDate, out var from))
+            filtered = filtered.Where(c =>
+                !string.IsNullOrEmpty(c.ContractDate) &&
+                DateTime.TryParse(c.ContractDate, out var cd) && cd >= from);
+
+        if (!string.IsNullOrEmpty(toDate) && DateTime.TryParse(toDate, out var to))
+            filtered = filtered.Where(c =>
+                !string.IsNullOrEmpty(c.ContractDate) &&
+                DateTime.TryParse(c.ContractDate, out var cd) && cd <= to);
+
+        return Ok(ApiResponse<IEnumerable<OwnerContractResponse>>.Ok(
+            filtered.Select(ToResponse), "Owner contracts retrieved."));
     }
 
     /// <summary>GET api/ownercontracts/5</summary>
@@ -100,6 +135,24 @@ public class OwnerContractsController : BaseApiController
         await _repo.DeleteAsync(id, CurrentUserId);
         await Log(ActivityType.Delete, ActivityModule.OwnerContracts, $"Deleted OwnerContract #{id}", id.ToString(), "OwnerContract");
         return Ok(ApiResponse<bool>.Ok(true, "Owner contract deleted successfully."));
+    }
+
+    /// <summary>PUT api/ownercontracts/5 — update owner contract details</summary>
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateOwnerContractRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null)
+            return NotFound(ApiResponse<object>.Fail($"Owner contract #{id} not found."));
+
+        await _repo.UpdateAsync(id, request, CurrentUserId);
+
+        var updated = await _repo.GetByIdAsync(id);
+        await Log(ActivityType.Update, ActivityModule.OwnerContracts,
+            $"Updated OwnerContract #{id}", id.ToString(), "OwnerContract");
+
+        return Ok(ApiResponse<OwnerContractResponse>.Ok(ToResponse(updated!), "Owner contract updated successfully."));
     }
 
     /// <summary>POST api/ownercontracts/{id}/renew — renew an existing owner contract</summary>
@@ -203,6 +256,7 @@ public class OwnerContractsController : BaseApiController
         MonthlyRent              = c.MonthlyRent,
         NoOfMonths               = c.NoOfMonths,
         Status                   = c.Status,
+        IsRenewal                = c.IsRenewal,
         CreatedAt                = c.CreatedAt,
         Installments = c.Installments.Select(i => new OwnerInstallmentResponse
         {
