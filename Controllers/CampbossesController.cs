@@ -117,6 +117,11 @@ public class CampbossesController : BaseApiController
         Username = cb.Username, LoginAccess = cb.LoginAccess, Status = cb.Status,
         Remarks = cb.Remarks, EmiratesId = cb.EmiratesId, PassportNo = cb.PassportNo,
         Nationality = cb.Nationality,
+        AssignedCamps = cb.AssignedCamps.Select(ac => new CampbossAssignedCampResponse
+        {
+            Id = ac.Id, CampId = ac.CampId, CampName = ac.CampName,
+            Type = ac.Type, Amount = ac.Amount
+        }).ToList(),
         CreatedAt = cb.CreatedAt, UpdatedAt = cb.UpdatedAt,
     };
 }

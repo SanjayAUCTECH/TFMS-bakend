@@ -51,6 +51,16 @@ public class CampbossResponse
     public string?  EmiratesId  { get; set; }
     public string?  PassportNo  { get; set; }
     public string?  Nationality { get; set; }
+    public List<CampbossAssignedCampResponse> AssignedCamps { get; set; } = new();
     public DateTime CreatedAt   { get; set; }
     public DateTime UpdatedAt   { get; set; }
+}
+
+public class CampbossAssignedCampResponse
+{
+    public int     Id       { get; set; }
+    public int     CampId   { get; set; }
+    public string  CampName { get; set; } = string.Empty;
+    public string  Type     { get; set; } = string.Empty;
+    public decimal Amount   { get; set; }
 }

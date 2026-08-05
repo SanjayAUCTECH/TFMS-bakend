@@ -27,6 +27,38 @@ public class CampbossRepository : ICampbossRepository
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync()) list.Add(Map(r));
         await r.CloseAsync();
+
+        // Load assigned camps for each campboss
+        if (list.Count > 0)
+        {
+            var ids = string.Join(",", list.Select(cb => cb.Id));
+            await using var conn2 = _factory.CreateConnection();
+            await conn2.OpenAsync();
+            await using var cmd2 = new SqlCommand(
+                $@"SELECT cc.Id, cc.CampbossId, cc.CampId, ISNULL(c.Name,'') AS CampName,
+                    ISNULL(cc.Type,'') AS Type, ISNULL(cc.Amount,0) AS Amount
+                FROM CampCampbosses cc
+                LEFT JOIN Camps c ON c.Id=cc.CampId AND c.IsDeleted=0
+                WHERE cc.CampbossId IN ({ids}) AND ISNULL(cc.IsDeleted,0)=0", conn2);
+            await using var r2 = await cmd2.ExecuteReaderAsync();
+            var map = new Dictionary<int, List<CampbossAssignedCamp>>();
+            while (await r2.ReadAsync())
+            {
+                var cbId = r2.GetInt32(r2.GetOrdinal("CampbossId"));
+                if (!map.ContainsKey(cbId)) map[cbId] = new();
+                map[cbId].Add(new CampbossAssignedCamp
+                {
+                    Id       = r2.GetInt32(r2.GetOrdinal("Id")),
+                    CampId   = r2.GetInt32(r2.GetOrdinal("CampId")),
+                    CampName = r2.GetString(r2.GetOrdinal("CampName")),
+                    Type     = r2.GetString(r2.GetOrdinal("Type")),
+                    Amount   = r2.GetDecimal(r2.GetOrdinal("Amount")),
+                });
+            }
+            foreach (var cb in list)
+                cb.AssignedCamps = map.TryGetValue(cb.Id, out var camps) ? camps : new();
+        }
+
         return (list, (int)(total.Value == DBNull.Value ? 0 : total.Value));
     }
 
