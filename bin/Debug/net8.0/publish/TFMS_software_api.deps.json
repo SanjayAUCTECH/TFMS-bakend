@@ -11,7 +11,8 @@
           "CloudinaryDotNet": "1.26.2",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.7",
           "Microsoft.Data.SqlClient": "5.2.2",
-          "Swashbuckle.AspNetCore": "6.7.3"
+          "Swashbuckle.AspNetCore": "6.7.3",
+          "Swashbuckle.AspNetCore.Annotations": "6.7.3"
         },
         "runtime": {
           "TFMS_software_api.dll": {}
@@ -281,6 +282,17 @@
           "Swashbuckle.AspNetCore.SwaggerUI": "6.7.3"
         }
       },
+      "Swashbuckle.AspNetCore.Annotations/6.7.3": {
+        "dependencies": {
+          "Swashbuckle.AspNetCore.SwaggerGen": "6.7.3"
+        },
+        "runtime": {
+          "lib/net8.0/Swashbuckle.AspNetCore.Annotations.dll": {
+            "assemblyVersion": "6.7.3.0",
+            "fileVersion": "6.7.3.685"
+          }
+        }
+      },
       "Swashbuckle.AspNetCore.Swagger/6.7.3": {
         "dependencies": {
           "Microsoft.OpenApi": "1.6.14"
@@ -520,6 +532,13 @@
       "sha512": "sha512-PYTm/M5YrkEUHmguhj6vF1DshG2deKMMcsnhKet1BkcKzZHNX/VVQady0T/jNpXrtxhLR3vB10hWhONF1Nbglw==",
       "path": "swashbuckle.aspnetcore/6.7.3",
       "hashPath": "swashbuckle.aspnetcore.6.7.3.nupkg.sha512"
+    },
+    "Swashbuckle.AspNetCore.Annotations/6.7.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-u/s7QGkpgViqpXwHZ28vsSG+/HDP1i9ALgVhi9Jm7dTlUoIS5edSYE5AQIId3g/fLJi0xbNmaTCdzz+ZNnThYw==",
+      "path": "swashbuckle.aspnetcore.annotations/6.7.3",
+      "hashPath": "swashbuckle.aspnetcore.annotations.6.7.3.nupkg.sha512"
     },
     "Swashbuckle.AspNetCore.Swagger/6.7.3": {
       "type": "package",

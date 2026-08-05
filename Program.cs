@@ -33,31 +33,14 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:3000", "http://localhost:5173", "http://localhost:9001" };
-
-// If "*" is in the list → allow any origin (no credentials)
-// Otherwise → use specific origins with credentials
-var hasWildcard = allowedOrigins.Any(o => o == "*");
-
+// Allow ALL origins, methods, headers — koi bhi port se koi bhi frontend connect kar sake
 builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", p =>
     {
-        if (hasWildcard)
-        {
-            // Allow any origin — used in production where frontend domain may vary
-            p.SetIsOriginAllowed(_ => true)
-             .AllowAnyMethod()
-             .AllowAnyHeader()
-             .AllowCredentials();
-        }
-        else
-        {
-            p.WithOrigins(allowedOrigins)
-             .AllowAnyMethod()
-             .AllowAnyHeader()
-             .AllowCredentials();
-        }
+        p.SetIsOriginAllowed(_ => true)
+         .AllowAnyMethod()
+         .AllowAnyHeader()
+         .AllowCredentials();
     }));
 
 // ── JWT Auth ─────────────────────────────────────────────────────────────────
@@ -127,6 +110,7 @@ builder.Services.AddScoped<IStaffRepository,        StaffRepository>();
 builder.Services.AddScoped<IMisRepository,          MisRepository>();
 builder.Services.AddScoped<IOwnerContractRepository, OwnerContractRepository>();
 builder.Services.AddScoped<IOwnerContractCancellationRepository, OwnerContractCancellationRepository>();
+builder.Services.AddScoped<ICampbossRepository, CampbossRepository>();
 builder.Services.AddScoped<ITxnRecordRepository,    TxnRecordRepository>();
 builder.Services.AddScoped<ICompanyAssetRepository, CompanyAssetRepository>();
 builder.Services.AddScoped<IContractTermRepository, ContractTermRepository>();
