@@ -646,7 +646,7 @@ public class ReportRepository : IReportRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand("sp_GetCampCollectionReport", conn) { CommandType = CommandType.StoredProcedure };
+        await using var cmd = new SqlCommand("sp_GetCampCollectionReport", conn) { CommandType = CommandType.StoredProcedure, CommandTimeout = 2400 };
         cmd.Parameters.AddWithValue("@CampId",     (object?)r.CampId     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@PartnerId",  (object?)r.PartnerId  ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@OwnerId",    (object?)r.OwnerId    ?? DBNull.Value);

@@ -56,7 +56,7 @@ public class DashboardRepository : IDashboardRepository
         }
         var collYear  = filterYear ?? DateTime.UtcNow.Year;
         var collWhere = new List<string> { "ci.Status='Paid'", "YEAR(ci.PaidDate)=@Year" };
-        if (campId.HasValue)   collWhere.Add("ct.Id IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
+        if (campId.HasValue)   collWhere.Add("ci.ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
         if (tenantId.HasValue) collWhere.Add("ct.TenantId=@TenantId");
         var collSql = $"SELECT MONTH(ci.PaidDate) MonthNum,SUM(ci.PaidAmount) Collected FROM ContractInstallments ci JOIN Contracts ct ON ct.ContractId=ci.ContractId WHERE {string.Join(" AND ",collWhere)} GROUP BY MONTH(ci.PaidDate) ORDER BY MONTH(ci.PaidDate)";
         await using (var cmd3 = new SqlCommand(collSql, conn))
@@ -92,7 +92,7 @@ public class DashboardRepository : IDashboardRepository
             if (await r5.ReadAsync()) { stats.TotalPaidAmount=r5.IsDBNull(0)?0:r5.GetDecimal(0); stats.TotalPendingAmount=r5.IsDBNull(1)?0:r5.GetDecimal(1); }
         }
         var ctWhere  = new List<string>();
-        if (campId.HasValue)   ctWhere.Add("Id IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
+        if (campId.HasValue)   ctWhere.Add("ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
         if (tenantId.HasValue) ctWhere.Add("TenantId=@TenantId");
         var ctFilter = ctWhere.Count>0 ? "WHERE IsDeleted=0 AND "+string.Join(" AND ",ctWhere) : "WHERE IsDeleted=0";
         await using (var cmd6 = new SqlCommand($"SELECT SUM(CASE WHEN Status='Active' THEN 1 ELSE 0 END) Active,SUM(CASE WHEN Status='Completed' THEN 1 ELSE 0 END) Completed FROM Contracts {ctFilter}", conn))
