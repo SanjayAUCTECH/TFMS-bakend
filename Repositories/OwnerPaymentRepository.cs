@@ -240,23 +240,22 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                 }
             }
 
-            // 4. Update OwnerInstallments (main installment table) — total amount distributed
-            if (!string.IsNullOrEmpty(installmentNos))
+            // 4. Update OwnerInstallments — distribute total amount sequentially from first unpaid
             {
                 var remaining2 = request.Amount;
-                var instNums2 = installmentNos.Split(',').Where(s => int.TryParse(s, out _)).Select(int.Parse).OrderBy(n => n);
-                foreach (var instNo in instNums2)
+                await using var oiListCmd = new SqlCommand(
+                    "SELECT No, Amount, ISNULL(PaidAmount,0) AS PaidAmount FROM OwnerInstallments WHERE OwnerContractId=@OcId AND ISNULL(IsDeleted,0)=0 AND (Amount - ISNULL(PaidAmount,0)) > 0 ORDER BY No", conn, txn);
+                oiListCmd.Parameters.AddWithValue("@OcId", request.OwnerContractId);
+                var unpaidInstallments = new List<(int No, decimal Balance)>();
+                await using (var rOi = await oiListCmd.ExecuteReaderAsync())
+                {
+                    while (await rOi.ReadAsync())
+                        unpaidInstallments.Add((rOi.GetInt32(0), rOi.GetDecimal(1) - rOi.GetDecimal(2)));
+                }
+
+                foreach (var (instNo, oiBal) in unpaidInstallments)
                 {
                     if (remaining2 <= 0) break;
-                    decimal oiBal = 0;
-                    await using (var balCmd = new SqlCommand(
-                        "SELECT (Amount - ISNULL(PaidAmount,0)) FROM OwnerInstallments WHERE OwnerContractId=@OcId AND No=@No AND ISNULL(IsDeleted,0)=0", conn, txn))
-                    {
-                        balCmd.Parameters.AddWithValue("@OcId", request.OwnerContractId);
-                        balCmd.Parameters.AddWithValue("@No", instNo);
-                        var bal = await balCmd.ExecuteScalarAsync();
-                        oiBal = bal != null && bal != DBNull.Value ? (decimal)bal : 0;
-                    }
                     if (oiBal <= 0) continue;
                     var payThis = Math.Min(remaining2, oiBal);
 
@@ -387,7 +386,7 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                    ISNULL(t.Description,'') AS Description,
                    ISNULL(t.InstallmentNos,'') AS InstallmentNos,
                    t.ExpenseId
-            FROM OwnerTransactions t WHERE t.Id=@TxnId", conn))
+            FROM OwnerTransactions t WHERE t.Id=@TxnId AND ISNULL(t.IsDeleted,0)=0", conn))
         {
             cmd.Parameters.AddWithValue("@TxnId", txnId);
             await using var r = await cmd.ExecuteReaderAsync();
@@ -485,7 +484,7 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                    ISNULL(t.Description,'') AS PaidBy,
                    '' AS FundPoolName
             FROM OwnerTransactions t
-            WHERE t.Id = @TxnId", conn);
+            WHERE t.Id = @TxnId AND ISNULL(t.IsDeleted,0)=0", conn);
         cmd.Parameters.AddWithValue("@TxnId", txnId);
 
         await using var r = await cmd.ExecuteReaderAsync();
@@ -664,6 +663,13 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                 CASE WHEN oc.EndDate IS NOT NULL THEN CONVERT(VARCHAR(10),oc.EndDate,120) ELSE NULL END AS EndDate,
                 ISNULL(oc.SecurityDeposit,0) AS SecurityDeposit,
                 ISNULL(oc.SecurityDepositPaid,0) AS SecurityDepositPaid,
+                CASE
+                    WHEN EXISTS (SELECT 1 FROM OwnerTransactions t WHERE t.OwnerContractId=oc.Id AND t.Type='SD-SETTLE' AND ISNULL(t.IsDeleted,0)=0) THEN 'Settled'
+                    WHEN ISNULL(oc.SecurityDeposit,0) = 0 THEN 'No SD'
+                    WHEN ISNULL(oc.SecurityDepositPaid,0) >= ISNULL(oc.SecurityDeposit,0) THEN 'Paid'
+                    WHEN ISNULL(oc.SecurityDepositPaid,0) > 0 THEN 'Partially Paid'
+                    ELSE 'Pending'
+                END AS SecurityDepositStatus,
                 oc.Status
             FROM OwnerContracts oc
             LEFT JOIN Owners o ON o.Id=oc.OwnerId
@@ -705,6 +711,7 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                 EndDate              = r.IsDBNull(r.GetOrdinal("EndDate")) ? null : r.GetString(r.GetOrdinal("EndDate")),
                 SecurityDeposit      = r.GetDecimal(r.GetOrdinal("SecurityDeposit")),
                 SecurityDepositPaid  = r.GetDecimal(r.GetOrdinal("SecurityDepositPaid")),
+                SecurityDepositStatus = SafeStr(r, "SecurityDepositStatus"),
                 Status               = SafeStr(r, "Status"),
             });
         }
@@ -731,7 +738,7 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                    ISNULL(t.Type,'CR') AS Type,
                    t.CreatedAt
             FROM OwnerTransactions t
-            WHERE t.Id = @TxnId", conn);
+            WHERE t.Id = @TxnId AND ISNULL(t.IsDeleted,0)=0", conn);
         cmd.Parameters.AddWithValue("@TxnId", txnId);
 
         await using var r = await cmd.ExecuteReaderAsync();
@@ -873,6 +880,7 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
             FROM OwnerTransactions
             WHERE OwnerContractId=@OwnerContractId
               AND Type IN ('CR','SD-PAY','SD-SETTLE')
+              AND ISNULL(IsDeleted,0)=0
             ORDER BY Date, Id", conn);
         cmd.Parameters.AddWithValue("@OwnerContractId", ownerContractId);
 
@@ -988,14 +996,21 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                     revRemaining -= reverseAmt;
                 }
 
-                // Also reverse OwnerInstallments
+                // Also reverse OwnerInstallments — sequential from last paid (reverse order)
                 var revRem2 = oldAmount;
-                foreach (var instNo in oldNums.Reverse())
+                await using var revOiList = new SqlCommand(
+                    "SELECT No, ISNULL(PaidAmount,0) AS PaidAmount FROM OwnerInstallments WHERE OwnerContractId=@OcId AND ISNULL(IsDeleted,0)=0 AND ISNULL(PaidAmount,0)>0 ORDER BY No DESC", conn, sqlTxn);
+                revOiList.Parameters.AddWithValue("@OcId", ownerContractId);
+                var paidOiList = new List<(int No, decimal Paid)>();
+                await using (var rRevOi = await revOiList.ExecuteReaderAsync())
+                {
+                    while (await rRevOi.ReadAsync())
+                        paidOiList.Add((rRevOi.GetInt32(0), rRevOi.GetDecimal(1)));
+                }
+
+                foreach (var (instNo, oiPaid) in paidOiList)
                 {
                     if (revRem2 <= 0) break;
-                    decimal oiPaid = 0;
-                    await using (var oiCmd = new SqlCommand("SELECT ISNULL(PaidAmount,0) FROM OwnerInstallments WHERE OwnerContractId=@OcId AND No=@No AND ISNULL(IsDeleted,0)=0", conn, sqlTxn))
-                    { oiCmd.Parameters.AddWithValue("@OcId", ownerContractId); oiCmd.Parameters.AddWithValue("@No", instNo); var v = await oiCmd.ExecuteScalarAsync(); oiPaid = v != null && v != DBNull.Value ? (decimal)v : 0; }
                     if (oiPaid <= 0) continue;
                     var revAmt = Math.Min(revRem2, oiPaid);
                     await using var oiRevCmd = new SqlCommand(@"
@@ -1057,24 +1072,33 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                 }
             }
 
-            // Also update OwnerInstallments with new total
-            if (!string.IsNullOrEmpty(newInstallmentNos))
+            // Also update OwnerInstallments — sequential from first unpaid (same as Pay)
             {
                 var rem2 = request.Amount;
-                foreach (var instNo in newInstallmentNos.Split(',').Where(s => int.TryParse(s, out _)).Select(int.Parse).OrderBy(n => n))
+                await using var oiListCmd = new SqlCommand(
+                    "SELECT No, Amount, ISNULL(PaidAmount,0) AS PaidAmount FROM OwnerInstallments WHERE OwnerContractId=@OcId AND ISNULL(IsDeleted,0)=0 AND (Amount - ISNULL(PaidAmount,0)) > 0 ORDER BY No", conn, sqlTxn);
+                oiListCmd.Parameters.AddWithValue("@OcId", ownerContractId);
+                var unpaidOi = new List<(int No, decimal Balance)>();
+                await using (var rOi2 = await oiListCmd.ExecuteReaderAsync())
+                {
+                    while (await rOi2.ReadAsync())
+                        unpaidOi.Add((rOi2.GetInt32(0), rOi2.GetDecimal(1) - rOi2.GetDecimal(2)));
+                }
+
+                foreach (var (instNo, oiBal) in unpaidOi)
                 {
                     if (rem2 <= 0) break;
-                    decimal oiBal = 0;
-                    await using (var bCmd = new SqlCommand("SELECT (Amount-ISNULL(PaidAmount,0)) FROM OwnerInstallments WHERE OwnerContractId=@OcId AND No=@No AND ISNULL(IsDeleted,0)=0", conn, sqlTxn))
-                    { bCmd.Parameters.AddWithValue("@OcId", ownerContractId); bCmd.Parameters.AddWithValue("@No", instNo); var v = await bCmd.ExecuteScalarAsync(); oiBal = v != null && v != DBNull.Value ? (decimal)v : 0; }
                     if (oiBal <= 0) continue;
                     var payThis = Math.Min(rem2, oiBal);
                     await using var oiCmd = new SqlCommand(@"
                         UPDATE OwnerInstallments SET PaidAmount=ISNULL(PaidAmount,0)+@Amt, PaidDate=@PaidDate, PaymentMode=@PayMode,
                             Status=CASE WHEN (ISNULL(PaidAmount,0)+@Amt)>=Amount THEN 'Paid' WHEN (ISNULL(PaidAmount,0)+@Amt)>0 THEN 'Partial' ELSE 'Pending' END
                         WHERE OwnerContractId=@OcId AND No=@No AND ISNULL(IsDeleted,0)=0", conn, sqlTxn);
-                    oiCmd.Parameters.AddWithValue("@OcId", ownerContractId); oiCmd.Parameters.AddWithValue("@No", instNo); oiCmd.Parameters.AddWithValue("@Amt", payThis);
-                    oiCmd.Parameters.AddWithValue("@PaidDate", request.PaidDate); oiCmd.Parameters.AddWithValue("@PayMode", request.PaymentMode ?? "Cash");
+                    oiCmd.Parameters.AddWithValue("@OcId", ownerContractId);
+                    oiCmd.Parameters.AddWithValue("@No", instNo);
+                    oiCmd.Parameters.AddWithValue("@Amt", payThis);
+                    oiCmd.Parameters.AddWithValue("@PaidDate", request.PaidDate);
+                    oiCmd.Parameters.AddWithValue("@PayMode", request.PaymentMode ?? "Cash");
                     await oiCmd.ExecuteNonQueryAsync();
                     rem2 -= payThis;
                 }

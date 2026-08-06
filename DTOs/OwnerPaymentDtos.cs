@@ -247,6 +247,7 @@ public class OwnerContractListItemResponse
     public string? EndDate        { get; set; }
     public decimal SecurityDeposit     { get; set; }
     public decimal SecurityDepositPaid { get; set; }
+    public string  SecurityDepositStatus { get; set; } = "Pending";
     public string  Status         { get; set; } = string.Empty;
 }
 

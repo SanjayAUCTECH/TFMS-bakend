@@ -73,6 +73,7 @@ BEGIN
     FROM OwnerTransactions t
     WHERE t.OwnerContractId = @OwnerContractId
       AND t.Type IN ('CR', 'SD-PAY', 'SD-SETTLE')
+      AND ISNULL(t.IsDeleted, 0) = 0
     ORDER BY t.Date DESC, t.Id DESC;
 END;
 GO
@@ -319,28 +320,26 @@ BEGIN
         DEALLOCATE rev_cursor;
     END;
 
-    -- 2. Reverse OwnerInstallments
-    IF @InstallmentNos IS NOT NULL AND @InstallmentNos != ''
+    -- 2. Reverse OwnerInstallments — sequential from last paid (not by monthly InstallmentNos)
     BEGIN
         DECLARE @RemRev2 DECIMAL(18,2) = @Amount;
         DECLARE @RevNo2 INT;
+        DECLARE @OIPaid2 DECIMAL(18,2);
         
+        -- Cursor: get all paid installments in REVERSE order (last paid first)
         DECLARE rev2_cursor CURSOR FOR
-            SELECT CAST(value AS INT) FROM STRING_SPLIT(@InstallmentNos, ',')
-            WHERE ISNUMERIC(value) = 1 ORDER BY CAST(value AS INT) DESC;
+            SELECT No, ISNULL(PaidAmount, 0) FROM OwnerInstallments
+            WHERE OwnerContractId = @OwnerContractId AND ISNULL(IsDeleted,0)=0 AND ISNULL(PaidAmount,0) > 0
+            ORDER BY No DESC;
         
         OPEN rev2_cursor;
-        FETCH NEXT FROM rev2_cursor INTO @RevNo2;
+        FETCH NEXT FROM rev2_cursor INTO @RevNo2, @OIPaid2;
         
         WHILE @@FETCH_STATUS = 0 AND @RemRev2 > 0
         BEGIN
-            DECLARE @OIPaid DECIMAL(18,2);
-            SELECT @OIPaid = PaidAmount FROM OwnerInstallments
-            WHERE OwnerContractId = @OwnerContractId AND No = @RevNo2 AND ISNULL(IsDeleted,0)=0;
-            
-            IF @OIPaid IS NOT NULL AND @OIPaid > 0
+            IF @OIPaid2 > 0
             BEGIN
-                DECLARE @RevThis2 DECIMAL(18,2) = CASE WHEN @RemRev2 >= @OIPaid THEN @OIPaid ELSE @RemRev2 END;
+                DECLARE @RevThis2 DECIMAL(18,2) = CASE WHEN @RemRev2 >= @OIPaid2 THEN @OIPaid2 ELSE @RemRev2 END;
                 
                 UPDATE OwnerInstallments
                 SET PaidAmount = ISNULL(PaidAmount, 0) - @RevThis2,
@@ -353,15 +352,15 @@ BEGIN
                 SET @RemRev2 = @RemRev2 - @RevThis2;
             END;
             
-            FETCH NEXT FROM rev2_cursor INTO @RevNo2;
+            FETCH NEXT FROM rev2_cursor INTO @RevNo2, @OIPaid2;
         END;
         
         CLOSE rev2_cursor;
         DEALLOCATE rev2_cursor;
     END;
 
-    -- 3. Delete OwnerTransaction
-    DELETE FROM OwnerTransactions WHERE Id = @TxnId;
+    -- 3. Soft-delete OwnerTransaction
+    UPDATE OwnerTransactions SET IsDeleted = 1, DeletedBy = @DeletedBy WHERE Id = @TxnId;
 
     -- 4. Soft-delete Expense
     IF @ExpenseId IS NOT NULL
@@ -515,4 +514,88 @@ END;
 GO
 
 PRINT '✅ 149 - All Owner Payment SPs created successfully';
+GO
+
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- 7. sp_SettleOwnerSecurityDeposit — UPDATED: RecoverAmount → Income table
+-- ──────────────────────────────────────────────────────────────────────────────
+IF EXISTS (SELECT * FROM sys.objects WHERE name = 'sp_SettleOwnerSecurityDeposit') DROP PROCEDURE sp_SettleOwnerSecurityDeposit;
+GO
+CREATE PROCEDURE sp_SettleOwnerSecurityDeposit
+    @OwnerContractId INT,
+    @RecoverAmount   DECIMAL(18,2) = 0,
+    @AdjustAmount    DECIMAL(18,2) = 0,
+    @ForfeitAmount   DECIMAL(18,2) = 0,
+    @FundPoolId      INT = NULL,
+    @FundPoolName    NVARCHAR(200) = '',
+    @Notes           NVARCHAR(500) = '',
+    @SettledBy       NVARCHAR(200) = 'Admin',
+    @NewStatus       NVARCHAR(50) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @OcCode NVARCHAR(50), @OwnerId INT, @CampId INT,
+            @OwnerName NVARCHAR(200), @CampName NVARCHAR(200),
+            @FundPoolCode NVARCHAR(50) = '';
+
+    SELECT @OcCode = oc.OcCode, @OwnerId = oc.OwnerId, @CampId = oc.CampId,
+           @OwnerName = ISNULL(o.Name, ''), @CampName = ISNULL(c.Name, '')
+    FROM OwnerContracts oc
+    LEFT JOIN Owners o ON o.Id = oc.OwnerId
+    LEFT JOIN Camps c ON c.Id = oc.CampId
+    WHERE oc.Id = @OwnerContractId;
+
+    -- Get FundPool Code
+    IF @FundPoolId IS NOT NULL
+        SELECT @FundPoolCode = Code, @FundPoolName = Name FROM FundPools WHERE Id = @FundPoolId;
+
+    -- Determine status
+    SET @NewStatus = CASE
+        WHEN @RecoverAmount > 0 THEN 'Recovered'
+        WHEN @ForfeitAmount > 0 THEN 'Forfeited'
+        WHEN @AdjustAmount > 0 THEN 'Adjusted'
+        ELSE 'Settled' END;
+
+    -- 1. Insert OwnerTransaction (SD-SETTLE)
+    DECLARE @TxnCode NVARCHAR(50) = 'OSS-' + RIGHT('000000' + CAST((SELECT ISNULL(MAX(Id),0)+1 FROM OwnerTransactions) AS VARCHAR), 6);
+    DECLARE @TotalSettled DECIMAL(18,2) = @RecoverAmount + @AdjustAmount + @ForfeitAmount;
+
+    INSERT INTO OwnerTransactions (TxnCode, OwnerContractId, OcCode, CampId, CampName, OwnerId, OwnerName,
+                                   Type, Amount, Date, Description, PaymentMode, CreatedAt)
+    VALUES (@TxnCode, @OwnerContractId, @OcCode, @CampId, @CampName, @OwnerId, @OwnerName,
+            'SD-SETTLE', @TotalSettled, GETDATE(),
+            'SD Settlement - Recover:' + CAST(@RecoverAmount AS VARCHAR) + ' Adjust:' + CAST(@AdjustAmount AS VARCHAR) + ' Forfeit:' + CAST(@ForfeitAmount AS VARCHAR) + ' ' + @Notes,
+            '', GETDATE());
+
+    -- 2. If recovering, add back to FundPool (money coming back from owner)
+    IF @RecoverAmount > 0 AND @FundPoolId IS NOT NULL
+        UPDATE FundPools SET Balance = Balance + @RecoverAmount, UpdatedAt = GETDATE() WHERE Id = @FundPoolId;
+
+    -- 3. RecoverAmount → INSERT into Incomes (Company Income — SD recovered from owner)
+    IF @RecoverAmount > 0
+    BEGIN
+        DECLARE @IncomeId NVARCHAR(MAX) = 'INC-' + RIGHT('000000' + CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Incomes) AS NVARCHAR), 6);
+
+        INSERT INTO Incomes(
+            IncomeId, Date, Mode, Head, FundPool, FundPoolName, Amount,
+            Purpose, Source, SourceRef, CampId, CampName,
+            IsDeleted, CreatedAt, UpdatedAt
+        )
+        VALUES(
+            @IncomeId, GETDATE(), 'Recovery', 'Owner SD Recovery',
+            @FundPoolCode, @FundPoolName, @RecoverAmount,
+            'Owner SD Recovery - ' + @OcCode + ' - ' + @OwnerName + ' ' + @Notes,
+            'Owner', @OcCode, @CampId, @CampName,
+            0, GETDATE(), GETDATE()
+        );
+    END;
+
+    -- 4. Update contract timestamp
+    UPDATE OwnerContracts SET UpdatedAt = GETDATE() WHERE Id = @OwnerContractId;
+END;
+GO
+
+PRINT '✅ sp_SettleOwnerSecurityDeposit UPDATED with Income entry for RecoverAmount';
 GO
