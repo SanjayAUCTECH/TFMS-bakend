@@ -161,6 +161,7 @@ public class ContractRoomDetail
     public int      RoomId        { get; set; }
     public int      CampId        { get; set; }
     public string   RoomNo        { get; set; } = string.Empty;
+    public string   CampName      { get; set; } = string.Empty;
     public decimal  MonthlyAmount { get; set; }
     public decimal  TotalAmount   { get; set; }
     public decimal  PaidAmount    { get; set; }

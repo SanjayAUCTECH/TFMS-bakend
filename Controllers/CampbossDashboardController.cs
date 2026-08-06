@@ -46,6 +46,7 @@ public class CampbossDashboardController : BaseApiController
                 vacantRooms        = 0,
                 occupiedRooms      = 0,
                 assignedCamps      = new List<object>(),
+                campCollections    = new List<object>(),
                 recentTransactions = new List<object>()
             }, "Campboss dashboard retrieved."));
         }
@@ -74,7 +75,10 @@ public class CampbossDashboardController : BaseApiController
         var assignedCamps = new List<object>();
         await using (var cmd = new SqlCommand(
             $@"SELECT c.Id, c.Code, c.Name, c.Rooms, c.Floors, c.Status,
-                cc.Type, cc.Amount
+                cc.Type, cc.Amount,
+                ISNULL((SELECT COUNT(*) FROM Rooms r WHERE r.CampId=c.Id AND r.IsDeleted=0), 0) AS TotalRooms,
+                ISNULL((SELECT COUNT(*) FROM Rooms r WHERE r.CampId=c.Id AND r.IsDeleted=0 AND r.Status='Vacant'), 0) AS VacantRooms,
+                ISNULL((SELECT COUNT(*) FROM Rooms r WHERE r.CampId=c.Id AND r.IsDeleted=0 AND r.Status='Occupied'), 0) AS OccupiedRooms
             FROM CampCampbosses cc
             JOIN Camps c ON c.Id=cc.CampId AND c.IsDeleted=0
             WHERE cc.CampbossId=@CampbossId AND ISNULL(cc.IsDeleted,0)=0
@@ -86,19 +90,63 @@ public class CampbossDashboardController : BaseApiController
             {
                 assignedCamps.Add(new
                 {
-                    campId   = r.GetInt32(r.GetOrdinal("Id")),
-                    campCode = r.IsDBNull(r.GetOrdinal("Code"))   ? "" : r.GetString(r.GetOrdinal("Code")),
-                    campName = r.IsDBNull(r.GetOrdinal("Name"))   ? "" : r.GetString(r.GetOrdinal("Name")),
-                    rooms    = r.GetInt32(r.GetOrdinal("Rooms")),
-                    floors   = r.GetInt32(r.GetOrdinal("Floors")),
-                    status   = r.IsDBNull(r.GetOrdinal("Status")) ? "" : r.GetString(r.GetOrdinal("Status")),
-                    type     = r.IsDBNull(r.GetOrdinal("Type"))   ? "" : r.GetString(r.GetOrdinal("Type")),
-                    amount   = r.IsDBNull(r.GetOrdinal("Amount")) ? 0m : r.GetDecimal(r.GetOrdinal("Amount")),
+                    campId        = r.GetInt32(r.GetOrdinal("Id")),
+                    campCode      = r.IsDBNull(r.GetOrdinal("Code"))   ? "" : r.GetString(r.GetOrdinal("Code")),
+                    campName      = r.IsDBNull(r.GetOrdinal("Name"))   ? "" : r.GetString(r.GetOrdinal("Name")),
+                    rooms         = r.GetInt32(r.GetOrdinal("Rooms")),
+                    floors        = r.GetInt32(r.GetOrdinal("Floors")),
+                    status        = r.IsDBNull(r.GetOrdinal("Status")) ? "" : r.GetString(r.GetOrdinal("Status")),
+                    type          = r.IsDBNull(r.GetOrdinal("Type"))   ? "" : r.GetString(r.GetOrdinal("Type")),
+                    amount        = r.IsDBNull(r.GetOrdinal("Amount")) ? 0m : r.GetDecimal(r.GetOrdinal("Amount")),
+                    totalRooms    = r.GetInt32(r.GetOrdinal("TotalRooms")),
+                    vacantRooms   = r.GetInt32(r.GetOrdinal("VacantRooms")),
+                    occupiedRooms = r.GetInt32(r.GetOrdinal("OccupiedRooms")),
                 });
             }
         }
 
-        // ── 4. Recent Transactions (Expenses where CampId in assigned camps) ─
+        // ── 4. Camp-wise Collection from ContractRooms ───────────────────────
+        var campCollections = new List<object>();
+        await using (var cmd = new SqlCommand(
+            $@"SELECT
+                cr.CampId,
+                ISNULL(c.Name,'')                           AS CampName,
+                ISNULL(c.Code,'')                           AS CampCode,
+                COUNT(DISTINCT cr.ContractId)               AS TotalContracts,
+                COUNT(cr.RoomId)                            AS TotalRooms,
+                ISNULL(SUM(cr.TotalAmount),  0)             AS TotalAmount,
+                ISNULL(SUM(cr.PaidAmount),   0)             AS CollectedAmount,
+                ISNULL(SUM(cr.Balance),      0)             AS PendingAmount,
+                ISNULL(SUM(cr.MonthlyAmount),0)             AS MonthlyAmount
+            FROM ContractRooms cr
+            LEFT JOIN Camps c ON c.Id = cr.CampId
+            WHERE cr.CampId IN ({campIdsStr})
+              AND ISNULL(cr.IsDeleted,0) = 0
+            GROUP BY cr.CampId, c.Name, c.Code
+            ORDER BY CollectedAmount DESC", conn))
+        {
+            await using var r = await cmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+            {
+                var totalAmt     = r.IsDBNull(r.GetOrdinal("TotalAmount"))     ? 0m : r.GetDecimal(r.GetOrdinal("TotalAmount"));
+                var collectedAmt = r.IsDBNull(r.GetOrdinal("CollectedAmount")) ? 0m : r.GetDecimal(r.GetOrdinal("CollectedAmount"));
+                campCollections.Add(new
+                {
+                    campId           = r.GetInt32(r.GetOrdinal("CampId")),
+                    campName         = r.GetString(r.GetOrdinal("CampName")),
+                    campCode         = r.GetString(r.GetOrdinal("CampCode")),
+                    totalContracts   = r.GetInt32(r.GetOrdinal("TotalContracts")),
+                    totalRooms       = r.GetInt32(r.GetOrdinal("TotalRooms")),
+                    totalAmount      = totalAmt,
+                    collectedAmount  = collectedAmt,
+                    pendingAmount    = r.IsDBNull(r.GetOrdinal("PendingAmount"))  ? 0m : r.GetDecimal(r.GetOrdinal("PendingAmount")),
+                    monthlyAmount    = r.IsDBNull(r.GetOrdinal("MonthlyAmount")) ? 0m : r.GetDecimal(r.GetOrdinal("MonthlyAmount")),
+                    collectionPct    = totalAmt > 0 ? Math.Round(collectedAmt / totalAmt * 100, 1) : 0m,
+                });
+            }
+        }
+
+        // ── 5. Recent Transactions (Expenses where CampId in assigned camps) ─
         var recentTransactions = new List<object>();
         await using (var cmd = new SqlCommand(
             $@"SELECT TOP 20
@@ -142,6 +190,7 @@ public class CampbossDashboardController : BaseApiController
             vacantRooms,
             occupiedRooms,
             assignedCamps,
+            campCollections,
             recentTransactions
         }, "Campboss dashboard retrieved."));
     }

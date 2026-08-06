@@ -86,12 +86,14 @@ public class ContractRepository : IContractRepository
             // RoomDetails (with amounts)
             await using var cmdRD = new SqlCommand(
                 $@"SELECT cr.ContractId, cr.RoomId, cr.CampId, ISNULL(r.RoomNo,'') RoomNo,
+                    ISNULL(ca.Name,'') CampName,
                     ISNULL(cr.MonthlyAmount, r.MonthlyPrice) MonthlyAmount,
                     ISNULL(cr.TotalAmount, 0) TotalAmount,
                     ISNULL(cr.PaidAmount, 0) PaidAmount,
                     ISNULL(cr.Balance, 0) Balance
                 FROM ContractRooms cr
                 LEFT JOIN Rooms r ON r.Id = cr.RoomId
+                LEFT JOIN Camps ca ON ca.Id = cr.CampId
                 WHERE cr.ContractId IN ({contractIds})", conn2);
             await using var rdrRD = await cmdRD.ExecuteReaderAsync();
             var roomDetailMap = new Dictionary<string, List<ContractRoomData>>();
@@ -104,6 +106,7 @@ public class ContractRepository : IContractRepository
                     RoomId        = rdrRD.GetInt32(rdrRD.GetOrdinal("RoomId")),
                     CampId        = rdrRD.IsDBNull(rdrRD.GetOrdinal("CampId")) ? 0 : rdrRD.GetInt32(rdrRD.GetOrdinal("CampId")),
                     RoomNo        = rdrRD.GetString(rdrRD.GetOrdinal("RoomNo")),
+                    CampName      = rdrRD.GetString(rdrRD.GetOrdinal("CampName")),
                     MonthlyAmount = rdrRD.IsDBNull(rdrRD.GetOrdinal("MonthlyAmount")) ? 0 : rdrRD.GetDecimal(rdrRD.GetOrdinal("MonthlyAmount")),
                     TotalAmount   = rdrRD.IsDBNull(rdrRD.GetOrdinal("TotalAmount")) ? 0 : rdrRD.GetDecimal(rdrRD.GetOrdinal("TotalAmount")),
                     PaidAmount    = rdrRD.IsDBNull(rdrRD.GetOrdinal("PaidAmount")) ? 0 : rdrRD.GetDecimal(rdrRD.GetOrdinal("PaidAmount")),
@@ -353,12 +356,14 @@ public class ContractRepository : IContractRepository
         try {
             await using var roomCmd = new SqlCommand(@"
                 SELECT cr.RoomId, cr.CampId, ISNULL(r.RoomNo,'') RoomNo,
+                       ISNULL(ca.Name,'') CampName,
                        ISNULL(cr.MonthlyAmount, r.MonthlyPrice) MonthlyAmount,
                        ISNULL(cr.TotalAmount, 0) TotalAmount,
                        ISNULL(cr.PaidAmount, 0) PaidAmount,
                        ISNULL(cr.Balance, 0) Balance
                 FROM ContractRooms cr
                 LEFT JOIN Rooms r ON r.Id = cr.RoomId
+                LEFT JOIN Camps ca ON ca.Id = cr.CampId
                 WHERE cr.ContractId = @ContractId", cmd.Connection);
             roomCmd.Parameters.AddWithValue("@ContractId", contract.ContractId);
             await using var roomReader = await roomCmd.ExecuteReaderAsync();
@@ -369,6 +374,7 @@ public class ContractRepository : IContractRepository
                     RoomId        = roomReader.GetInt32(roomReader.GetOrdinal("RoomId")),
                     CampId        = roomReader.IsDBNull(roomReader.GetOrdinal("CampId")) ? 0 : roomReader.GetInt32(roomReader.GetOrdinal("CampId")),
                     RoomNo        = roomReader.GetString(roomReader.GetOrdinal("RoomNo")),
+                    CampName      = roomReader.GetString(roomReader.GetOrdinal("CampName")),
                     MonthlyAmount = roomReader.IsDBNull(roomReader.GetOrdinal("MonthlyAmount")) ? 0 : roomReader.GetDecimal(roomReader.GetOrdinal("MonthlyAmount")),
                     TotalAmount   = roomReader.IsDBNull(roomReader.GetOrdinal("TotalAmount")) ? 0 : roomReader.GetDecimal(roomReader.GetOrdinal("TotalAmount")),
                     PaidAmount    = roomReader.IsDBNull(roomReader.GetOrdinal("PaidAmount")) ? 0 : roomReader.GetDecimal(roomReader.GetOrdinal("PaidAmount")),

@@ -109,6 +109,7 @@ builder.Services.AddScoped<IReportRepository,       ReportRepository>();
 builder.Services.AddScoped<IStaffRepository,        StaffRepository>();
 builder.Services.AddScoped<IMisRepository,          MisRepository>();
 builder.Services.AddScoped<IOwnerContractRepository, OwnerContractRepository>();
+builder.Services.AddScoped<IOwnerPaymentRepository,  OwnerPaymentRepository>();
 builder.Services.AddScoped<IOwnerContractCancellationRepository, OwnerContractCancellationRepository>();
 builder.Services.AddScoped<ICampbossRepository, CampbossRepository>();
 builder.Services.AddScoped<ITxnRecordRepository,    TxnRecordRepository>();
@@ -144,6 +145,7 @@ builder.Services.AddScoped<IUserService,         UserService>();
 builder.Services.AddScoped<IReportService,       ReportService>();
 builder.Services.AddScoped<IStaffService,        StaffService>();
 builder.Services.AddScoped<IMisService,          MisService>();
+builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
 
 var app = builder.Build();
 

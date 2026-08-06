@@ -183,6 +183,7 @@ public class ContractService : IContractService
         Rooms = c.RoomDetails.Select(rd => new ContractRoomDetail
         {
             RoomId = rd.RoomId, CampId = rd.CampId, RoomNo = rd.RoomNo,
+            CampName = rd.CampName,
             MonthlyAmount = rd.MonthlyAmount, TotalAmount = rd.TotalAmount,
             PaidAmount = rd.PaidAmount, Balance = rd.Balance
         }).ToList(),
