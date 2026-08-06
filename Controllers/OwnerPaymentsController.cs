@@ -150,6 +150,18 @@ public class OwnerPaymentsController : BaseApiController
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    //  EDIT DATA — GET api/ownerpayments/edit-data/{txnId}
+    //  Returns payment info + monthlyPayments array for edit pre-fill
+    // ══════════════════════════════════════════════════════════════════════════
+    /// <summary>Get payment + monthly breakdown for edit form pre-fill</summary>
+    [HttpGet("edit-data/{txnId:int}")]
+    public async Task<IActionResult> GetPaymentEditData(int txnId)
+    {
+        var r = await _service.GetPaymentEditDataAsync(txnId);
+        return r.Success ? Ok(r) : NotFound(r);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     //  SD STATUS — GET api/ownerpayments/security-deposit/status/{ownerContractId}
     // ══════════════════════════════════════════════════════════════════════════
     [HttpGet("security-deposit/status/{ownerContractId:int}")]

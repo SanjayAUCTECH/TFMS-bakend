@@ -48,8 +48,28 @@ public class PayOwnerRequest
     [SwaggerSchema("Additional notes")]
     public string Notes { get; set; } = string.Empty;
 
+    /// <summary>Month-wise payment breakdown [{installmentNo, month, amount}]</summary>
+    [SwaggerSchema("Per-month payment array — each entry has installmentNo, month, amount")]
+    public List<OwnerMonthlyPaymentItem>? MonthlyPayments { get; set; }
+
     // Set by controller
     public int? AddedBy { get; set; }
+}
+
+/// <summary>Individual month payment in a transaction</summary>
+public class OwnerMonthlyPaymentItem
+{
+    [SwaggerSchema("Installment number (1,2,3...)")]
+    public int InstallmentNo { get; set; }
+
+    [SwaggerSchema("Month label — e.g. 'January 2026'")]
+    public string Month { get; set; } = string.Empty;
+
+    [SwaggerSchema("Amount paid for this month")]
+    public decimal Amount { get; set; }
+
+    [SwaggerSchema("Due date of this installment (yyyy-MM-dd)")]
+    public string? DueDate { get; set; }
 }
 
 /// <summary>Pay security deposit to owner</summary>
@@ -190,6 +210,8 @@ public class UpdateOwnerPaymentRequest
     public string PaidBy { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
     public string InstallmentNos { get; set; } = string.Empty;
+    /// <summary>Per-month payment array — same as PayOwnerRequest</summary>
+    public List<OwnerMonthlyPaymentItem>? MonthlyPayments { get; set; }
     public int? UpdatedBy { get; set; }
 }
 
@@ -268,4 +290,40 @@ public class OwnerLedgerEntryResponse
     public string  Type          { get; set; } = string.Empty;
     public string  TxnCode       { get; set; } = string.Empty;
     public int?    TxnId         { get; set; }
+}
+
+/// <summary>Edit pre-fill data — payment + monthly breakdown</summary>
+public class OwnerPaymentEditDataResponse
+{
+    // Transaction info
+    public int      TxnId          { get; set; }
+    public string   TxnCode        { get; set; } = string.Empty;
+    public int      OwnerContractId { get; set; }
+    public string   OcCode         { get; set; } = string.Empty;
+    public decimal  Amount         { get; set; }
+    public string   Date           { get; set; } = string.Empty;
+    public string   PaymentMode    { get; set; } = string.Empty;
+    public string   ReferenceNo    { get; set; } = string.Empty;
+    public string   Description    { get; set; } = string.Empty;
+    public string   InstallmentNos { get; set; } = string.Empty;
+    public string   PaidBy         { get; set; } = string.Empty;
+    public int?     ExpenseId      { get; set; }
+    public int?     FundPoolId     { get; set; }
+    public string   FundPoolName   { get; set; } = string.Empty;
+
+    /// <summary>Monthly installments that were paid in this transaction</summary>
+    public List<OwnerPaymentEditMonthItem> MonthlyPayments { get; set; } = new();
+}
+
+/// <summary>Single month paid in a transaction</summary>
+public class OwnerPaymentEditMonthItem
+{
+    public int      Id             { get; set; }
+    public int      InstallmentNo  { get; set; }
+    public string   Month          { get; set; } = string.Empty;
+    public string   DueDate        { get; set; } = string.Empty;
+    public decimal  Amount         { get; set; }
+    public decimal  PaidAmount     { get; set; }
+    public decimal  Balance        { get; set; }
+    public string   Status         { get; set; } = string.Empty;
 }

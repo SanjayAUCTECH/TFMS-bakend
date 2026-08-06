@@ -160,6 +160,15 @@ public class OwnerPaymentService : IOwnerPaymentService
             : ApiResponse<OwnerPaymentVoucherResponse>.Ok(data, "Voucher data retrieved.");
     }
 
+    // ── Edit Data ─────────────────────────────────────────────────────────────
+    public async Task<ApiResponse<OwnerPaymentEditDataResponse>> GetPaymentEditDataAsync(int txnId)
+    {
+        var data = await _repo.GetPaymentEditDataAsync(txnId);
+        return data == null
+            ? ApiResponse<OwnerPaymentEditDataResponse>.Fail("Transaction not found.")
+            : ApiResponse<OwnerPaymentEditDataResponse>.Ok(data, "Payment edit data retrieved.");
+    }
+
     // ── Security Deposit — Status ─────────────────────────────────────────────
     public async Task<ApiResponse<OwnerSecurityDepositStatusResponse>> GetSecurityDepositStatusAsync(int ownerContractId)
     {

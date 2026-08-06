@@ -28,6 +28,9 @@ public interface IOwnerPaymentService
     // ── Voucher ───────────────────────────────────────────────────────────────
     Task<ApiResponse<OwnerPaymentVoucherResponse>> GetVoucherAsync(int txnId);
 
+    // ── Edit Data (payment + monthly breakdown by txnId) ─────────────────────
+    Task<ApiResponse<OwnerPaymentEditDataResponse>> GetPaymentEditDataAsync(int txnId);
+
     // ── Security Deposit ─────────────────────────────────────────────────────
     Task<ApiResponse<OwnerSecurityDepositStatusResponse>> GetSecurityDepositStatusAsync(int ownerContractId);
     Task<ApiResponse<object>> PaySecurityDepositAsync(PayOwnerSecurityDepositRequest request);

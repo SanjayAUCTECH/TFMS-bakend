@@ -27,6 +27,9 @@ public interface IOwnerPaymentRepository
     // ── Voucher ───────────────────────────────────────────────────────────────
     Task<OwnerPaymentVoucherResponse?> GetVoucherAsync(int txnId);
 
+    // ── Get Payment Detail with Monthly Breakdown (for Edit pre-fill) ────────
+    Task<OwnerPaymentEditDataResponse?> GetPaymentEditDataAsync(int txnId);
+
     // ── Security Deposit ─────────────────────────────────────────────────────
     Task<OwnerSecurityDepositStatusResponse?> GetSecurityDepositStatusAsync(int ownerContractId);
     Task<(bool Success, decimal NewPaid, string NewStatus)> PaySecurityDepositAsync(PayOwnerSecurityDepositRequest request);
