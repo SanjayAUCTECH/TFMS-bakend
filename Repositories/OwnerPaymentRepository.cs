@@ -277,31 +277,31 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                 }
             }
 
-            // 5. Insert Expense
+            // 5. Insert Expense via SP (AccountMasters + Expenses in one call)
             var expId = ""; int expenseId = 0;
-            await using (var expSeqCmd = new SqlCommand("SELECT 'EXP-' + RIGHT('000000'+CAST((SELECT ISNULL(MAX(Id),0)+1 FROM Expenses) AS VARCHAR),6)", conn, txn))
-            { expId = (string)(await expSeqCmd.ExecuteScalarAsync())!; }
-
-            await using (var expCmd = new SqlCommand(@"
-                INSERT INTO Expenses(ExpenseId, Date, Mode, Head, FundPool, FundPoolName, Amount, Nature,
-                    CampId, CampName, RecipientRole, RecipientName, Purpose, AddedBy, IsDeleted, CreatedAt, UpdatedAt)
-                VALUES(@ExpId, @Date, @Mode, 'Owner Payment', @FPool, @FPoolName, @Amount, 'Camp',
-                    @CampId, @CampName, 'Owner', @OwnerName, @Purpose, @AddedBy, 0, GETDATE(), GETDATE());
-                SELECT SCOPE_IDENTITY();", conn, txn))
+            await using (var expCmd = new SqlCommand("sp_InsertExpenseWithAccountMaster", conn, txn)
             {
-                expCmd.Parameters.AddWithValue("@ExpId", expId);
+                CommandType = CommandType.StoredProcedure
+            })
+            {
                 expCmd.Parameters.AddWithValue("@Date", request.PaidDate);
                 expCmd.Parameters.AddWithValue("@Mode", request.PaymentMode ?? "Cash");
-                expCmd.Parameters.AddWithValue("@FPool", FundPoolCode);
-                expCmd.Parameters.AddWithValue("@FPoolName", request.FundPoolName ?? "");
+                expCmd.Parameters.AddWithValue("@Head", "LANDLORD CHO");
+                expCmd.Parameters.AddWithValue("@FundPool", FundPoolCode);
+                expCmd.Parameters.AddWithValue("@FundPoolName", request.FundPoolName ?? "");
                 expCmd.Parameters.AddWithValue("@Amount", request.Amount);
+                expCmd.Parameters.AddWithValue("@Nature", "Camp");
                 expCmd.Parameters.AddWithValue("@CampId", CampId);
                 expCmd.Parameters.AddWithValue("@CampName", CampName);
-                expCmd.Parameters.AddWithValue("@OwnerName", OwnerName);
+                expCmd.Parameters.AddWithValue("@RecipientRole", "Owner");
+                expCmd.Parameters.AddWithValue("@RecipientId", OwnerId);
+                expCmd.Parameters.AddWithValue("@RecipientName", OwnerName);
                 expCmd.Parameters.AddWithValue("@Purpose", $"Owner Payment - {OcCode} - Inst: {installmentNos}");
                 expCmd.Parameters.AddWithValue("@AddedBy", (object?)request.AddedBy ?? DBNull.Value);
-                var result = await expCmd.ExecuteScalarAsync();
-                expenseId = result != null && result != DBNull.Value ? Convert.ToInt32(result) : 0;
+                var newExpParam = new SqlParameter("@NewExpenseId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+                expCmd.Parameters.Add(newExpParam);
+                await expCmd.ExecuteNonQueryAsync();
+                expenseId = (int)newExpParam.Value;
             }
 
             // 6. Update OwnerTransaction with ExpenseId
@@ -1134,9 +1134,36 @@ public class OwnerPaymentRepository : IOwnerPaymentRepository
                 await newFp.ExecuteNonQueryAsync();
             }
 
-            // ── 5. Update Expense ───────────────────────────────────────────────
+            // ── 5. Update AccountMasters FIRST, then Expense ─────────────────
             if (oldExpenseId.HasValue)
             {
+                // 5a. Get AccountId from Expense
+                string accountId = "";
+                await using (var getAccCmd = new SqlCommand("SELECT ISNULL(AccountId,'') FROM Expenses WHERE Id=@Id", conn, sqlTxn))
+                {
+                    getAccCmd.Parameters.AddWithValue("@Id", oldExpenseId.Value);
+                    var accResult = await getAccCmd.ExecuteScalarAsync();
+                    accountId = accResult?.ToString() ?? "";
+                }
+
+                // 5b. UPDATE AccountMasters FIRST
+                if (!string.IsNullOrEmpty(accountId))
+                {
+                    await using var updAcc = new SqlCommand(@"
+                        UPDATE AccountMasters SET Amount=@Amount, TransDate=@Date, Mode=@Mode,
+                            FundPool=@FPool, FundPoolName=@FPoolName, UpdatedBy=@UpdatedBy, UpdatedAt=GETDATE()
+                        WHERE AccountId=@AccountId AND IsDeleted=0", conn, sqlTxn);
+                    updAcc.Parameters.AddWithValue("@Amount", request.Amount);
+                    updAcc.Parameters.AddWithValue("@Date", request.PaidDate);
+                    updAcc.Parameters.AddWithValue("@Mode", request.PaymentMode ?? "Cash");
+                    updAcc.Parameters.AddWithValue("@FPool", newFundPoolCode);
+                    updAcc.Parameters.AddWithValue("@FPoolName", request.FundPoolName ?? "");
+                    updAcc.Parameters.AddWithValue("@UpdatedBy", (object?)request.UpdatedBy ?? DBNull.Value);
+                    updAcc.Parameters.AddWithValue("@AccountId", accountId);
+                    await updAcc.ExecuteNonQueryAsync();
+                }
+
+                // 5c. THEN UPDATE Expense
                 await using var updExp = new SqlCommand(@"
                     UPDATE Expenses SET Amount=@Amount, Date=@Date, Mode=@Mode, FundPool=@FPool, FundPoolName=@FPoolName, UpdatedAt=GETDATE() WHERE Id=@Id", conn, sqlTxn);
                 updExp.Parameters.AddWithValue("@Id", oldExpenseId.Value);

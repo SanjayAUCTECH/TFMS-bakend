@@ -252,10 +252,32 @@ BEGIN
         SELECT @ContractId, CampId FROM OPENJSON(@CampIdsJson) WITH (CampId INT '$');
     END
 
+    -- ── Regenerate ContractInstallments (only if no payment received yet) ──
+    -- Check if any installment has been paid
+    DECLARE @HasPayments BIT = 0;
+    IF EXISTS (SELECT 1 FROM ContractInstallments WHERE ContractId=@ContractId AND PaidAmount>0 AND ISNULL(IsDeleted,0)=0)
+        SET @HasPayments = 1;
+
+    IF @HasPayments = 0
+    BEGIN
+        -- Safe to regenerate — no payments made yet
+        DELETE FROM ContractInstallments WHERE ContractId=@ContractId AND ISNULL(IsDeleted,0)=0;
+
+        DECLARE @ci INT = 1;
+        WHILE @ci <= @FinalMonths
+        BEGIN
+            INSERT INTO ContractInstallments (ContractId, InstallmentNo, Amount, DueDate, PaidAmount, Status, IsDeleted)
+            VALUES (@ContractId, @ci, @FinalMonthly, DATEADD(MONTH, @ci - 1, @FinalStart), 0, 'Pending', 0);
+            SET @ci += 1;
+        END
+    END
+    ELSE
+        SET @PaymentStarted = 1;
+
     -- ── Regenerate room-wise installments ─────────────────────────────────
     EXEC sp_GenerateContractRoomInstallments @ContractId;
 
-    SET @PaymentStarted = 0;
+    SET @PaymentStarted = ISNULL(@PaymentStarted, 0);
 END
 GO
 

@@ -84,6 +84,17 @@ public class SecurityDepositController : ControllerBase
         var newPaid   = (decimal)pNewPaid.Value;
         var newStatus = pNewStatus.Value?.ToString() ?? "Received";
 
+        // ★ Sync to AccountMasters (Nature='Camp')
+        await using (var syncCmd = new SqlCommand("sp_SyncSDReceiveToAccountMaster", conn) { CommandType = CommandType.StoredProcedure })
+        {
+            syncCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
+            syncCmd.Parameters.AddWithValue("@Amount", req.Amount);
+            syncCmd.Parameters.AddWithValue("@PaidDate", req.PaidDate);
+            syncCmd.Parameters.AddWithValue("@PaymentMode", req.PaymentMode);
+            syncCmd.Parameters.AddWithValue("@FundPoolId", (object?)req.FundPoolId ?? DBNull.Value);
+            await syncCmd.ExecuteNonQueryAsync();
+        }
+
         return Ok(ApiResponse<object>.Ok(new
         {
             contractId     = req.ContractId,
@@ -128,6 +139,26 @@ public class SecurityDepositController : ControllerBase
         await cmd.ExecuteNonQueryAsync();
 
         var newStatus = pNewStatus.Value?.ToString() ?? "Settled";
+
+        // ★ Sync to AccountMasters — Refund case
+        if (req.RefundAmount > 0)
+        {
+            await using var syncCmd = new SqlCommand("sp_SyncSDRefundToAccountMaster", conn) { CommandType = CommandType.StoredProcedure };
+            syncCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
+            syncCmd.Parameters.AddWithValue("@Amount", req.RefundAmount);
+            await syncCmd.ExecuteNonQueryAsync();
+        }
+
+        // ★ Sync to AccountMasters — Forfeit/Penalty case
+        if (req.ForfeitAmount > 0)
+        {
+            await using var syncCmd = new SqlCommand("sp_SyncSDForfeitToAccountMaster", conn) { CommandType = CommandType.StoredProcedure };
+            syncCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
+            syncCmd.Parameters.AddWithValue("@ForfeitAmount", req.ForfeitAmount);
+            syncCmd.Parameters.AddWithValue("@FundPoolId", (object?)req.FundPoolId ?? DBNull.Value);
+            syncCmd.Parameters.AddWithValue("@FundPoolName", req.FundPoolName ?? "");
+            await syncCmd.ExecuteNonQueryAsync();
+        }
 
         return Ok(ApiResponse<object>.Ok(new
         {

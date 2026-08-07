@@ -72,7 +72,7 @@ BEGIN
         t.CreatedAt
     FROM OwnerTransactions t
     WHERE t.OwnerContractId = @OwnerContractId
-      AND t.Type IN ('CR', 'SD-PAY', 'SD-SETTLE')
+      AND t.Type = 'CR'
       AND ISNULL(t.IsDeleted, 0) = 0
     ORDER BY t.Date DESC, t.Id DESC;
 END;

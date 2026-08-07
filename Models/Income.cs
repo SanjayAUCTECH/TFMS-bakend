@@ -4,6 +4,9 @@ public class Income
 {
     public int      Id           { get; set; }
     public string   IncomeId     { get; set; } = string.Empty;
+    public string   VoucherNo    { get; set; } = string.Empty;
+    public string   AccountId    { get; set; } = string.Empty;
+    public DateTime TransDate    { get; set; }
     public DateTime Date         { get; set; }
     public string   Mode         { get; set; } = string.Empty;
     public string   Head         { get; set; } = string.Empty;

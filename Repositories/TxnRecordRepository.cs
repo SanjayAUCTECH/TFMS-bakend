@@ -64,6 +64,18 @@ public class TxnRecordRepository : ITxnRecordRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
 
+        // ★ AccountMasters update FIRST
+        await using (var accCmd = new SqlCommand("sp_UpdateAccountMasterByTxnRecordId", conn) { CommandType = CommandType.StoredProcedure })
+        {
+            accCmd.Parameters.AddWithValue("@TxnRecordId", id);
+            accCmd.Parameters.AddWithValue("@Amount", r.Amount);
+            accCmd.Parameters.AddWithValue("@TxnDate", r.TxnDate);
+            accCmd.Parameters.AddWithValue("@PaymentMode", r.PaymentMode ?? "");
+            accCmd.Parameters.AddWithValue("@FundPool", "");
+            accCmd.Parameters.AddWithValue("@FundPoolName", r.FundPoolName ?? "");
+            await accCmd.ExecuteNonQueryAsync();
+        }
+
         // sp_UpdateTxnRecord handles: TxnRecord + FundPool + ContractInstallments + Incomes
         await using var cmd = new SqlCommand("sp_UpdateTxnRecord", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id",            id);
@@ -209,6 +221,16 @@ public class TxnRecordRepository : ITxnRecordRepository
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
+
+        // ★ AccountMasters delete FIRST
+        await using (var accCmd = new SqlCommand("sp_DeleteAccountMasterByTxnRecordId", conn) { CommandType = CommandType.StoredProcedure })
+        {
+            accCmd.Parameters.AddWithValue("@TxnRecordId", id);
+            accCmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
+            await accCmd.ExecuteNonQueryAsync();
+        }
+
+        // Then delete TxnRecord (which also deletes Income)
         await using var cmd = new SqlCommand("sp_DeleteTxnRecord", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@Id", id);
         cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);

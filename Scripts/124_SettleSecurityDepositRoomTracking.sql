@@ -205,7 +205,7 @@ BEGIN
             @ExpenseId,
             CAST(GETDATE() AS DATE),
             'System',
-            'Security Deposit Refund',           -- Head
+            'SD',           -- Head = SD for refund
             ISNULL(NULLIF(@FPCode,''),'MAIN'),
             @ActualFPName,
             @RefundAmount,
