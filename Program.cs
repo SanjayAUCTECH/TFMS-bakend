@@ -59,22 +59,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // ── Authorization: require valid JWT for all endpoints ──────────────────────
 builder.Services.AddAuthorization(options =>
 {
-    // In Development: open access so frontend can work without token during dev
-    // In Production: JWT required on all [Authorize] endpoints
-    if (builder.Environment.IsDevelopment())
-    {
-        options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-            .RequireAssertion(_ => true)   // dev only — no token required
-            .Build();
-        options.FallbackPolicy = null;
-    }
-    else
-    {
-        options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .Build();
-        options.FallbackPolicy = null;
-    }
+    // Open access — no token required (both dev and production)
+    options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAssertion(_ => true)
+        .Build();
+    options.FallbackPolicy = null;
 });
 
 // ── Database ─────────────────────────────────────────────────────────────────

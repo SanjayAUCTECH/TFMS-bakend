@@ -8,10 +8,14 @@ namespace TFMS_software_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ReportsController : ControllerBase
+public class ReportsController : BaseApiController
 {
     private readonly IReportService _service;
-    public ReportsController(IReportService service) => _service = service;
+    public ReportsController(IReportService service, IActivityLogService log)
+    {
+        _service     = service;
+        _activityLog = log;
+    }
 
     /// <summary>GET api/reports/inventory?CampId=1&Status=Occupied</summary>
     [HttpGet("inventory")]
@@ -101,6 +105,12 @@ public class ReportsController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.MakePaymentAsync(request);
+
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Payments,
+                $"MakePayment: {request.PaymentType} to '{request.RecipientName}', Amount {request.Amount}, Mode {request.PaymentMode}",
+                r.Data?.Id.ToString() ?? "", "Payment");
+
         return r.Success ? Ok(r) : BadRequest(r);
     }
 }

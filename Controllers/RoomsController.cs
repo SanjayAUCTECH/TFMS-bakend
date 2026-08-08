@@ -55,6 +55,9 @@ public class RoomsController : BaseApiController
         if (request.RoomNos.Count > 2000)
             return BadRequest(Common.ApiResponse<BulkCreateRoomResponse>.Fail("Maximum 2000 rooms at a time."));
         var result = await _repo.BulkCreateAsync(request);
+        await Log(ActivityType.Insert, ActivityModule.Rooms,
+            $"Bulk created {result.Created} rooms (skipped {result.Skipped}), CampId {request.CampId}",
+            request.CampId.ToString(), "Room");
         return Ok(Common.ApiResponse<BulkCreateRoomResponse>.Ok(result,
             $"Bulk create done: {result.Created} created, {result.Skipped} skipped."));
     }

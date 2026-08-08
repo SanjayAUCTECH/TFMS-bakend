@@ -49,7 +49,7 @@ public class TaskAlertController : BaseApiController
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request, CurrentUserId);
         if (r.Success)
-            await Log(ActivityType.Insert, ActivityModule.AccountsHeads,
+            await Log(ActivityType.Insert, ActivityModule.TaskAlerts,
                 $"Created TaskAlert #{r.Data!.Id} '{r.Data.TaskTitle}'",
                 r.Data.Id.ToString(), "TaskAlert");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
@@ -62,7 +62,7 @@ public class TaskAlertController : BaseApiController
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request, CurrentUserId);
         if (r.Success)
-            await Log(ActivityType.Update, ActivityModule.AccountsHeads,
+            await Log(ActivityType.Update, ActivityModule.TaskAlerts,
                 $"Updated TaskAlert #{id}", id.ToString(), "TaskAlert");
         return r.Success ? Ok(r) : NotFound(r);
     }
@@ -73,7 +73,7 @@ public class TaskAlertController : BaseApiController
     {
         var r = await _service.DeleteAsync(id, CurrentUserId);
         if (r.Success)
-            await Log(ActivityType.Delete, ActivityModule.AccountsHeads,
+            await Log(ActivityType.Delete, ActivityModule.TaskAlerts,
                 $"Deleted TaskAlert #{id}", id.ToString(), "TaskAlert");
         return r.Success ? Ok(r) : NotFound(r);
     }

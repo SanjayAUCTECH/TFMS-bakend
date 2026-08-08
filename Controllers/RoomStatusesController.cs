@@ -42,6 +42,8 @@ public class RoomStatusesController : BaseApiController
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.CreateAsync(request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Insert, ActivityModule.Rooms, $"Created RoomStatus #{r.Data!.Id} '{r.Data.Name}'", r.Data!.Id.ToString(), "RoomStatus");
         return r.Success ? CreatedAtAction(nameof(GetById), new { id = r.Data!.Id }, r) : BadRequest(r);
     }
 
@@ -50,6 +52,8 @@ public class RoomStatusesController : BaseApiController
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var r = await _service.UpdateAsync(id, request, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Update, ActivityModule.Rooms, $"Updated RoomStatus #{id}", id.ToString(), "RoomStatus");
         return r.Success ? Ok(r) : NotFound(r);
     }
 
@@ -57,6 +61,8 @@ public class RoomStatusesController : BaseApiController
     public async Task<IActionResult> Delete(int id)
     {
         var r = await _service.DeleteAsync(id, CurrentUserId);
+        if (r.Success)
+            await Log(ActivityType.Delete, ActivityModule.Rooms, $"Deleted RoomStatus #{id}", id.ToString(), "RoomStatus");
         return r.Success ? Ok(r) : NotFound(r);
     }
 }

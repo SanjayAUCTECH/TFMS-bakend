@@ -4,16 +4,21 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using TFMS_software_api.Common;
 using TFMS_software_api.Repositories;
+using TFMS_software_api.Services;
 
 namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ContractRoomInstallmentsController : ControllerBase
+public class ContractRoomInstallmentsController : BaseApiController
 {
     private readonly IDbConnectionFactory _factory;
-    public ContractRoomInstallmentsController(IDbConnectionFactory factory) => _factory = factory;
+    public ContractRoomInstallmentsController(IDbConnectionFactory factory, IActivityLogService log)
+    {
+        _factory     = factory;
+        _activityLog = log;
+    }
 
     /// <summary>
     /// GET api/contractroominstallments/{contractId}
@@ -127,6 +132,10 @@ public class ContractRoomInstallmentsController : ControllerBase
 
         await cmd.ExecuteNonQueryAsync();
 
+        await Log(ActivityType.Update, ActivityModule.ContractRoomInstallments,
+            $"Updated Room Installment #{id}, Status: {req.Status ?? "N/A"}, PaidAmount: {req.PaidAmount?.ToString() ?? "N/A"}",
+            id.ToString(), "ContractRoomInstallment");
+
         return Ok(ApiResponse<object>.Ok(new { id }, "Room installment updated."));
     }
 
@@ -142,6 +151,11 @@ public class ContractRoomInstallmentsController : ControllerBase
         };
         cmd.Parameters.AddWithValue("@ContractId", contractId);
         await cmd.ExecuteNonQueryAsync();
+
+        await Log(ActivityType.Update, ActivityModule.ContractRoomInstallments,
+            $"Regenerated Room Installments for Contract {contractId}",
+            contractId, "ContractRoomInstallment");
+
         return Ok(ApiResponse<object?>.Ok(null, $"Room installments regenerated for {contractId}."));
     }
 }

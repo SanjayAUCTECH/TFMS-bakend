@@ -94,7 +94,7 @@ public class CampCampbossesController : BaseApiController
             await insCmd.ExecuteNonQueryAsync();
         }
 
-        await Log(ActivityType.Update, "CampCampboss",
+        await Log(ActivityType.Update, ActivityModule.CampCampbosses,
             $"Assigned Campboss #{request.CampbossId} to {request.Camps.Count} camps",
             request.CampbossId.ToString(), "Campboss");
 
@@ -116,6 +116,10 @@ public class CampCampbossesController : BaseApiController
         cmd.Parameters.AddWithValue("@Id", id);
         cmd.Parameters.AddWithValue("@DeletedBy", (object?)CurrentUserId ?? DBNull.Value);
         var rows = await cmd.ExecuteNonQueryAsync();
+        if (rows > 0)
+            await Log(ActivityType.Delete, ActivityModule.CampCampbosses,
+                $"Removed CampCampboss assignment #{id}",
+                id.ToString(), "CampCampboss");
         return rows > 0
             ? Ok(ApiResponse<bool>.Ok(true, "Campboss removed from camp."))
             : NotFound(ApiResponse<bool>.Fail("Assignment not found."));

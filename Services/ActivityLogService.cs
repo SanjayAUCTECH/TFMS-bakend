@@ -47,9 +47,15 @@ public static class ActivityModule
     public const string Staff            = "Staff";
     public const string Owners           = "Owners";
     public const string OwnerContracts   = "OwnerContracts";
-    public const string CompanyAssets    = "CompanyAssets";
-    public const string TxnRecords       = "TxnRecords";
-    public const string Companies        = "Companies";
+    public const string CompanyAssets          = "CompanyAssets";
+    public const string TxnRecords             = "TxnRecords";
+    public const string Companies              = "Companies";
+    public const string AccountMasters         = "AccountMasters";
+    public const string TaskAlerts             = "TaskAlerts";
+    public const string Campbosses             = "Campbosses";
+    public const string CampCampbosses         = "CampCampbosses";
+    public const string ContractTerms          = "ContractTerms";
+    public const string ContractRoomInstallments = "ContractRoomInstallments";
 }
 
 // ── IActivityLogService ──────────────────────────────────────────────────────

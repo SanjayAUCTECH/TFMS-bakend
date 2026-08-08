@@ -98,6 +98,14 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> RefreshToken()
     {
         var result = await _service.RefreshTokenAsync(CurrentUserId);
+
+        await _log.LogAsync(ActivityType.Login, ActivityModule.Auth,
+            $"User '{CurrentUserName}' refreshed token",
+            CurrentUserId.ToString(), "User",
+            userId: CurrentUserId, userName: CurrentUserName, userRole: CurrentUserRole,
+            ipAddress: ClientIp, userAgent: ClientAgent,
+            status: result.Success ? "Success" : "Failed");
+
         return result.Success ? Ok(result) : Unauthorized(result);
     }
 
@@ -107,6 +115,14 @@ public class AuthController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var result = await _service.UpdateMenuAccessAsync(CurrentUserId, request);
+
+        if (result.Success)
+            await _log.LogAsync(ActivityType.Update, ActivityModule.Auth,
+                $"User '{CurrentUserName}' updated own menu access",
+                CurrentUserId.ToString(), "User",
+                userId: CurrentUserId, userName: CurrentUserName, userRole: CurrentUserRole,
+                ipAddress: ClientIp, userAgent: ClientAgent);
+
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

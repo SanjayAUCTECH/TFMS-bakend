@@ -3,16 +3,21 @@ using Microsoft.AspNetCore.Mvc;
 using TFMS_software_api.Common;
 using TFMS_software_api.DTOs;
 using TFMS_software_api.Repositories;
+using TFMS_software_api.Services;
 
 namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ContractTermsController : ControllerBase
+public class ContractTermsController : BaseApiController
 {
     private readonly IContractTermRepository _repo;
-    public ContractTermsController(IContractTermRepository repo) => _repo = repo;
+    public ContractTermsController(IContractTermRepository repo, IActivityLogService log)
+    {
+        _repo        = repo;
+        _activityLog = log;
+    }
 
     /// <summary>
     /// GET api/contractterms/{contractId}
@@ -38,6 +43,11 @@ public class ContractTermsController : ControllerBase
 
         var terms = request.Terms ?? new List<ContractTermItem>();
         var data = await _repo.SaveAsync(request.ContractId, terms);
+
+        await Log(ActivityType.Update, ActivityModule.ContractTerms,
+            $"Saved {terms.Count} terms for Contract {request.ContractId}",
+            request.ContractId, "ContractTerm");
+
         return Ok(ApiResponse<IEnumerable<ContractTermResponse>>.Ok(data, "Contract terms saved successfully."));
     }
 }

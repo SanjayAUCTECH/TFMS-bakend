@@ -5,16 +5,21 @@ using System.Data;
 using TFMS_software_api.Common;
 using TFMS_software_api.DTOs;
 using TFMS_software_api.Repositories;
+using TFMS_software_api.Services;
 
 namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class SecurityDepositController : ControllerBase
+public class SecurityDepositController : BaseApiController
 {
     private readonly IDbConnectionFactory _factory;
-    public SecurityDepositController(IDbConnectionFactory factory) => _factory = factory;
+    public SecurityDepositController(IDbConnectionFactory factory, IActivityLogService log)
+    {
+        _factory     = factory;
+        _activityLog = log;
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     /// <summary>GET api/securitydeposit/status/{contractId}</summary>
@@ -95,6 +100,10 @@ public class SecurityDepositController : ControllerBase
             await syncCmd.ExecuteNonQueryAsync();
         }
 
+        await Log(ActivityType.Insert, ActivityModule.SecurityDeposit,
+            $"SD Received: Contract {req.ContractId}, Amount {req.Amount}, Mode {req.PaymentMode}, Status {newStatus}",
+            req.ContractId, "SecurityDeposit");
+
         return Ok(ApiResponse<object>.Ok(new
         {
             contractId     = req.ContractId,
@@ -159,6 +168,10 @@ public class SecurityDepositController : ControllerBase
             syncCmd.Parameters.AddWithValue("@FundPoolName", req.FundPoolName ?? "");
             await syncCmd.ExecuteNonQueryAsync();
         }
+
+        await Log(ActivityType.Update, ActivityModule.SecurityDeposit,
+            $"SD Settled: Contract {req.ContractId}, Adjust {req.AdjustAmount}, Refund {req.RefundAmount}, Forfeit {req.ForfeitAmount}, Status {newStatus}",
+            req.ContractId, "SecurityDeposit");
 
         return Ok(ApiResponse<object>.Ok(new
         {

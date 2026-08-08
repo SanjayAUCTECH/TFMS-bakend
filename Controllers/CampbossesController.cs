@@ -63,7 +63,7 @@ public class CampbossesController : BaseApiController
 
         var id = await _repo.CreateAsync(cb);
         var created = await _repo.GetByIdAsync(id);
-        await Log(ActivityType.Insert, "Campboss", $"Created Campboss #{id}", id.ToString(), "Campboss");
+        await Log(ActivityType.Insert, ActivityModule.Campbosses, $"Created Campboss #{id}", id.ToString(), "Campboss");
         return CreatedAtAction(nameof(GetById), new { id }, ApiResponse<CampbossResponse>.Ok(ToResponse(created!), "Campboss created."));
     }
 
@@ -96,7 +96,7 @@ public class CampbossesController : BaseApiController
 
         await _repo.UpdateAsync(existing);
         var updated = await _repo.GetByIdAsync(id);
-        await Log(ActivityType.Update, "Campboss", $"Updated Campboss #{id}", id.ToString(), "Campboss");
+        await Log(ActivityType.Update, ActivityModule.Campbosses, $"Updated Campboss #{id}", id.ToString(), "Campboss");
         return Ok(ApiResponse<CampbossResponse>.Ok(ToResponse(updated!), "Campboss updated."));
     }
 
@@ -106,7 +106,7 @@ public class CampbossesController : BaseApiController
         if (await _repo.GetByIdAsync(id) == null)
             return NotFound(ApiResponse<bool>.Fail("Campboss not found."));
         await _repo.DeleteAsync(id, CurrentUserId);
-        await Log(ActivityType.Delete, "Campboss", $"Deleted Campboss #{id}", id.ToString(), "Campboss");
+        await Log(ActivityType.Delete, ActivityModule.Campbosses, $"Deleted Campboss #{id}", id.ToString(), "Campboss");
         return Ok(ApiResponse<bool>.Ok(true, "Campboss deleted."));
     }
 

@@ -122,6 +122,10 @@ public class OwnerContractsController : BaseApiController
 
         var newId = await _repo.CreateAsync(contract, installmentsJson, monthlyInstallmentsJson);
         var created = await _repo.GetByIdAsync(newId);
+
+        await Log(ActivityType.Insert, ActivityModule.OwnerContracts,
+            $"Created OwnerContract #{newId}", newId.ToString(), "OwnerContract");
+
         return CreatedAtAction(nameof(GetById), new { id = newId },
             ApiResponse<OwnerContractResponse>.Ok(ToResponse(created!), "Owner contract created successfully."));
     }
