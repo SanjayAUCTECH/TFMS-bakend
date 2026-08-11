@@ -93,6 +93,7 @@ public class IncomeRegisterResponse
     public string   Camp        { get; set; } = "";
     public string   Property    { get; set; } = "";
     public string   Tenant      { get; set; } = "";
+    public string   PartyName   { get; set; } = "";
     public string   AccountHead { get; set; } = "";
     public string   PaymentMode { get; set; } = "";
     public decimal  Amount      { get; set; }

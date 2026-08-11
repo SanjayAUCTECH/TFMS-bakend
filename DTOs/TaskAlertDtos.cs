@@ -28,6 +28,7 @@ public class TaskAlertListRequest : PagedRequest
 {
     public string? TaskStatus      { get; set; }
     public int?    AssignPersonId  { get; set; }
+    public int?    AddedBy         { get; set; }
     public string? DateFrom        { get; set; }
     public string? DateTo          { get; set; }
 }

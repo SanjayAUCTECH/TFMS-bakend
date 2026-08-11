@@ -278,13 +278,14 @@ public class ContractRepository : IContractRepository
         return (true, paymentStarted);
     }
 
-    public async Task<bool> UpdateScheduleAsync(string contractId, string scheduleJson)
+    public async Task<bool> UpdateScheduleAsync(string contractId, string scheduleJson, string? installmentType = null)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_UpdatePaymentSchedule", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@ContractId",   contractId);
-        cmd.Parameters.AddWithValue("@ScheduleJson", scheduleJson);
+        cmd.Parameters.AddWithValue("@ContractId",      contractId);
+        cmd.Parameters.AddWithValue("@ScheduleJson",    scheduleJson);
+        cmd.Parameters.AddWithValue("@InstallmentType", (object?)installmentType ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync();
         return true;
     }

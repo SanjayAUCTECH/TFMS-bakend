@@ -55,20 +55,36 @@ public class DashboardRepository : IDashboardRepository
                 stats.CampOccupancy.Add(new DashCampOccupancy { CampName=r2.GetString(0), TotalRooms=r2.IsDBNull(1)?0:r2.GetInt32(1), Occupied=r2.IsDBNull(2)?0:r2.GetInt32(2), Vacant=r2.IsDBNull(3)?0:r2.GetInt32(3) });
         }
         var collYear  = filterYear ?? DateTime.UtcNow.Year;
-        var collWhere = new List<string> { "ci.Status='Paid'", "YEAR(ci.PaidDate)=@Year" };
-        if (campId.HasValue)   collWhere.Add("ci.ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
-        if (tenantId.HasValue) collWhere.Add("ct.TenantId=@TenantId");
-        var collSql = $"SELECT MONTH(ci.PaidDate) MonthNum,SUM(ci.PaidAmount) Collected FROM ContractInstallments ci JOIN Contracts ct ON ct.ContractId=ci.ContractId WHERE {string.Join(" AND ",collWhere)} GROUP BY MONTH(ci.PaidDate) ORDER BY MONTH(ci.PaidDate)";
-        await using (var cmd3 = new SqlCommand(collSql, conn))
+        // Monthly Collections — all 12 months of year, 0 if no payment
+        var collYearSuffix = collYear.ToString().Substring(2); // "26" for 2026
+        var collWhere      = new List<string> { "ISNULL(cri3.IsDeleted,0)=0", "cri3.Status='Paid'", $"RIGHT(cri3.Month,2)='{collYearSuffix}'" };
+        if (campId.HasValue)   collWhere.Add("cri3.CampId=@CampId");
+        if (tenantId.HasValue) collWhere.Add("ct3.TenantId=@TenantId");
+        var collJoin3 = tenantId.HasValue ? "JOIN Contracts ct3 ON ct3.ContractId=cri3.ContractId" : "";
+        var collSql3  = $"SELECT cri3.Month AS MonthName, SUM(cri3.PaidAmount) AS Collected FROM ContractRoomInstallments cri3 {collJoin3} WHERE {string.Join(" AND ", collWhere)} GROUP BY cri3.Month ORDER BY MIN(cri3.DueDate)";
+        await using (var cmd3 = new SqlCommand(collSql3, conn))
         {
-            cmd3.Parameters.AddWithValue("@Year", collYear);
             if (campId.HasValue)   cmd3.Parameters.AddWithValue("@CampId",   campId.Value);
             if (tenantId.HasValue) cmd3.Parameters.AddWithValue("@TenantId", tenantId.Value);
-            var monthMap = new Dictionary<int,decimal>();
-            await using (var r3 = await cmd3.ExecuteReaderAsync())
-                while (await r3.ReadAsync()) monthMap[r3.GetInt32(0)] = r3.IsDBNull(1)?0:r3.GetDecimal(1);
-            var mNames = new[]{"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-            for (int i=1;i<=12;i++) stats.MonthlyCollections.Add(new DashMonthlyCollection{Month=mNames[i-1],Collected=monthMap.TryGetValue(i,out var v)?v:0});
+            // Build map of MonthName -> Collected
+            var collMap = new Dictionary<string, decimal>();
+            await using var r3 = await cmd3.ExecuteReaderAsync();
+            while (await r3.ReadAsync())
+            {
+                var mn = r3.IsDBNull(0) ? "" : r3.GetString(0);
+                if (!string.IsNullOrEmpty(mn))
+                    collMap[mn] = r3.IsDBNull(1) ? 0m : r3.GetDecimal(1);
+            }
+            // Generate all 12 months — Jan26..Dec26 — with 0 for missing
+            var mPrefixes = new[]{"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+            foreach (var mp in mPrefixes)
+            {
+                var key = mp + collYearSuffix;
+                stats.MonthlyCollections.Add(new DashMonthlyCollection {
+                    Month     = key,
+                    Collected = collMap.TryGetValue(key, out var cv) ? cv : 0m
+                });
+            }
         }
         var revWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.IsDeleted=0 AND c.Id=@CampId" : "WHERE c.Status='Active' AND c.IsDeleted=0";
         await using (var cmd4 = new SqlCommand($"SELECT c.Name CampName,ISNULL(SUM(r.MonthlyPrice),0) MonthlyRevenue FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id AND r.Status='Occupied' AND r.IsDeleted=0 {revWhere} GROUP BY c.Id,c.Name ORDER BY c.Name", conn))
@@ -77,13 +93,14 @@ public class DashboardRepository : IDashboardRepository
             await using var r4 = await cmd4.ExecuteReaderAsync();
             while (await r4.ReadAsync()) stats.CampRevenue.Add(new DashCampRevenue{CampName=r4.GetString(0),MonthlyRevenue=r4.IsDBNull(1)?0:r4.GetDecimal(1)});
         }
+        // Query 5: TotalPaidAmount + TotalPendingAmount from ContractRoomInstallments
         var payWhere = new List<string>();
-        if (campId.HasValue)      payWhere.Add("ci2.ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");
+        if (campId.HasValue)      payWhere.Add("cri2.CampId=@CampId");
         if (tenantId.HasValue)    payWhere.Add("ct2.TenantId=@TenantId");
-        if (filterMonth.HasValue) payWhere.Add("MONTH(ci2.PaidDate)=@Month AND YEAR(ci2.PaidDate)=@Year2");
-        var payJoin   = tenantId.HasValue ? "JOIN Contracts ct2 ON ct2.ContractId=ci2.ContractId" : "";
-        var payFilter = payWhere.Count>0 ? "WHERE "+string.Join(" AND ",payWhere) : "";
-        await using (var cmd5 = new SqlCommand($"SELECT ISNULL(SUM(CASE WHEN ci2.Status='Paid' THEN ci2.PaidAmount ELSE 0 END),0) TotalPaid,ISNULL(SUM(CASE WHEN ci2.Status='Pending' THEN ci2.Amount ELSE 0 END),0) TotalPending FROM ContractInstallments ci2 {payJoin} {payFilter}", conn))
+        if (filterMonth.HasValue) payWhere.Add("MONTH(cri2.PaidDate)=@Month AND YEAR(cri2.PaidDate)=@Year2");
+        var payJoin   = tenantId.HasValue ? "JOIN Contracts ct2 ON ct2.ContractId=cri2.ContractId" : "";
+        var payFilter = payWhere.Count>0 ? "WHERE ISNULL(cri2.IsDeleted,0)=0 AND "+string.Join(" AND ",payWhere) : "WHERE ISNULL(cri2.IsDeleted,0)=0";
+        await using (var cmd5 = new SqlCommand($"SELECT ISNULL(SUM(CASE WHEN cri2.Status='Paid' THEN cri2.PaidAmount ELSE 0 END),0) TotalPaid, ISNULL(SUM(CASE WHEN cri2.Status='Pending' THEN cri2.InstallAmount ELSE 0 END),0) TotalPending FROM ContractRoomInstallments cri2 {payJoin} {payFilter}", conn))
         {
             if (campId.HasValue)      cmd5.Parameters.AddWithValue("@CampId",   campId.Value);
             if (tenantId.HasValue)    cmd5.Parameters.AddWithValue("@TenantId", tenantId.Value);

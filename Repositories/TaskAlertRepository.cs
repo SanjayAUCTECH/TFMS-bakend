@@ -20,6 +20,7 @@ public class TaskAlertRepository : ITaskAlertRepository
         cmd.Parameters.AddWithValue("@SearchText",     (object?)request.SearchText     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@TaskStatus",     (object?)request.TaskStatus     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@AssignPersonId", (object?)request.AssignPersonId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@AddedBy",        (object?)request.AddedBy        ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@DateFrom",       (object?)request.DateFrom       ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@DateTo",         (object?)request.DateTo         ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };

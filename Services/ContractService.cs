@@ -166,7 +166,7 @@ public class ContractService : IContractService
         if (contract == null) return ApiResponse<bool>.Fail("Contract not found.");
         var scheduleJson = System.Text.Json.JsonSerializer.Serialize(
             (request.Schedule ?? new()).Select(s => new { no=s.No, amount=s.Amount, dueDate=s.DueDate, mode=s.Mode, cheque=s.Cheque, clearance=s.Clearance }));
-        await _repo.UpdateScheduleAsync(contractId, scheduleJson);
+        await _repo.UpdateScheduleAsync(contractId, scheduleJson, request.InstallmentType);
         return ApiResponse<bool>.Ok(true, $"Schedule updated for {contractId}.");
     }
 

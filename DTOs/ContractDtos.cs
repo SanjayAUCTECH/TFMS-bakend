@@ -43,7 +43,8 @@ public class UpdateContractStatusRequest
 
 public class UpdateContractScheduleRequest
 {
-    public string? ContractId { get; set; } = string.Empty;
+    public string? ContractId      { get; set; } = string.Empty;
+    public string? InstallmentType { get; set; }
     public List<ScheduleItemRequest>? Schedule { get; set; } = new();
 }
 

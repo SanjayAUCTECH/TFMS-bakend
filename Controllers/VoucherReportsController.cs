@@ -156,8 +156,8 @@ public class VoucherReportsController : ControllerBase
         while (await r.ReadAsync())
             rows.Add(new IncomeRegisterResponse { Date=SafeDate(r,0), IncomeId=SafeStr(r,1),
                 VoucherNo=SafeStr(r,2), Camp=SafeStr(r,3), Property=SafeStr(r,4), Tenant=SafeStr(r,5),
-                AccountHead=SafeStr(r,6), PaymentMode=SafeStr(r,7), Amount=SafeDec(r,8),
-                Purpose=SafeStr(r,9), Source=SafeStr(r,10) });
+                PartyName=SafeStr(r,6), AccountHead=SafeStr(r,7), PaymentMode=SafeStr(r,8),
+                Amount=SafeDec(r,9), Purpose=SafeStr(r,10), Source=SafeStr(r,11) });
         await r.CloseAsync();
 
         int tot = total.Value is int tv ? tv : 0;
@@ -208,10 +208,11 @@ public class VoucherReportsController : ControllerBase
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
         await using var cmd = new SqlCommand("sp_GetAccountHeadLedger", conn) { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@AccountHead",   (object?)req.AccountHead ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@FromDate",      (object?)req.FromDate     ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@ToDate",        (object?)req.ToDate       ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@FinancialYear", (object?)req.FinancialYear ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@AccountHead",   (object?)req.AccountHead   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FromDate",      (object?)req.FromDate      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ToDate",        (object?)req.ToDate        ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FinancialYear", (object?)req.FinancialYear  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SearchText",    (object?)req.SearchText    ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@PageNumber",    req.ResolvedPageNumber);
         cmd.Parameters.AddWithValue("@PageSize",      req.ResolvedPageSize);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
