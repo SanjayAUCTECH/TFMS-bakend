@@ -107,6 +107,9 @@ builder.Services.AddScoped<IContractTermRepository, ContractTermRepository>();
 builder.Services.AddScoped<IContractRenewalRepository, ContractRenewalRepository>();
 builder.Services.AddScoped<IContractCancellationRepository, ContractCancellationRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
+builder.Services.AddScoped<IPartnerTransRepository,  PartnerTransRepository>();
+builder.Services.AddScoped<IPartnerPayoutRepository, PartnerPayoutRepository>();
+builder.Services.AddScoped<IPartnerPayoutService,    PartnerPayoutService>();
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPartnerService,      PartnerService>();
