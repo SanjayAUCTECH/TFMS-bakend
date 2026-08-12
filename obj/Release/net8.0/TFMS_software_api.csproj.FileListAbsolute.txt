@@ -1,7 +1,6 @@
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\appsettings.Development.json
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\appsettings.json
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\appsettings.Production.json
-g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\Scripts\test_payment_body.json
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\TFMS_software_api.staticwebassets.runtime.json
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\TFMS_software_api.staticwebassets.endpoints.json
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\TFMS_software_api.exe

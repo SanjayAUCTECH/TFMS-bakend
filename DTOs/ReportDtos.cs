@@ -219,7 +219,25 @@ public class TenantLedgerSummary
     public decimal TotalDebit   { get; set; }
     public decimal TotalCredit  { get; set; }
     public decimal NetBalance   { get; set; }
-    public List<TenantLedgerRow> Rows { get; set; } = new();
+    public List<TenantLedgerRow>         Rows         { get; set; } = new();
+    public List<TenantInstallmentRow>    Installments { get; set; } = new();
+}
+
+// ── Tenant Installment Row ────────────────────────────────────────────────
+public class TenantInstallmentRow
+{
+    public int      Id            { get; set; }
+    public string   ContractId    { get; set; } = string.Empty;
+    public int      InstallmentNo { get; set; }
+    public decimal  Amount        { get; set; }        // Total due
+    public decimal  PaidAmount    { get; set; }        // Paid so far
+    public decimal  Balance       { get; set; }        // Remaining
+    public string   DueDate       { get; set; } = string.Empty;
+    public string?  PaidDate      { get; set; }
+    public string   Status        { get; set; } = string.Empty;  // Pending | Partial | Paid | Overdue
+    public string   PaymentMode   { get; set; } = string.Empty;
+    public string   CampName      { get; set; } = string.Empty;
+    public string   RoomNos       { get; set; } = string.Empty;
 }
 
 // ── Transaction Statement ─────────────────────────────────────────────────

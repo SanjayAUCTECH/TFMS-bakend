@@ -25,4 +25,7 @@ public interface IPartnerPayoutRepository
 
     /// <summary>Get PartnerMonthlyPayout records by month/year.</summary>
     Task<GetPartnerMonthlyPayoutListResponse> GetMonthlyPayoutListAsync(int month, int year, int? partnerId);
+
+    /// <summary>Save a release payout for a partner.</summary>
+    Task<int> SaveReleasePayoutAsync(CreatePartnerReleasePayoutRequest request, int? userId);
 }

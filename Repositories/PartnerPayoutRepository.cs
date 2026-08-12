@@ -386,6 +386,42 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
         return response;
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // SAVE — PartnerReleasePayout
+    // ──────────────────────────────────────────────────────────────
+    public async Task<int> SaveReleasePayoutAsync(
+        CreatePartnerReleasePayoutRequest request, int? userId)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_SavePartnerReleasePayout", conn)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+
+        cmd.Parameters.AddWithValue("@Date",                  request.Date);
+        cmd.Parameters.AddWithValue("@ReleaseDate",           request.ReleaseDate);
+        cmd.Parameters.AddWithValue("@PartnerId",             request.PartnerId);
+        cmd.Parameters.AddWithValue("@CampPartnerPercentage", request.CampPartnerPercentage);
+        cmd.Parameters.AddWithValue("@TotalCampIncome",       request.TotalCampIncome);
+        cmd.Parameters.AddWithValue("@TotalCampExpense",      request.TotalCampExpense);
+        cmd.Parameters.AddWithValue("@TotalHOExpense",        request.TotalHOExpense);
+        cmd.Parameters.AddWithValue("@TotalAllExpense",       request.TotalAllExpense);
+        cmd.Parameters.AddWithValue("@TotalBenefitAmount",    request.TotalBenefitAmount);
+        cmd.Parameters.AddWithValue("@PartnerShareAmount",    request.PartnerShareAmount);
+        cmd.Parameters.AddWithValue("@ReleaseAmount",         request.ReleaseAmount);
+        cmd.Parameters.AddWithValue("@BalanceAmount",         request.BalanceAmount);
+        cmd.Parameters.AddWithValue("@AddedBy",               (object?)userId ?? DBNull.Value);
+
+        var newIdParam = new SqlParameter("@NewId", System.Data.SqlDbType.Int)
+            { Direction = System.Data.ParameterDirection.Output };
+        cmd.Parameters.Add(newIdParam);
+
+        await cmd.ExecuteNonQueryAsync();
+        return (int)newIdParam.Value;
+    }
+
     // ── Helpers ───────────────────────────────────────────────────
     private static string  S(SqlDataReader r, string c) { try { var o = r.GetOrdinal(c); return r.IsDBNull(o) ? "" : r.GetString(o);  } catch { return ""; } }
     private static decimal D(SqlDataReader r, string c) { try { var o = r.GetOrdinal(c); return r.IsDBNull(o) ? 0m : r.GetDecimal(o); } catch { return 0m; } }

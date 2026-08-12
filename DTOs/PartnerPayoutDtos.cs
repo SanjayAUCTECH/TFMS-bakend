@@ -252,3 +252,40 @@ public class GetPartnerMonthlyPayoutListResponse
     public string   MonthLabel  { get; set; } = string.Empty;
     public List<PartnerMonthlyPayoutResponse> Partners { get; set; } = new();
 }
+
+// ── PartnerReleasePayout Save Request ─────────────────────────
+public class CreatePartnerReleasePayoutRequest
+{
+    public DateTime  Date                  { get; set; }
+    public DateTime  ReleaseDate           { get; set; }
+    public int       PartnerId             { get; set; }
+    public decimal   CampPartnerPercentage { get; set; }
+    public decimal   TotalCampIncome       { get; set; }
+    public decimal   TotalCampExpense      { get; set; }
+    public decimal   TotalHOExpense        { get; set; }
+    public decimal   TotalAllExpense       { get; set; }
+    public decimal   TotalBenefitAmount    { get; set; }
+    public decimal   PartnerShareAmount    { get; set; }
+    public decimal   ReleaseAmount         { get; set; }
+    public decimal   BalanceAmount         { get; set; }
+}
+
+// ── PartnerReleasePayout Save Response ────────────────────────
+public class PartnerReleasePayoutResponse
+{
+    public int      Id                    { get; set; }
+    public DateTime Date                  { get; set; }
+    public DateTime ReleaseDate           { get; set; }
+    public int      PartnerId             { get; set; }
+    public string   PartnerName           { get; set; } = string.Empty;
+    public decimal  CampPartnerPercentage { get; set; }
+    public decimal  TotalCampIncome       { get; set; }
+    public decimal  TotalCampExpense      { get; set; }
+    public decimal  TotalHOExpense        { get; set; }
+    public decimal  TotalAllExpense       { get; set; }
+    public decimal  TotalBenefitAmount    { get; set; }
+    public decimal  PartnerShareAmount    { get; set; }
+    public decimal  ReleaseAmount         { get; set; }
+    public decimal  BalanceAmount         { get; set; }
+    public DateTime CreatedAt             { get; set; }
+}

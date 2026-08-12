@@ -416,6 +416,30 @@ public class ReportRepository : IReportRepository
             PaymentMode=rd.IsDBNull(rd.GetOrdinal("PaymentMode"))?"":rd.GetString(rd.GetOrdinal("PaymentMode")),
             Reference=rd.IsDBNull(rd.GetOrdinal("Reference"))?"":rd.GetString(rd.GetOrdinal("Reference")),
         });
+
+        // ── Result Set 3: Installments ─────────────────────────────────────
+        if (await rd.NextResultAsync())
+        {
+            while (await rd.ReadAsync())
+            {
+                summary.Installments.Add(new TenantInstallmentRow
+                {
+                    Id            = rd.IsDBNull(rd.GetOrdinal("Id"))            ? 0  : rd.GetInt32(rd.GetOrdinal("Id")),
+                    ContractId    = rd.IsDBNull(rd.GetOrdinal("ContractId"))    ? "" : rd.GetString(rd.GetOrdinal("ContractId")),
+                    InstallmentNo = rd.IsDBNull(rd.GetOrdinal("InstallmentNo")) ? 0  : rd.GetInt32(rd.GetOrdinal("InstallmentNo")),
+                    Amount        = rd.IsDBNull(rd.GetOrdinal("Amount"))        ? 0m : rd.GetDecimal(rd.GetOrdinal("Amount")),
+                    PaidAmount    = rd.IsDBNull(rd.GetOrdinal("PaidAmount"))    ? 0m : rd.GetDecimal(rd.GetOrdinal("PaidAmount")),
+                    Balance       = rd.IsDBNull(rd.GetOrdinal("Balance"))       ? 0m : rd.GetDecimal(rd.GetOrdinal("Balance")),
+                    DueDate       = rd.IsDBNull(rd.GetOrdinal("DueDate"))       ? "" : rd.GetString(rd.GetOrdinal("DueDate")),
+                    PaidDate      = rd.IsDBNull(rd.GetOrdinal("PaidDate"))      ? null : rd.GetString(rd.GetOrdinal("PaidDate")),
+                    Status        = rd.IsDBNull(rd.GetOrdinal("Status"))        ? "" : rd.GetString(rd.GetOrdinal("Status")),
+                    PaymentMode   = rd.IsDBNull(rd.GetOrdinal("PaymentMode"))   ? "" : rd.GetString(rd.GetOrdinal("PaymentMode")),
+                    CampName      = rd.IsDBNull(rd.GetOrdinal("CampName"))      ? "" : rd.GetString(rd.GetOrdinal("CampName")),
+                    RoomNos       = rd.IsDBNull(rd.GetOrdinal("RoomNos"))       ? "" : rd.GetString(rd.GetOrdinal("RoomNos")),
+                });
+            }
+        }
+
         return summary;
     }
 

@@ -95,6 +95,18 @@ public class PartnerPayoutController : BaseApiController
     }
 
     /// <summary>
+    /// POST api/PartnerPayout/release-payout
+    /// Save a release payout for a partner into PartnerReleasePayout table.
+    /// </summary>
+    [HttpPost("release-payout")]
+    public async Task<IActionResult> SaveReleasePayout([FromBody] CreatePartnerReleasePayoutRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var r = await _service.SaveReleasePayoutAsync(request, CurrentUserId);
+        return r.Success ? Ok(r) : BadRequest(r);
+    }
+
+    /// <summary>
     /// POST api/PartnerPayout/generate-camp-payout
     /// Saves camp-wise payout rows into PartnerMonthlyCampPayout table.
     /// </summary>

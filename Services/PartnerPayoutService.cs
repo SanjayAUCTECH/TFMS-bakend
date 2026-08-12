@@ -144,4 +144,38 @@ public class PartnerPayoutService : IPartnerPayoutService
         return ApiResponse<GetPartnerMonthlyPayoutListResponse>.Ok(
             data, $"Partner monthly payout for {data.MonthLabel} retrieved successfully.");
     }
+
+    // ── SAVE PartnerReleasePayout ─────────────────────────────────
+    public async Task<ApiResponse<PartnerReleasePayoutResponse>> SaveReleasePayoutAsync(
+        CreatePartnerReleasePayoutRequest request, int? userId)
+    {
+        if (request.PartnerId <= 0)
+            return ApiResponse<PartnerReleasePayoutResponse>.Fail("Valid PartnerId is required.");
+        if (request.ReleaseAmount <= 0)
+            return ApiResponse<PartnerReleasePayoutResponse>.Fail("Release amount must be greater than 0.");
+        if (request.ReleaseDate == default)
+            return ApiResponse<PartnerReleasePayoutResponse>.Fail("Release date is required.");
+
+        var newId = await _repo.SaveReleasePayoutAsync(request, userId);
+
+        return ApiResponse<PartnerReleasePayoutResponse>.Ok(
+            new PartnerReleasePayoutResponse
+            {
+                Id                    = newId,
+                Date                  = request.Date == default ? DateTime.Now : request.Date,
+                ReleaseDate           = request.ReleaseDate,
+                PartnerId             = request.PartnerId,
+                CampPartnerPercentage = request.CampPartnerPercentage,
+                TotalCampIncome       = request.TotalCampIncome,
+                TotalCampExpense      = request.TotalCampExpense,
+                TotalHOExpense        = request.TotalHOExpense,
+                TotalAllExpense       = request.TotalAllExpense,
+                TotalBenefitAmount    = request.TotalBenefitAmount,
+                PartnerShareAmount    = request.PartnerShareAmount,
+                ReleaseAmount         = request.ReleaseAmount,
+                BalanceAmount         = request.BalanceAmount,
+                CreatedAt             = DateTime.Now,
+            },
+            "Partner release payout saved successfully.");
+    }
 }

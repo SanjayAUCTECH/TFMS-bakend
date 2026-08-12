@@ -2,7 +2,6 @@ G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\T
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\appsettings.Development.json
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\appsettings.json
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\appsettings.Production.json
-G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\Scripts\test_payment_body.json
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\TFMS_software_api.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\TFMS_software_api.deps.json
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\publish\TFMS_software_api.runtimeconfig.json

@@ -12,4 +12,5 @@ public interface IPartnerPayoutService
     Task<ApiResponse<SavePartnerMonthlyPayoutResponse>> SaveMonthlyPayoutAsync(SavePartnerMonthlyPayoutRequest request, int? userId);
     Task<ApiResponse<DeletePartnerMonthlyPayoutResponse>> DeleteMonthlyPayoutAsync(DeletePartnerMonthlyPayoutRequest request, int? userId);
     Task<ApiResponse<GetPartnerMonthlyPayoutListResponse>> GetMonthlyPayoutListAsync(int month, int year, int? partnerId);
+    Task<ApiResponse<PartnerReleasePayoutResponse>> SaveReleasePayoutAsync(CreatePartnerReleasePayoutRequest request, int? userId);
 }
