@@ -10,15 +10,108 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
     public PartnerPayoutRepository(IDbConnectionFactory factory) => _factory = factory;
 
     // ──────────────────────────────────────────────────────────────
-    // GET — camp-wise payout data for a month
+    // GET — all distinct payout dates (PartnerMonthlyPayout)
     // ──────────────────────────────────────────────────────────────
-    public async Task<PartnerPayoutDataResponse> GetPayoutDataAsync(int month, int year)
+    public async Task<List<MonthlyPayoutDateItem>> GetMonthlyPayoutDatesAsync()
+    {
+        var list = new List<MonthlyPayoutDateItem>();
+
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_GetMonthlyPayoutDates", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new MonthlyPayoutDateItem
+            {
+                FromDate     = reader.GetDateTime(reader.GetOrdinal("FromDate")),
+                ToDate       = reader.GetDateTime(reader.GetOrdinal("ToDate")),
+                PayoutDate   = reader.GetDateTime(reader.GetOrdinal("PayoutDate")),
+                PartnerCount = reader.GetInt32(reader.GetOrdinal("PartnerCount")),
+                CreatedAt    = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+            });
+        }
+
+        return list;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // GET — last monthly payout date (PartnerMonthlyPayout table)
+    // ──────────────────────────────────────────────────────────────
+    public async Task<LastMonthlyPayoutDateResponse> GetLastMonthlyPayoutDateAsync()
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_GetLastMonthlyPayoutDate", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var response = new LastMonthlyPayoutDateResponse();
+
+        if (await reader.ReadAsync())
+        {
+            response.LastPayoutDate = reader.IsDBNull(reader.GetOrdinal("LastPayoutDate"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastPayoutDate"));
+            response.LastToDate = reader.IsDBNull(reader.GetOrdinal("LastToDate"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastToDate"));
+            response.LastFromDate = reader.IsDBNull(reader.GetOrdinal("LastFromDate"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastFromDate"));
+            response.LastCreatedAt = reader.IsDBNull(reader.GetOrdinal("LastCreatedAt"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastCreatedAt"));
+        }
+
+        return response;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // GET — last payout date (PartnerMonthlyCampPayout table)
+    // ──────────────────────────────────────────────────────────────
+    public async Task<LastPayoutDateResponse> GetLastPayoutDateAsync()
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_GetLastPayoutDate", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var response = new LastPayoutDateResponse();
+
+        if (await reader.ReadAsync())
+        {
+            response.LastPayoutDate = reader.IsDBNull(reader.GetOrdinal("LastPayoutDate"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastPayoutDate"));
+            response.LastToDate = reader.IsDBNull(reader.GetOrdinal("LastToDate"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastToDate"));
+            response.LastFromDate = reader.IsDBNull(reader.GetOrdinal("LastFromDate"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastFromDate"));
+            response.LastCreatedAt = reader.IsDBNull(reader.GetOrdinal("LastCreatedAt"))
+                ? null : reader.GetDateTime(reader.GetOrdinal("LastCreatedAt"));
+        }
+
+        return response;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // GET — camp-wise payout data for a date range
+    // ──────────────────────────────────────────────────────────────
+    public async Task<PartnerPayoutDataResponse> GetPayoutDataAsync(DateTime fromDate, DateTime toDate)
     {
         var response = new PartnerPayoutDataResponse
         {
-            Month      = month,
-            Year       = year,
-            MonthLabel = new DateTime(year, month, 1).ToString("MMMM yyyy")
+            FromDate    = fromDate,
+            ToDate      = toDate,
+            PeriodLabel = $"{fromDate:dd MMM yyyy} – {toDate:dd MMM yyyy}"
         };
 
         await using var conn = _factory.CreateConnection();
@@ -28,8 +121,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
         {
             CommandType = CommandType.StoredProcedure
         };
-        cmd.Parameters.AddWithValue("@Month", month);
-        cmd.Parameters.AddWithValue("@Year",  year);
+        cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
+        cmd.Parameters.AddWithValue("@ToDate",   toDate.Date);
 
         await using var reader = await cmd.ExecuteReaderAsync();
 
@@ -54,6 +147,7 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 TotalHOExpenseAllCamps = D(reader, "TotalHOExpenseAllCamps"),
                 ActiveCampCount        = reader.IsDBNull(reader.GetOrdinal("ActiveCampCount"))
                                             ? 0 : reader.GetInt32(reader.GetOrdinal("ActiveCampCount")),
+                PartnerInvestmentIncome = D(reader, "PartnerInvestmentIncome"),
             });
         }
 
@@ -100,14 +194,15 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
 
         // Build TVP DataTable
         var dt = new DataTable();
-        dt.Columns.Add("PartnerId",             typeof(int));
-        dt.Columns.Add("CampId",                typeof(int));
-        dt.Columns.Add("CampPartnerPercentage", typeof(decimal));
-        dt.Columns.Add("CampIncome",            typeof(decimal));
-        dt.Columns.Add("CampExpense",           typeof(decimal));
-        dt.Columns.Add("HOExpense",             typeof(decimal));
-        dt.Columns.Add("TotalExpense",          typeof(decimal));
-        dt.Columns.Add("BenefitAmount",         typeof(decimal));
+        dt.Columns.Add("PartnerId",               typeof(int));
+        dt.Columns.Add("CampId",                  typeof(int));
+        dt.Columns.Add("CampPartnerPercentage",   typeof(decimal));
+        dt.Columns.Add("CampIncome",              typeof(decimal));
+        dt.Columns.Add("CampExpense",             typeof(decimal));
+        dt.Columns.Add("HOExpense",               typeof(decimal));
+        dt.Columns.Add("TotalExpense",            typeof(decimal));
+        dt.Columns.Add("BenefitAmount",           typeof(decimal));
+        dt.Columns.Add("PartnerInvestmentIncome", typeof(decimal));
 
         foreach (var row in request.Rows)
         {
@@ -119,7 +214,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 row.CampExpense,
                 row.HOExpense,
                 row.TotalExpense,
-                row.BenefitAmount
+                row.BenefitAmount,
+                row.PartnerInvestmentIncome
             );
         }
 
@@ -189,15 +285,15 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
     }
 
     // ──────────────────────────────────────────────────────────────
-    // GET partner-wise payout by month
+    // GET partner-wise payout by date range
     // ──────────────────────────────────────────────────────────────
-    public async Task<PartnerPayoutByMonthResponse> GetPartnerPayoutByMonthAsync(int month, int year)
+    public async Task<PartnerPayoutByMonthResponse> GetPartnerPayoutByMonthAsync(DateTime fromDate, DateTime toDate)
     {
         var response = new PartnerPayoutByMonthResponse
         {
-            Month      = month,
-            Year       = year,
-            MonthLabel = new DateTime(year, month, 1).ToString("MMMM yyyy")
+            FromDate    = fromDate,
+            ToDate      = toDate,
+            PeriodLabel = $"{fromDate:dd MMM yyyy} – {toDate:dd MMM yyyy}"
         };
 
         await using var conn = _factory.CreateConnection();
@@ -207,8 +303,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
         {
             CommandType = System.Data.CommandType.StoredProcedure
         };
-        cmd.Parameters.AddWithValue("@Month", month);
-        cmd.Parameters.AddWithValue("@Year",  year);
+        cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
+        cmd.Parameters.AddWithValue("@ToDate",   toDate.Date);
 
         await using var reader = await cmd.ExecuteReaderAsync();
 
@@ -242,7 +338,6 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
             while (await reader.ReadAsync())
             {
                 var partnerId = reader.GetInt32(reader.GetOrdinal("PartnerId"));
-
                 var partnerRow = new PartnerPayoutTotalRow
                 {
                     PartnerId          = partnerId,
@@ -256,10 +351,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                     TotalPayoutAmount  = D(reader, "TotalPayoutAmount"),
                     TotalCamps         = reader.IsDBNull(reader.GetOrdinal("TotalCamps"))
                                             ? 0 : reader.GetInt32(reader.GetOrdinal("TotalCamps")),
-                    // Attach camp-wise rows for this partner
                     Camps = campRows.Where(c => c.PartnerId == partnerId).ToList()
                 };
-
                 response.Partners.Add(partnerRow);
             }
         }
@@ -420,6 +513,27 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
 
         await cmd.ExecuteNonQueryAsync();
         return (int)newIdParam.Value;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // DELETE — soft-delete PartnerMonthlyCampPayout by ToDate only
+    // ──────────────────────────────────────────────────────────────
+    public async Task<int> DeleteCampPayoutAsync(DateTime toDate, int? deletedBy)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_DeletePartnerMonthlyCampPayout", conn)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("@ToDate",    toDate.Date);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+            return reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+        return 0;
     }
 
     // ── Helpers ───────────────────────────────────────────────────

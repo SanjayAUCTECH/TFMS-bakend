@@ -1,39 +1,71 @@
 namespace TFMS_software_api.DTOs;
 
-// ── Request ───────────────────────────────────────────────────
+// ── Monthly Payout Dates List ─────────────────────────────────
+public class MonthlyPayoutDateItem
+{
+    public DateTime FromDate     { get; set; }
+    public DateTime ToDate       { get; set; }
+    public DateTime PayoutDate   { get; set; }
+    public int      PartnerCount { get; set; }
+    public DateTime CreatedAt    { get; set; }
+}
+
+// ── Last Payout Date Response ─────────────────────────────────
+public class LastPayoutDateResponse
+{
+    public DateTime? LastPayoutDate { get; set; }
+    public DateTime? LastToDate     { get; set; }
+    public DateTime? LastFromDate   { get; set; }
+    public DateTime? LastCreatedAt  { get; set; }
+}
+
+// ── Last Monthly Payout Date Response ────────────────────────
+public class LastMonthlyPayoutDateResponse
+{
+    public DateTime? LastPayoutDate { get; set; }
+    public DateTime? LastToDate     { get; set; }
+    public DateTime? LastFromDate   { get; set; }
+    public DateTime? LastCreatedAt  { get; set; }
+}
+
+// ── Preview/Fetch Request ─────────────────────────────────────
 public class PartnerPayoutDataRequest
 {
-    /// <summary>Month number 1..12</summary>
-    public int Month { get; set; }
+    public DateTime FromDate { get; set; }
+    public DateTime ToDate   { get; set; }
+}
 
-    /// <summary>Year e.g. 2026</summary>
-    public int Year  { get; set; }
+// ── Delete CampPayout by ToDate only ─────────────────────────
+public class DeletePartnerCampPayoutRequest
+{
+    public DateTime ToDate { get; set; }
+}
+
+public class DeletePartnerCampPayoutResponse
+{
+    public int    DeletedCount { get; set; }
+    public string PeriodLabel  { get; set; } = string.Empty;
 }
 
 // ── Camp-wise row (Result Set 1) ──────────────────────────────
 public class PartnerCampPayoutRow
 {
-    public int      CampId                { get; set; }
-    public string   CampName              { get; set; } = string.Empty;
-
-    // Financials
-    public decimal  CampIncome            { get; set; }
-    public decimal  CampExpense           { get; set; }
-    public decimal  HOExpense             { get; set; }
-    public decimal  TotalExpense          { get; set; }
-    public decimal  BenefitAmount         { get; set; }
-
-    // Partner info
-    public int      CampPartnerId         { get; set; }
-    public int      PartnerId             { get; set; }
-    public string   PartnerName           { get; set; } = string.Empty;
-    public string   ShareType             { get; set; } = string.Empty;
-    public decimal  CampPartnerPercentage { get; set; }
-    public decimal  PartnerShareAmount    { get; set; }
-
-    // HO expense distribution info (for transparency on frontend)
-    public decimal  TotalHOExpenseAllCamps { get; set; }  // total HO for month
-    public int      ActiveCampCount        { get; set; }  // divided by this many camps
+    public int      CampId                 { get; set; }
+    public string   CampName               { get; set; } = string.Empty;
+    public decimal  CampIncome             { get; set; }
+    public decimal  CampExpense            { get; set; }
+    public decimal  HOExpense              { get; set; }
+    public decimal  TotalExpense           { get; set; }
+    public decimal  BenefitAmount          { get; set; }
+    public int      CampPartnerId          { get; set; }
+    public int      PartnerId              { get; set; }
+    public string   PartnerName            { get; set; } = string.Empty;
+    public string   ShareType              { get; set; } = string.Empty;
+    public decimal  CampPartnerPercentage  { get; set; }
+    public decimal  PartnerShareAmount     { get; set; }
+    public decimal  TotalHOExpenseAllCamps { get; set; }
+    public int      ActiveCampCount        { get; set; }
+    public decimal  PartnerInvestmentIncome { get; set; }  // from Incomes (Head='Partner Investment', Source='Partner')
 }
 
 // ── Partner summary (Result Set 2) ───────────────────────────
@@ -79,35 +111,29 @@ public class PartnerMonthlyCampPayoutResponse
     public DateTime UpdatedAt             { get; set; }
 }
 
-// ── Save Request (POST) ───────────────────────────────────────
+// ── Save CampPayout Request ───────────────────────────────────
 public class SavePartnerMonthlyCampPayoutRequest
 {
-    /// <summary>Period start date — e.g. 2026-06-01</summary>
-    public DateTime FromDate { get; set; }
-
-    /// <summary>Period end date — e.g. 2026-06-30</summary>
-    public DateTime ToDate   { get; set; }
-
-    /// <summary>Entry date (defaults to today if not provided)</summary>
-    public DateTime? Date    { get; set; }
-
-    /// <summary>Rows to save — one per camp per partner</summary>
+    public DateTime  FromDate { get; set; }
+    public DateTime  ToDate   { get; set; }
+    public DateTime? Date     { get; set; }
     public List<PartnerMonthlyCampPayoutItem> Rows { get; set; } = new();
 }
 
 public class PartnerMonthlyCampPayoutItem
 {
-    public int      PartnerId             { get; set; }
-    public int      CampId                { get; set; }
-    public decimal  CampPartnerPercentage { get; set; }
-    public decimal  CampIncome            { get; set; }
-    public decimal  CampExpense           { get; set; }
-    public decimal  HOExpense             { get; set; }
-    public decimal  TotalExpense          { get; set; }
-    public decimal  BenefitAmount         { get; set; }
+    public int      PartnerId               { get; set; }
+    public int      CampId                  { get; set; }
+    public decimal  CampPartnerPercentage   { get; set; }
+    public decimal  CampIncome              { get; set; }
+    public decimal  CampExpense             { get; set; }
+    public decimal  HOExpense               { get; set; }
+    public decimal  TotalExpense            { get; set; }
+    public decimal  BenefitAmount           { get; set; }
+    public decimal  PartnerInvestmentIncome { get; set; }
 }
 
-// ── Save Response ─────────────────────────────────────────────
+// ── Save CampPayout Response ──────────────────────────────────
 public class SavePartnerMonthlyCampPayoutResponse
 {
     public int      SavedCount { get; set; }
@@ -115,21 +141,17 @@ public class SavePartnerMonthlyCampPayoutResponse
     public DateTime ToDate     { get; set; }
 }
 
-// ── Full API response ─────────────────────────────────────────
+// ── Full preview response ─────────────────────────────────────
 public class PartnerPayoutDataResponse
 {
-    public int      Month       { get; set; }
-    public int      Year        { get; set; }
-    public string   MonthLabel  { get; set; } = string.Empty;  // e.g. "June 2026"
-
-    /// <summary>Camp-wise breakdown — one row per camp per partner</summary>
+    public DateTime FromDate    { get; set; }
+    public DateTime ToDate      { get; set; }
+    public string   PeriodLabel { get; set; } = string.Empty;
     public List<PartnerCampPayoutRow>    CampDetails { get; set; } = new();
-
-    /// <summary>Partner-level totals across all camps</summary>
     public List<PartnerPayoutSummaryRow> Summary     { get; set; } = new();
 }
 
-// ── Partner Payout By Month — camp-wise row ───────────────────
+// ── Payout by month — camp row ────────────────────────────────
 public class PartnerPayoutCampRow
 {
     public int      Id                    { get; set; }
@@ -146,10 +168,10 @@ public class PartnerPayoutCampRow
     public decimal  HOExpense             { get; set; }
     public decimal  TotalExpense          { get; set; }
     public decimal  BenefitAmount         { get; set; }
-    public decimal  CampPayoutAmount      { get; set; }   // +ve or -ve
+    public decimal  CampPayoutAmount      { get; set; }
 }
 
-// ── Partner Payout By Month — partner total row ───────────────
+// ── Payout by month — partner total row ──────────────────────
 public class PartnerPayoutTotalRow
 {
     public int      PartnerId             { get; set; }
@@ -160,25 +182,21 @@ public class PartnerPayoutTotalRow
     public decimal  TotalHOExpense        { get; set; }
     public decimal  TotalExpense          { get; set; }
     public decimal  TotalBenefitAmount    { get; set; }
-    public decimal  TotalPayoutAmount     { get; set; }   // +ve or -ve
+    public decimal  TotalPayoutAmount     { get; set; }
     public int      TotalCamps            { get; set; }
-
-    /// <summary>Camp-wise breakdown for this partner</summary>
     public List<PartnerPayoutCampRow> Camps { get; set; } = new();
 }
 
-// ── Full response for GetPartnerPayoutByMonth ─────────────────
+// ── Full payout-by-month response ────────────────────────────
 public class PartnerPayoutByMonthResponse
 {
-    public int      Month       { get; set; }
-    public int      Year        { get; set; }
-    public string   MonthLabel  { get; set; } = string.Empty;
-
-    /// <summary>Partner-wise list — each with camp breakdown inside</summary>
+    public DateTime FromDate    { get; set; }
+    public DateTime ToDate      { get; set; }
+    public string   PeriodLabel { get; set; } = string.Empty;
     public List<PartnerPayoutTotalRow> Partners { get; set; } = new();
 }
 
-// ── PartnerMonthlyPayout Save Request ─────────────────────────
+// ── Save MonthlyPayout Request ────────────────────────────────
 public class SavePartnerMonthlyPayoutRequest
 {
     public DateTime  FromDate { get; set; }
@@ -206,14 +224,11 @@ public class SavePartnerMonthlyPayoutResponse
     public DateTime ToDate     { get; set; }
 }
 
-// ── PartnerMonthlyPayout Delete Request ───────────────────────
+// ── Delete MonthlyPayout (by month/year) ─────────────────────
 public class DeletePartnerMonthlyPayoutRequest
 {
-    /// <summary>Month 1..12</summary>
     public int  Month     { get; set; }
-    /// <summary>Year e.g. 2026</summary>
     public int  Year      { get; set; }
-    /// <summary>Optional — if null, all partners for that month are deleted</summary>
     public int? PartnerId { get; set; }
 }
 
@@ -223,7 +238,7 @@ public class DeletePartnerMonthlyPayoutResponse
     public string MonthLabel   { get; set; } = string.Empty;
 }
 
-// ── PartnerMonthlyPayout GET Response ─────────────────────────
+// ── MonthlyPayout GET Response ────────────────────────────────
 public class PartnerMonthlyPayoutResponse
 {
     public int      Id                    { get; set; }
@@ -253,7 +268,7 @@ public class GetPartnerMonthlyPayoutListResponse
     public List<PartnerMonthlyPayoutResponse> Partners { get; set; } = new();
 }
 
-// ── PartnerReleasePayout Save Request ─────────────────────────
+// ── ReleasePayout Request ─────────────────────────────────────
 public class CreatePartnerReleasePayoutRequest
 {
     public DateTime  Date                  { get; set; }
@@ -270,7 +285,7 @@ public class CreatePartnerReleasePayoutRequest
     public decimal   BalanceAmount         { get; set; }
 }
 
-// ── PartnerReleasePayout Save Response ────────────────────────
+// ── ReleasePayout Response ────────────────────────────────────
 public class PartnerReleasePayoutResponse
 {
     public int      Id                    { get; set; }

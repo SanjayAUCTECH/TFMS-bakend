@@ -10,15 +10,39 @@ public class PartnerPayoutService : IPartnerPayoutService
 
     public PartnerPayoutService(IPartnerPayoutRepository repo) => _repo = repo;
 
-    // ── GET payout data ───────────────────────────────────────────
-    public async Task<ApiResponse<PartnerPayoutDataResponse>> GetPayoutDataAsync(int month, int year)
+    // ── GET all monthly payout dates ──────────────────────────────
+    public async Task<ApiResponse<List<MonthlyPayoutDateItem>>> GetMonthlyPayoutDatesAsync()
     {
-        if (month < 1 || month > 12)
-            return ApiResponse<PartnerPayoutDataResponse>.Fail("Month must be between 1 and 12.");
-        if (year < 2000 || year > 2100)
-            return ApiResponse<PartnerPayoutDataResponse>.Fail("Invalid year.");
+        var data = await _repo.GetMonthlyPayoutDatesAsync();
+        return ApiResponse<List<MonthlyPayoutDateItem>>.Ok(
+            data, $"{data.Count} payout period(s) found.");
+    }
 
-        var data = await _repo.GetPayoutDataAsync(month, year);
+    // ── GET last payout date (PartnerMonthlyCampPayout) ──────────
+    public async Task<ApiResponse<LastPayoutDateResponse>> GetLastPayoutDateAsync()
+    {
+        var data = await _repo.GetLastPayoutDateAsync();
+        return ApiResponse<LastPayoutDateResponse>.Ok(data, "Last payout date retrieved successfully.");
+    }
+
+    // ── GET last monthly payout date (PartnerMonthlyPayout) ──────
+    public async Task<ApiResponse<LastMonthlyPayoutDateResponse>> GetLastMonthlyPayoutDateAsync()
+    {
+        var data = await _repo.GetLastMonthlyPayoutDateAsync();
+        return ApiResponse<LastMonthlyPayoutDateResponse>.Ok(data, "Last monthly payout date retrieved successfully.");
+    }
+
+    // ── GET payout data ───────────────────────────────────────────
+    public async Task<ApiResponse<PartnerPayoutDataResponse>> GetPayoutDataAsync(DateTime fromDate, DateTime toDate)
+    {
+        if (fromDate == default)
+            return ApiResponse<PartnerPayoutDataResponse>.Fail("FromDate is required.");
+        if (toDate == default)
+            return ApiResponse<PartnerPayoutDataResponse>.Fail("ToDate is required.");
+        if (fromDate > toDate)
+            return ApiResponse<PartnerPayoutDataResponse>.Fail("FromDate cannot be greater than ToDate.");
+
+        var data = await _repo.GetPayoutDataAsync(fromDate, toDate);
         return ApiResponse<PartnerPayoutDataResponse>.Ok(data, "Partner payout data retrieved successfully.");
     }
 
@@ -60,22 +84,24 @@ public class PartnerPayoutService : IPartnerPayoutService
         );
     }
 
-    // ── GET partner payout by month ───────────────────────────────
-    public async Task<ApiResponse<PartnerPayoutByMonthResponse>> GetPartnerPayoutByMonthAsync(int month, int year)
+    // ── GET partner payout by date range ─────────────────────────
+    public async Task<ApiResponse<PartnerPayoutByMonthResponse>> GetPartnerPayoutByMonthAsync(DateTime fromDate, DateTime toDate)
     {
-        if (month < 1 || month > 12)
-            return ApiResponse<PartnerPayoutByMonthResponse>.Fail("Month must be between 1 and 12.");
-        if (year < 2000 || year > 2100)
-            return ApiResponse<PartnerPayoutByMonthResponse>.Fail("Invalid year.");
+        if (fromDate == default)
+            return ApiResponse<PartnerPayoutByMonthResponse>.Fail("FromDate is required.");
+        if (toDate == default)
+            return ApiResponse<PartnerPayoutByMonthResponse>.Fail("ToDate is required.");
+        if (fromDate > toDate)
+            return ApiResponse<PartnerPayoutByMonthResponse>.Fail("FromDate cannot be greater than ToDate.");
 
-        var data = await _repo.GetPartnerPayoutByMonthAsync(month, year);
+        var data = await _repo.GetPartnerPayoutByMonthAsync(fromDate, toDate);
 
         if (data.Partners.Count == 0)
             return ApiResponse<PartnerPayoutByMonthResponse>.Fail(
-                $"No payout data found for {data.MonthLabel}. Please generate camp payout first.");
+                $"No payout data found for {data.PeriodLabel}. Please generate camp payout first.");
 
         return ApiResponse<PartnerPayoutByMonthResponse>.Ok(
-            data, $"Partner payout data for {data.MonthLabel} retrieved successfully.");
+            data, $"Partner payout data for {data.PeriodLabel} retrieved successfully.");
     }
 
     // ── SAVE PartnerMonthlyPayout ─────────────────────────────────
@@ -143,6 +169,29 @@ public class PartnerPayoutService : IPartnerPayoutService
 
         return ApiResponse<GetPartnerMonthlyPayoutListResponse>.Ok(
             data, $"Partner monthly payout for {data.MonthLabel} retrieved successfully.");
+    }
+
+    // ── DELETE PartnerMonthlyCampPayout by ToDate only ────────────
+    public async Task<ApiResponse<DeletePartnerCampPayoutResponse>> DeleteCampPayoutAsync(
+        DeletePartnerCampPayoutRequest request, int? userId)
+    {
+        if (request.ToDate == default)
+            return ApiResponse<DeletePartnerCampPayoutResponse>.Fail("ToDate is required.");
+
+        var label = $"{request.ToDate:dd MMM yyyy}";
+        var deletedCount = await _repo.DeleteCampPayoutAsync(request.ToDate, userId);
+
+        if (deletedCount == 0)
+            return ApiResponse<DeletePartnerCampPayoutResponse>.Fail(
+                $"No camp payout records found for ToDate {label}.");
+
+        return ApiResponse<DeletePartnerCampPayoutResponse>.Ok(
+            new DeletePartnerCampPayoutResponse
+            {
+                DeletedCount = deletedCount,
+                PeriodLabel  = label,
+            },
+            $"{deletedCount} camp payout records deleted for ToDate {label}.");
     }
 
     // ── SAVE PartnerReleasePayout ─────────────────────────────────

@@ -1,23 +1,23 @@
 -- ================================================================
 -- FILE   : sp_GetPartnerMonthlyPayoutData.sql
--- PURPOSE: Camp-wise Income + Expense for a selected month
+-- PURPOSE: Camp-wise Income + Expense for a date range (FromDate..ToDate)
 --          with partner-wise share breakdown
 --
--- Income   : ContractRoomsTrns (TxnType='CR', month/year filter)
--- CampExp  : Expenses (Nature='Camp', Head <> 'Partner Profit', date in month)
--- HO Exp   : Expenses (Nature='HO', Head <> 'Partner Profit', date in month)
+-- Income   : ContractRoomsTrns (TxnType='CR', TxnDate BETWEEN @FromDate AND @ToDate)
+-- CampExp  : Expenses (Nature='Camp', Head <> 'Partner Profit', Date BETWEEN range)
+-- HO Exp   : Expenses (Nature='HO',  Head <> 'Partner Profit', Date BETWEEN range)
 --            → Total HO expense divided EQUALLY among all Active camps
 -- Partners : CampPartners JOIN Partners
 -- ================================================================
 
 CREATE OR ALTER PROCEDURE sp_GetPartnerMonthlyPayoutData
-    @Month  INT,    -- 1..12
-    @Year   INT     -- e.g. 2026
+    @FromDate  DATE,   -- e.g. 2026-01-01
+    @ToDate    DATE    -- e.g. 2026-01-31
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- ── Step 1: Total HO Expense for the month ───────────────────────
+    -- ── Step 1: Total HO Expense for the date range ──────────────────
     DECLARE @TotalHOExpense DECIMAL(18,2);
 
     SELECT @TotalHOExpense = ISNULL(SUM(Amount), 0)
@@ -26,8 +26,8 @@ BEGIN
         ISNULL(IsDeleted, 0) = 0
         AND Nature = 'HO'
         AND ISNULL(Head, '') <> 'Partner Profit'
-        AND MONTH([Date]) = @Month
-        AND YEAR([Date])  = @Year;
+        AND CAST([Date] AS DATE) >= @FromDate
+        AND CAST([Date] AS DATE) <= @ToDate;
 
     -- ── Step 2: Count of Active camps ────────────────────────────────
     DECLARE @ActiveCampCount INT;
@@ -87,7 +87,7 @@ BEGIN
             ELSE cp.ShareValue
         END                                         AS PartnerShareAmount,
 
-        -- Extra info for frontend
+        -- Extra info for frontend transparency
         @TotalHOExpense                             AS TotalHOExpenseAllCamps,
         @ActiveCampCount                            AS ActiveCampCount
 
@@ -101,7 +101,7 @@ BEGIN
            ON p.Id = cp.PartnerId
           AND ISNULL(p.IsDeleted, 0) = 0
 
-    -- Camp Income
+    -- Camp Income: TxnDate BETWEEN @FromDate AND @ToDate
     LEFT JOIN (
         SELECT
             CampId,
@@ -109,12 +109,12 @@ BEGIN
         FROM ContractRoomsTrns
         WHERE
             TxnType = 'CR'
-            AND MONTH(TxnDate) = @Month
-            AND YEAR(TxnDate)  = @Year
+            AND CAST(TxnDate AS DATE) >= @FromDate
+            AND CAST(TxnDate AS DATE) <= @ToDate
         GROUP BY CampId
     ) inc ON inc.CampId = c.Id
 
-    -- Camp Expense (Nature=Camp only)
+    -- Camp Expense: Date BETWEEN @FromDate AND @ToDate
     LEFT JOIN (
         SELECT
             CampId,
@@ -124,14 +124,14 @@ BEGIN
             ISNULL(IsDeleted, 0) = 0
             AND Nature = 'Camp'
             AND ISNULL(Head, '') <> 'Partner Profit'
-            AND MONTH([Date]) = @Month
-            AND YEAR([Date])  = @Year
+            AND CAST([Date] AS DATE) >= @FromDate
+            AND CAST([Date] AS DATE) <= @ToDate
         GROUP BY CampId
     ) exp ON exp.CampId = c.Id
 
     WHERE
         ISNULL(c.IsDeleted, 0) = 0
-        AND c.Status = 'Active'     -- only active camps
+        AND c.Status = 'Active'
 
     ORDER BY c.Name, p.Name;
 
@@ -146,19 +146,15 @@ BEGIN
         SUM(ISNULL(inc.CampIncome,  0))             AS TotalCampIncome,
         SUM(ISNULL(exp.CampExpense, 0))             AS TotalCampExpense,
 
-        -- Each camp gets equal share of HO expense
         SUM(@HOExpensePerCamp)                      AS TotalHOExpense,
 
-        -- TotalAllExpense = CampExpense + HOExpense (per camp summed)
         SUM(ISNULL(exp.CampExpense, 0))
             + SUM(@HOExpensePerCamp)                AS TotalAllExpense,
 
-        -- TotalBenefit = Income - AllExpense
         SUM(ISNULL(inc.CampIncome, 0))
             - SUM(ISNULL(exp.CampExpense, 0))
             - SUM(@HOExpensePerCamp)                AS TotalBenefitAmount,
 
-        -- Partner's total share across all camps
         SUM(
             CASE
                 WHEN cp.ShareType = 'percentage' THEN
@@ -176,25 +172,25 @@ BEGIN
     INNER JOIN Partners p ON p.Id = cp.PartnerId AND ISNULL(p.IsDeleted,0) = 0
     INNER JOIN Camps    c ON c.Id = cp.CampId
                          AND ISNULL(c.IsDeleted,0) = 0
-                         AND c.Status = 'Active'    -- only active camps
+                         AND c.Status = 'Active'
 
     LEFT JOIN (
         SELECT CampId, SUM(ISNULL(Amount,0)) AS CampIncome
         FROM ContractRoomsTrns
-        WHERE TxnType='CR'
-          AND MONTH(TxnDate)=@Month
-          AND YEAR(TxnDate) =@Year
+        WHERE TxnType = 'CR'
+          AND CAST(TxnDate AS DATE) >= @FromDate
+          AND CAST(TxnDate AS DATE) <= @ToDate
         GROUP BY CampId
     ) inc ON inc.CampId = c.Id
 
     LEFT JOIN (
         SELECT CampId, SUM(ISNULL(Amount,0)) AS CampExpense
         FROM Expenses
-        WHERE ISNULL(IsDeleted,0)=0
-          AND Nature='Camp'
-          AND ISNULL(Head,'')<>'Partner Profit'
-          AND MONTH([Date])=@Month
-          AND YEAR([Date]) =@Year
+        WHERE ISNULL(IsDeleted,0) = 0
+          AND Nature = 'Camp'
+          AND ISNULL(Head,'') <> 'Partner Profit'
+          AND CAST([Date] AS DATE) >= @FromDate
+          AND CAST([Date] AS DATE) <= @ToDate
         GROUP BY CampId
     ) exp ON exp.CampId = c.Id
 
@@ -206,5 +202,5 @@ BEGIN
 END
 GO
 
-PRINT 'sp_GetPartnerMonthlyPayoutData updated successfully.';
+PRINT 'sp_GetPartnerMonthlyPayoutData updated successfully (FromDate/ToDate).';
 GO
