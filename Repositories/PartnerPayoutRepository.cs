@@ -427,33 +427,34 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
     }
 
     // ──────────────────────────────────────────────────────────────
-    // GET PartnerMonthlyPayout list by month/year
+    // GET PartnerMonthlyPayout list — paginated with date filter
     // ──────────────────────────────────────────────────────────────
-    public async Task<GetPartnerMonthlyPayoutListResponse> GetMonthlyPayoutListAsync(
-        int month, int year, int? partnerId)
+    public async Task<(IEnumerable<PartnerMonthlyPayoutResponse> Data, int Total)>
+        GetMonthlyPayoutListAsync(GetPartnerMonthlyPayoutListRequest request)
     {
-        var response = new GetPartnerMonthlyPayoutListResponse
-        {
-            Month      = month,
-            Year       = year,
-            MonthLabel = new DateTime(year, month, 1).ToString("MMMM yyyy")
-        };
-
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
 
         await using var cmd = new SqlCommand("sp_GetPartnerMonthlyPayout", conn)
         {
-            CommandType = System.Data.CommandType.StoredProcedure
+            CommandType = CommandType.StoredProcedure
         };
-        cmd.Parameters.AddWithValue("@Month",     month);
-        cmd.Parameters.AddWithValue("@Year",      year);
-        cmd.Parameters.AddWithValue("@PartnerId", (object?)partnerId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Date",        (object?)request.Date      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PartnerId",   (object?)request.PartnerId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Search",      (object?)request.Search    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PageNumber",  request.ResolvedPageNumber);
+        cmd.Parameters.AddWithValue("@PageSize",    request.ResolvedPageSize);
 
+        var totalParam = new SqlParameter("@TotalRecords", System.Data.SqlDbType.Int)
+            { Direction = System.Data.ParameterDirection.Output };
+        cmd.Parameters.Add(totalParam);
+
+        var list = new List<PartnerMonthlyPayoutResponse>();
         await using var reader = await cmd.ExecuteReaderAsync();
+
         while (await reader.ReadAsync())
         {
-            response.Partners.Add(new PartnerMonthlyPayoutResponse
+            list.Add(new PartnerMonthlyPayoutResponse
             {
                 Id                    = reader.GetInt32(reader.GetOrdinal("Id")),
                 FromDate              = reader.GetDateTime(reader.GetOrdinal("FromDate")),
@@ -476,7 +477,9 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
             });
         }
 
-        return response;
+        await reader.CloseAsync();
+        int total = totalParam.Value == DBNull.Value ? 0 : (int)totalParam.Value;
+        return (list, total);
     }
 
     // ──────────────────────────────────────────────────────────────

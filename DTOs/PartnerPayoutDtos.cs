@@ -238,6 +238,28 @@ public class DeletePartnerMonthlyPayoutResponse
     public string MonthLabel   { get; set; } = string.Empty;
 }
 
+// ── MonthlyPayout List Request ────────────────────────────────
+public class GetPartnerMonthlyPayoutListRequest
+{
+    /// <summary>Filter by exact Date (Date column). Optional.</summary>
+    public DateTime? Date       { get; set; }
+
+    /// <summary>Filter by PartnerId. Optional.</summary>
+    public int?      PartnerId  { get; set; }
+
+    /// <summary>Search by partner name. Optional.</summary>
+    public string?   Search     { get; set; }
+
+    /// <summary>Page number (1-based). Optional — defaults to 1.</summary>
+    public int?      PageNumber { get; set; }
+
+    /// <summary>Records per page. Optional — 0 or omit = all records.</summary>
+    public int?      PageSize   { get; set; }
+
+    public int ResolvedPageNumber => PageNumber is > 0 ? PageNumber.Value : 1;
+    public int ResolvedPageSize   => PageSize   is > 0 ? PageSize.Value   : int.MaxValue;
+}
+
 // ── MonthlyPayout GET Response ────────────────────────────────
 public class PartnerMonthlyPayoutResponse
 {
@@ -262,9 +284,6 @@ public class PartnerMonthlyPayoutResponse
 
 public class GetPartnerMonthlyPayoutListResponse
 {
-    public int      Month       { get; set; }
-    public int      Year        { get; set; }
-    public string   MonthLabel  { get; set; } = string.Empty;
     public List<PartnerMonthlyPayoutResponse> Partners { get; set; } = new();
 }
 

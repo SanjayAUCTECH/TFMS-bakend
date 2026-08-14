@@ -153,22 +153,15 @@ public class PartnerPayoutService : IPartnerPayoutService
     }
 
     // ── GET PartnerMonthlyPayout list ─────────────────────────────
-    public async Task<ApiResponse<GetPartnerMonthlyPayoutListResponse>> GetMonthlyPayoutListAsync(
-        int month, int year, int? partnerId)
+    public async Task<ApiResponse<IEnumerable<PartnerMonthlyPayoutResponse>>> GetMonthlyPayoutListAsync(
+        GetPartnerMonthlyPayoutListRequest request)
     {
-        if (month < 1 || month > 12)
-            return ApiResponse<GetPartnerMonthlyPayoutListResponse>.Fail("Month must be between 1 and 12.");
-        if (year < 2000 || year > 2100)
-            return ApiResponse<GetPartnerMonthlyPayoutListResponse>.Fail("Invalid year.");
-
-        var data = await _repo.GetMonthlyPayoutListAsync(month, year, partnerId);
-
-        if (data.Partners.Count == 0)
-            return ApiResponse<GetPartnerMonthlyPayoutListResponse>.Fail(
-                $"No monthly payout data found for {data.MonthLabel}.");
-
-        return ApiResponse<GetPartnerMonthlyPayoutListResponse>.Ok(
-            data, $"Partner monthly payout for {data.MonthLabel} retrieved successfully.");
+        var (data, total) = await _repo.GetMonthlyPayoutListAsync(request);
+        return ApiResponse<IEnumerable<PartnerMonthlyPayoutResponse>>.Ok(
+            data,
+            "Records retrieved successfully.",
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize)
+        );
     }
 
     // ── DELETE PartnerMonthlyCampPayout by ToDate only ────────────
@@ -181,17 +174,15 @@ public class PartnerPayoutService : IPartnerPayoutService
         var label = $"{request.ToDate:dd MMM yyyy}";
         var deletedCount = await _repo.DeleteCampPayoutAsync(request.ToDate, userId);
 
-        if (deletedCount == 0)
-            return ApiResponse<DeletePartnerCampPayoutResponse>.Fail(
-                $"No camp payout records found for ToDate {label}.");
-
         return ApiResponse<DeletePartnerCampPayoutResponse>.Ok(
             new DeletePartnerCampPayoutResponse
             {
                 DeletedCount = deletedCount,
                 PeriodLabel  = label,
             },
-            $"{deletedCount} camp payout records deleted for ToDate {label}.");
+            deletedCount > 0
+                ? $"{deletedCount} camp payout records deleted for ToDate {label}."
+                : $"No records found for ToDate {label}. Nothing to delete.");
     }
 
     // ── SAVE PartnerReleasePayout ─────────────────────────────────

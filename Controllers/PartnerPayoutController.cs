@@ -52,17 +52,15 @@ public class PartnerPayoutController : BaseApiController
     }
 
     /// <summary>
-    /// GET api/PartnerPayout/monthly-payout-list?month=6&amp;year=2026
-    /// Get saved partner monthly payout records from PartnerMonthlyPayout table.
-    /// Optional: pass partnerId to filter by specific partner.
+    /// GET api/PartnerPayout/monthly-payout-list
+    /// Get paginated partner monthly payout records.
+    /// Optional filters: fromDate, toDate, pageNumber, pageSize
     /// </summary>
     [HttpGet("monthly-payout-list")]
-    public async Task<IActionResult> GetMonthlyPayoutList(
-        [FromQuery] int month,
-        [FromQuery] int year,
-        [FromQuery] int? partnerId = null)
+    public async Task<IActionResult> GetMonthlyPayoutList([FromQuery] GetPartnerMonthlyPayoutListRequest request)
     {
-        var r = await _service.GetMonthlyPayoutListAsync(month, year, partnerId);
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var r = await _service.GetMonthlyPayoutListAsync(request);
         return r.Success ? Ok(r) : BadRequest(r);
     }
 

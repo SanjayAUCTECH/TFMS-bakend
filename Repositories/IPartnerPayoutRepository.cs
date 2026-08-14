@@ -32,8 +32,8 @@ public interface IPartnerPayoutRepository
     /// <summary>Soft-delete partner monthly payout by month/year (optionally by partnerId).</summary>
     Task<int> DeleteMonthlyPayoutAsync(int month, int year, int? partnerId, int? deletedBy);
 
-    /// <summary>Get PartnerMonthlyPayout records by month/year.</summary>
-    Task<GetPartnerMonthlyPayoutListResponse> GetMonthlyPayoutListAsync(int month, int year, int? partnerId);
+    /// <summary>Get PartnerMonthlyPayout records with pagination and date filter.</summary>
+    Task<(IEnumerable<PartnerMonthlyPayoutResponse> Data, int Total)> GetMonthlyPayoutListAsync(GetPartnerMonthlyPayoutListRequest request);
 
     /// <summary>Soft-delete PartnerMonthlyCampPayout by ToDate only.</summary>
     Task<int> DeleteCampPayoutAsync(DateTime toDate, int? deletedBy);

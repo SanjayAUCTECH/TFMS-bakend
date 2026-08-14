@@ -159,6 +159,9 @@ public class PartnerReportRow
     public decimal TotalCollected  { get; set; }   // rent collected from tenants for partner's camps
     public decimal TotalPaid       { get; set; }   // expenses paid to partner (RecipientRole=Partner, RecipientId=PartnerId)
     public decimal ShareDue        { get; set; }   // TotalCollected - TotalPaid
+    public decimal TotalPayoutGenerated   { get; set; }  // from PartnerTrans (Type=Payout)
+    public DateTime? LastPayoutDate       { get; set; }  // last payout date from PartnerMonthlyPayout
+    public decimal TotalPartnerShareAmount { get; set; } // total PartnerShareAmount from PartnerMonthlyPayout
 }
 
 // ── Camp Report ────────────────────────────────────────────────────────────

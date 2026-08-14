@@ -1,7 +1,8 @@
 -- ================================================================
 -- FILE   : sp_SavePartnerMonthlyPayout.sql
--- PURPOSE: Save partner-wise monthly payout totals
---          into PartnerMonthlyPayout table using TVP
+-- PURPOSE: Save partner-wise monthly payout totals into
+--          PartnerMonthlyPayout table using TVP.
+--          Also inserts a record into PartnerTrans for audit trail.
 -- ================================================================
 
 CREATE OR ALTER PROCEDURE sp_SavePartnerMonthlyPayout
@@ -16,7 +17,7 @@ BEGIN
     BEGIN TRANSACTION;
     BEGIN TRY
 
-        -- Soft-delete existing active records for same period + same Partner
+        -- ── Step 1: Soft-delete existing active records for same period + partner ──
         UPDATE pm
         SET    IsDeleted = 1,
                UpdatedAt = GETDATE()
@@ -26,7 +27,7 @@ BEGIN
           AND  CAST(pm.ToDate   AS DATE) = CAST(@ToDate   AS DATE)
           AND  pm.IsDeleted = 0;
 
-        -- Insert fresh rows
+        -- ── Step 2: Insert fresh rows into PartnerMonthlyPayout ──────────────────
         INSERT INTO PartnerMonthlyPayout (
             FromDate, ToDate, [Date],
             PartnerId,
@@ -46,6 +47,41 @@ BEGIN
             @AddedBy, 0, GETDATE(), GETDATE()
         FROM @Rows r;
 
+        -- ── Step 3: Insert into PartnerTrans for audit trail ─────────────────────
+        --   Type        = 'Payout'
+        --   AccountHead = 'Partner Monthly Payout'
+        --   Amount      = PartnerShareAmount
+        --   Remark      = Period label
+        INSERT INTO PartnerTrans (
+            PartnerId,
+            PaymentMode,
+            Type,
+            AccountHead,
+            Amount,
+            AccountId,
+            Remark,
+            AddedBy,
+            IsDeleted,
+            CreatedAt,
+            UpdatedAt
+        )
+        SELECT
+            r.PartnerId,
+            NULL,                          -- PaymentMode (not applicable)
+            'Payout',                      -- Type
+            'Partner Monthly Payout',      -- AccountHead
+            r.PartnerShareAmount,          -- Amount = partner's share
+            NULL,                          -- AccountId
+            'Monthly Payout: ' +
+                CONVERT(VARCHAR, CAST(@FromDate AS DATE), 105) +
+                ' to ' +
+                CONVERT(VARCHAR, CAST(@ToDate AS DATE), 105),   -- Remark: period
+            @AddedBy,
+            0,
+            GETDATE(),
+            GETDATE()
+        FROM @Rows r;
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
@@ -55,5 +91,5 @@ BEGIN
 END
 GO
 
-PRINT 'sp_SavePartnerMonthlyPayout created successfully.';
+PRINT 'sp_SavePartnerMonthlyPayout updated - now also saves to PartnerTrans.';
 GO

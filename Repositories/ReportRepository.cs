@@ -177,6 +177,9 @@ public class ReportRepository : IReportRepository
                 TotalCollected=rd.IsDBNull(rd.GetOrdinal("TotalCollected"))?0:rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
                 TotalPaid=rd.IsDBNull(rd.GetOrdinal("TotalPaid"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPaid")),
                 ShareDue=rd.IsDBNull(rd.GetOrdinal("ShareDue"))?0:rd.GetDecimal(rd.GetOrdinal("ShareDue")),
+                TotalPayoutGenerated=rd.IsDBNull(rd.GetOrdinal("TotalPayoutGenerated"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPayoutGenerated")),
+                LastPayoutDate=rd.IsDBNull(rd.GetOrdinal("LastPayoutDate"))?null:rd.GetDateTime(rd.GetOrdinal("LastPayoutDate")),
+                TotalPartnerShareAmount=rd.IsDBNull(rd.GetOrdinal("TotalPartnerShareAmount"))?0:rd.GetDecimal(rd.GetOrdinal("TotalPartnerShareAmount")),
             });
         int total=all.Count, active=all.Count(x=>x.Status=="Active"), inactive=all.Count(x=>x.Status!="Active");
         var campMap = new Dictionary<string,int>();
