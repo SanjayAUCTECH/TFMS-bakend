@@ -55,15 +55,17 @@ public class PartnerDashboardController : ControllerBase
             result.VacantRooms    = reader.IsDBNull(reader.GetOrdinal("VacantRooms"))    ? 0 : reader.GetInt32(reader.GetOrdinal("VacantRooms"));
 
             // Wallet / Payout fields
-            result.OpeningBalance     = reader.IsDBNull(reader.GetOrdinal("OpeningBalance"))     ? 0 : reader.GetDecimal(reader.GetOrdinal("OpeningBalance"));
-            result.ProfitGenerate     = reader.IsDBNull(reader.GetOrdinal("ProfitGenerate"))     ? 0 : reader.GetDecimal(reader.GetOrdinal("ProfitGenerate"));
-            result.ProfitGenerateDate = reader.IsDBNull(reader.GetOrdinal("ProfitGenerateDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ProfitGenerateDate"));
-            result.TotalOPAmount      = reader.IsDBNull(reader.GetOrdinal("TotalOPAmount"))      ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalOPAmount"));
-            result.Paid               = reader.IsDBNull(reader.GetOrdinal("Paid"))               ? 0 : reader.GetDecimal(reader.GetOrdinal("Paid"));
-            result.ClosingBalance     = reader.IsDBNull(reader.GetOrdinal("ClosingBalance"))     ? 0 : reader.GetDecimal(reader.GetOrdinal("ClosingBalance"));
-            result.TotalProfit        = reader.IsDBNull(reader.GetOrdinal("TotalProfit"))        ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalProfit"));
-            result.TotalReceived      = reader.IsDBNull(reader.GetOrdinal("TotalReceived"))      ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalReceived"));
-            result.TotalBalance       = reader.IsDBNull(reader.GetOrdinal("TotalBalance"))       ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalBalance"));
+            result.OpeningBalance         = reader.IsDBNull(reader.GetOrdinal("OpeningBalance"))         ? 0    : reader.GetDecimal(reader.GetOrdinal("OpeningBalance"));
+            result.OpeningBalanceUpToDate = reader.IsDBNull(reader.GetOrdinal("OpeningBalanceUpToDate")) ? null : reader.GetDateTime(reader.GetOrdinal("OpeningBalanceUpToDate"));
+            result.ProfitGenerate         = reader.IsDBNull(reader.GetOrdinal("ProfitGenerate"))         ? 0    : reader.GetDecimal(reader.GetOrdinal("ProfitGenerate"));
+            result.ProfitGenerateDate     = reader.IsDBNull(reader.GetOrdinal("ProfitGenerateDate"))     ? null : reader.GetDateTime(reader.GetOrdinal("ProfitGenerateDate"));
+            result.TotalOPAmount          = reader.IsDBNull(reader.GetOrdinal("TotalOPAmount"))          ? 0    : reader.GetDecimal(reader.GetOrdinal("TotalOPAmount"));
+            result.Paid                   = reader.IsDBNull(reader.GetOrdinal("Paid"))                   ? 0    : reader.GetDecimal(reader.GetOrdinal("Paid"));
+            result.LastPaidDate           = reader.IsDBNull(reader.GetOrdinal("LastPaidDate"))           ? null : reader.GetDateTime(reader.GetOrdinal("LastPaidDate"));
+            result.ClosingBalance         = reader.IsDBNull(reader.GetOrdinal("ClosingBalance"))         ? 0    : reader.GetDecimal(reader.GetOrdinal("ClosingBalance"));
+            result.TotalProfit            = reader.IsDBNull(reader.GetOrdinal("TotalProfit"))            ? 0    : reader.GetDecimal(reader.GetOrdinal("TotalProfit"));
+            result.TotalReceived          = reader.IsDBNull(reader.GetOrdinal("TotalReceived"))          ? 0    : reader.GetDecimal(reader.GetOrdinal("TotalReceived"));
+            result.TotalBalance           = reader.IsDBNull(reader.GetOrdinal("TotalBalance"))           ? 0    : reader.GetDecimal(reader.GetOrdinal("TotalBalance"));
         }
 
         // ── Result Set 2: Assigned Camps ──────────────────────────

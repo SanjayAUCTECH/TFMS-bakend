@@ -16,15 +16,17 @@ public class PartnerDashboardResponse
     public decimal NetBalance   { get; set; }
 
     // ── Wallet / Payout Summary (from PartnerTrans) ──────────────
-    public decimal   OpeningBalance      { get; set; }
-    public decimal   ProfitGenerate      { get; set; }
-    public DateTime? ProfitGenerateDate  { get; set; }
-    public decimal   TotalOPAmount       { get; set; }
-    public decimal   Paid                { get; set; }
-    public decimal   ClosingBalance      { get; set; }
-    public decimal   TotalProfit         { get; set; }
-    public decimal   TotalReceived       { get; set; }
-    public decimal   TotalBalance        { get; set; }
+    public decimal   OpeningBalance          { get; set; }
+    public DateTime? OpeningBalanceUpToDate  { get; set; }   // Opening balance kis date tak hai
+    public decimal   ProfitGenerate          { get; set; }
+    public DateTime? ProfitGenerateDate      { get; set; }
+    public decimal   TotalOPAmount           { get; set; }
+    public decimal   Paid                    { get; set; }
+    public DateTime? LastPaidDate            { get; set; }   // Last expense date
+    public decimal   ClosingBalance          { get; set; }
+    public decimal   TotalProfit             { get; set; }
+    public decimal   TotalReceived           { get; set; }
+    public decimal   TotalBalance            { get; set; }
 
     // ── Camp / Room Stats ────────────────────────────────────────
     public int AssignedCamps  { get; set; }

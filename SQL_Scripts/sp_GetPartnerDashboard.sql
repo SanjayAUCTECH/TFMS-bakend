@@ -18,6 +18,11 @@ BEGIN
 
     -- Opening Balance: All Payout amounts BEFORE latest payout (exclude current)
     DECLARE @OpeningBalance DECIMAL(18,2) = 0;
+    DECLARE @OpeningBalanceUpToDate DATE = NULL;
+
+    -- Opening balance is calculated up to (but not including) the last payout date
+    SET @OpeningBalanceUpToDate = DATEADD(DAY, -1, @LastPayoutDate);
+
     SELECT @OpeningBalance = ISNULL(SUM(
         CASE WHEN pt.Type = 'Payout' THEN pt.Amount ELSE 0 END
       - CASE WHEN pt.Type = 'Expense' THEN pt.Amount ELSE 0 END
@@ -72,6 +77,14 @@ BEGIN
     -- Total Balance: Total Profit - Total Received
     DECLARE @TotalBalance DECIMAL(18,2) = @TotalProfit - @TotalReceived;
 
+    -- Last Paid Date: last Type='Expense' in PartnerTrans
+    DECLARE @LastPaidDate DATE = NULL;
+    SELECT @LastPaidDate = MAX(CAST(pt.CreatedAt AS DATE))
+    FROM PartnerTrans pt
+    WHERE ISNULL(pt.IsDeleted,0)=0
+      AND pt.Type = 'Expense'
+      AND (@PartnerId IS NULL OR pt.PartnerId=@PartnerId);
+
     -- ── Result Set 1: Summary ─────────────────────────────────────
     SELECT
         ISNULL(p.Id,0) AS PartnerId, ISNULL(p.Name,'') AS PartnerName,
@@ -89,15 +102,17 @@ BEGIN
         ISNULL((SELECT COUNT(DISTINCT r.Id) FROM Rooms r JOIN CampPartners cp ON cp.CampId=r.CampId WHERE r.IsDeleted=0 AND r.Occupied=0 AND ISNULL(cp.IsDeleted,0)=0 AND (@PartnerId IS NULL OR cp.PartnerId=@PartnerId)),0) AS VacantRooms,
 
         -- NEW wallet keys
-        @OpeningBalance       AS OpeningBalance,
-        @ProfitGenerate       AS ProfitGenerate,
-        @ProfitGenerateDate   AS ProfitGenerateDate,
-        @TotalOPAmount        AS TotalOPAmount,
-        @Paid                 AS Paid,
-        @ClosingBalance       AS ClosingBalance,
-        @TotalProfit          AS TotalProfit,
-        @TotalReceived        AS TotalReceived,
-        @TotalBalance         AS TotalBalance
+        @OpeningBalance           AS OpeningBalance,
+        @OpeningBalanceUpToDate   AS OpeningBalanceUpToDate,
+        @ProfitGenerate           AS ProfitGenerate,
+        @ProfitGenerateDate       AS ProfitGenerateDate,
+        @TotalOPAmount            AS TotalOPAmount,
+        @Paid                     AS Paid,
+        @ClosingBalance           AS ClosingBalance,
+        @TotalProfit              AS TotalProfit,
+        @TotalReceived            AS TotalReceived,
+        @TotalBalance             AS TotalBalance,
+        @LastPaidDate             AS LastPaidDate
 
     FROM Partners p WHERE p.IsDeleted=0 AND (@PartnerId IS NULL OR p.Id=@PartnerId);
 
