@@ -8,11 +8,77 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- ── Variables for wallet calculations ─────────────────────────
+    -- Latest payout date for this partner
+    DECLARE @LastPayoutDate DATE;
+    SELECT @LastPayoutDate = MAX(CAST([Date] AS DATE))
+    FROM PartnerMonthlyPayout
+    WHERE ISNULL(IsDeleted,0)=0
+      AND (@PartnerId IS NULL OR PartnerId=@PartnerId);
+
+    -- Opening Balance: All Payout amounts BEFORE latest payout (exclude current)
+    DECLARE @OpeningBalance DECIMAL(18,2) = 0;
+    SELECT @OpeningBalance = ISNULL(SUM(
+        CASE WHEN pt.Type = 'Payout' THEN pt.Amount ELSE 0 END
+      - CASE WHEN pt.Type = 'Expense' THEN pt.Amount ELSE 0 END
+    ), 0)
+    FROM PartnerTrans pt
+    WHERE ISNULL(pt.IsDeleted,0)=0
+      AND (@PartnerId IS NULL OR pt.PartnerId=@PartnerId)
+      AND (@LastPayoutDate IS NULL OR CAST(pt.CreatedAt AS DATE) < @LastPayoutDate);
+
+    -- Profit Generate: Latest payout amount & date
+    DECLARE @ProfitGenerate DECIMAL(18,2) = 0;
+    DECLARE @ProfitGenerateDate DATE = NULL;
+    SELECT TOP 1
+        @ProfitGenerate = ISNULL(pm.PartnerShareAmount, 0),
+        @ProfitGenerateDate = CAST(pm.[Date] AS DATE)
+    FROM PartnerMonthlyPayout pm
+    WHERE ISNULL(pm.IsDeleted,0)=0
+      AND (@PartnerId IS NULL OR pm.PartnerId=@PartnerId)
+    ORDER BY pm.[Date] DESC, pm.CreatedAt DESC;
+
+    -- Total OP Amount: Opening Balance + Profit Generate
+    DECLARE @TotalOPAmount DECIMAL(18,2) = @OpeningBalance + @ProfitGenerate;
+
+    -- Paid: From last payout month to today, Type='Expense' total
+    DECLARE @Paid DECIMAL(18,2) = 0;
+    SELECT @Paid = ISNULL(SUM(pt.Amount), 0)
+    FROM PartnerTrans pt
+    WHERE ISNULL(pt.IsDeleted,0)=0
+      AND pt.Type = 'Expense'
+      AND (@PartnerId IS NULL OR pt.PartnerId=@PartnerId)
+      AND (@LastPayoutDate IS NULL OR CAST(pt.CreatedAt AS DATE) >= @LastPayoutDate);
+
+    -- Closing Balance: Total OP Amount - Paid
+    DECLARE @ClosingBalance DECIMAL(18,2) = @TotalOPAmount - @Paid;
+
+    -- Total Profit: All time sum of Payout amounts
+    DECLARE @TotalProfit DECIMAL(18,2) = 0;
+    SELECT @TotalProfit = ISNULL(SUM(pt.Amount), 0)
+    FROM PartnerTrans pt
+    WHERE ISNULL(pt.IsDeleted,0)=0
+      AND pt.Type = 'Payout'
+      AND (@PartnerId IS NULL OR pt.PartnerId=@PartnerId);
+
+    -- Total Received: All time Type='Expense' total
+    DECLARE @TotalReceived DECIMAL(18,2) = 0;
+    SELECT @TotalReceived = ISNULL(SUM(pt.Amount), 0)
+    FROM PartnerTrans pt
+    WHERE ISNULL(pt.IsDeleted,0)=0
+      AND pt.Type = 'Expense'
+      AND (@PartnerId IS NULL OR pt.PartnerId=@PartnerId);
+
+    -- Total Balance: Total Profit - Total Received
+    DECLARE @TotalBalance DECIMAL(18,2) = @TotalProfit - @TotalReceived;
+
     -- ── Result Set 1: Summary ─────────────────────────────────────
     SELECT
         ISNULL(p.Id,0) AS PartnerId, ISNULL(p.Name,'') AS PartnerName,
         ISNULL(p.Code,'') AS PartnerCode, ISNULL(p.Contact,'') AS PartnerContact,
         ISNULL(p.Email,'') AS PartnerEmail, ISNULL(p.Status,'') AS PartnerStatus,
+
+        -- Existing fields
         ISNULL((SELECT SUM(i.Amount) FROM Incomes i WHERE ISNULL(i.IsDeleted,0)=0 AND (@PartnerId IS NULL OR i.PartnerId=@PartnerId)),0) AS TotalIncome,
         ISNULL((SELECT SUM(e.Amount) FROM Expenses e WHERE ISNULL(e.IsDeleted,0)=0 AND e.RecipientRole='Partner' AND (@PartnerId IS NULL OR e.RecipientId=@PartnerId)),0) AS TotalExpense,
         ISNULL((SELECT SUM(i.Amount) FROM Incomes i WHERE ISNULL(i.IsDeleted,0)=0 AND (@PartnerId IS NULL OR i.PartnerId=@PartnerId)),0)
@@ -20,7 +86,19 @@ BEGIN
         ISNULL((SELECT COUNT(DISTINCT cp.CampId) FROM CampPartners cp WHERE ISNULL(cp.IsDeleted,0)=0 AND (@PartnerId IS NULL OR cp.PartnerId=@PartnerId)),0) AS AssignedCamps,
         ISNULL((SELECT COUNT(DISTINCT r.Id) FROM Rooms r JOIN CampPartners cp ON cp.CampId=r.CampId WHERE r.IsDeleted=0 AND ISNULL(cp.IsDeleted,0)=0 AND (@PartnerId IS NULL OR cp.PartnerId=@PartnerId)),0) AS TotalRooms,
         ISNULL((SELECT COUNT(DISTINCT r.Id) FROM Rooms r JOIN CampPartners cp ON cp.CampId=r.CampId WHERE r.IsDeleted=0 AND r.Occupied=1 AND ISNULL(cp.IsDeleted,0)=0 AND (@PartnerId IS NULL OR cp.PartnerId=@PartnerId)),0) AS OccupiedRooms,
-        ISNULL((SELECT COUNT(DISTINCT r.Id) FROM Rooms r JOIN CampPartners cp ON cp.CampId=r.CampId WHERE r.IsDeleted=0 AND r.Occupied=0 AND ISNULL(cp.IsDeleted,0)=0 AND (@PartnerId IS NULL OR cp.PartnerId=@PartnerId)),0) AS VacantRooms
+        ISNULL((SELECT COUNT(DISTINCT r.Id) FROM Rooms r JOIN CampPartners cp ON cp.CampId=r.CampId WHERE r.IsDeleted=0 AND r.Occupied=0 AND ISNULL(cp.IsDeleted,0)=0 AND (@PartnerId IS NULL OR cp.PartnerId=@PartnerId)),0) AS VacantRooms,
+
+        -- NEW wallet keys
+        @OpeningBalance       AS OpeningBalance,
+        @ProfitGenerate       AS ProfitGenerate,
+        @ProfitGenerateDate   AS ProfitGenerateDate,
+        @TotalOPAmount        AS TotalOPAmount,
+        @Paid                 AS Paid,
+        @ClosingBalance       AS ClosingBalance,
+        @TotalProfit          AS TotalProfit,
+        @TotalReceived        AS TotalReceived,
+        @TotalBalance         AS TotalBalance
+
     FROM Partners p WHERE p.IsDeleted=0 AND (@PartnerId IS NULL OR p.Id=@PartnerId);
 
     -- ── Result Set 2: Assigned Camps ─────────────────────────────
@@ -42,7 +120,6 @@ BEGIN
     SELECT TOP 50 TxnType, TxnRefId, Date, Amount, Head,
         Mode, FundPoolName, Purpose, CampId, CampName, CreatedAt
     FROM (
-        -- Incomes
         SELECT 'Income' AS TxnType, i.IncomeId AS TxnRefId, i.Date, i.Amount,
                ISNULL(i.Head,'') AS Head, ISNULL(i.Mode,'') AS Mode,
                ISNULL(i.FundPoolName,'') AS FundPoolName, ISNULL(i.Purpose,'') AS Purpose,
@@ -51,7 +128,6 @@ BEGIN
 
         UNION ALL
 
-        -- Expenses
         SELECT 'Expense', e.ExpenseId, e.Date, e.Amount,
                ISNULL(e.Head,''), ISNULL(e.Mode,''),
                ISNULL(e.FundPoolName,''), ISNULL(e.Purpose,''),
@@ -61,7 +137,6 @@ BEGIN
 
         UNION ALL
 
-        -- PartnerTrans (Payout records)
         SELECT 'Payout' AS TxnType,
                CAST(pt.Id AS NVARCHAR(50)) AS TxnRefId,
                pt.CreatedAt AS Date,
@@ -76,10 +151,9 @@ BEGIN
         FROM PartnerTrans pt
         WHERE ISNULL(pt.IsDeleted,0)=0
           AND (@PartnerId IS NULL OR pt.PartnerId=@PartnerId)
-
     ) txn ORDER BY txn.CreatedAt DESC;
 END
 GO
 
-PRINT 'sp_GetPartnerDashboard updated - includes PartnerTrans data.';
+PRINT 'sp_GetPartnerDashboard updated with wallet calculations.';
 GO

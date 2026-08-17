@@ -158,6 +158,10 @@ public class ReportRepository : IReportRepository
         cmd.Parameters.AddWithValue("@PageSize",   r.ResolvedPageSize == int.MaxValue ? 100 : r.ResolvedPageSize);
         cmd.Parameters.AddWithValue("@SearchText", (object?)r.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",     (object?)r.Status     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PartnerId",  (object?)r.PartnerId  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId",     (object?)r.CampId     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateFrom",   string.IsNullOrWhiteSpace(r.DateFrom) ? DBNull.Value : (object)DateTime.Parse(r.DateFrom));
+        cmd.Parameters.AddWithValue("@DateTo",     string.IsNullOrWhiteSpace(r.DateTo)   ? DBNull.Value : (object)DateTime.Parse(r.DateTo));
         var pPartnerTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(pPartnerTotal);
         var all = new List<PartnerReportRow>();
