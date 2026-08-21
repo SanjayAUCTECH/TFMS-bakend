@@ -251,9 +251,25 @@ public class VoucherReportsController : ControllerBase
             var rows = new List<CampWiseSummary>();
             await using var r = await cmd.ExecuteReaderAsync();
             while (await r.ReadAsync())
-                rows.Add(new CampWiseSummary { CampId=r.GetInt32(0), CampName=SafeStr(r,1),
-                    TotalIncome=SafeDec(r,2), TotalExpense=SafeDec(r,3), NetProfit=SafeDec(r,4) });
-            return Ok(ApiResponse<object>.Ok(new { rows }, "Camp wise report retrieved."));
+                rows.Add(new CampWiseSummary {
+                    CampId             = r.GetInt32(0),
+                    CampName           = SafeStr(r, 1),
+                    TotalIncome        = SafeDec(r, 2),
+                    TotalExpense       = SafeDec(r, 3),
+                    HOExpense          = SafeDec(r, 4),
+                    TotalExpenseWithHO = SafeDec(r, 5),
+                    NetProfit          = SafeDec(r, 6)
+                });
+            // Read grand total (result set 2)
+            object? grandTotal = null;
+            if (await r.NextResultAsync() && await r.ReadAsync())
+                grandTotal = new {
+                    GrandIncome    = SafeDec(r, 0),
+                    GrandExpense   = SafeDec(r, 1),
+                    GrandHOExpense = SafeDec(r, 2),
+                    GrandNet       = SafeDec(r, 3)
+                };
+            return Ok(ApiResponse<object>.Ok(new { rows, grandTotal }, "Camp wise report retrieved."));
         }
         else
         {

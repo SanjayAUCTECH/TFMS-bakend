@@ -138,11 +138,13 @@ public class AccountHeadLedgerTotals
 // ── 7. Camp Wise ──────────────────────────────────────────────
 public class CampWiseSummary
 {
-    public int     CampId      { get; set; }
-    public string  CampName    { get; set; } = "";
-    public decimal TotalIncome  { get; set; }
-    public decimal TotalExpense { get; set; }
-    public decimal NetProfit    { get; set; }
+    public int     CampId             { get; set; }
+    public string  CampName           { get; set; } = "";
+    public decimal TotalIncome        { get; set; }
+    public decimal TotalExpense       { get; set; }
+    public decimal HOExpense          { get; set; }   // HO expense allocated to this camp
+    public decimal TotalExpenseWithHO { get; set; }   // TotalExpense + HOExpense
+    public decimal NetProfit          { get; set; }
 }
 
 // ── 8. Property Wise ─────────────────────────────────────────

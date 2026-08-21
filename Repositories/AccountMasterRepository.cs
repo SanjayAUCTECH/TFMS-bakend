@@ -22,6 +22,11 @@ public class AccountMasterRepository : IAccountMasterRepository
         if (!string.IsNullOrEmpty(request.PaymentType))  where += " AND PaymentType=@PaymentType";
         if (!string.IsNullOrEmpty(request.Nature))       where += " AND Nature=@Nature";
         if (request.RecipientId.HasValue)                where += " AND RecipientId=@RecipientId";
+        if (!string.IsNullOrEmpty(request.FundPool))     where += " AND FundPool=@FundPool";
+        if (!string.IsNullOrEmpty(request.Mode))         where += " AND Mode=@Mode";
+        if (!string.IsNullOrEmpty(request.AccountHead))
+            where += @" AND (AccountId IN (SELECT AccountId FROM Incomes WHERE Head=@AccountHead AND ISNULL(IsDeleted,0)=0)
+                         OR AccountId IN (SELECT AccountId FROM Expenses WHERE Head=@AccountHead AND ISNULL(IsDeleted,0)=0))";
         if (!string.IsNullOrEmpty(request.DateFrom))     where += " AND CAST(TransDate AS DATE)>=@DateFrom";
         if (!string.IsNullOrEmpty(request.DateTo))       where += " AND CAST(TransDate AS DATE)<=@DateTo";
         if (!string.IsNullOrEmpty(request.SearchText))
@@ -258,6 +263,9 @@ public class AccountMasterRepository : IAccountMasterRepository
         if (!string.IsNullOrEmpty(req.PaymentType))  cmd.Parameters.AddWithValue("@PaymentType", req.PaymentType);
         if (!string.IsNullOrEmpty(req.Nature))       cmd.Parameters.AddWithValue("@Nature",      req.Nature);
         if (req.RecipientId.HasValue)                cmd.Parameters.AddWithValue("@RecipientId", req.RecipientId.Value);
+        if (!string.IsNullOrEmpty(req.FundPool))     cmd.Parameters.AddWithValue("@FundPool",    req.FundPool);
+        if (!string.IsNullOrEmpty(req.Mode))         cmd.Parameters.AddWithValue("@Mode",        req.Mode);
+        if (!string.IsNullOrEmpty(req.AccountHead))  cmd.Parameters.AddWithValue("@AccountHead", req.AccountHead);
         if (!string.IsNullOrEmpty(req.DateFrom) && DateTime.TryParse(req.DateFrom, out var df))
             cmd.Parameters.AddWithValue("@DateFrom", df.Date);
         if (!string.IsNullOrEmpty(req.DateTo) && DateTime.TryParse(req.DateTo, out var dt))

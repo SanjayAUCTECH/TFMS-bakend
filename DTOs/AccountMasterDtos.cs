@@ -57,6 +57,9 @@ public class AccountMasterListRequest : PagedRequest
     public string? PaymentType   { get; set; }   // Income | Expense | null=All
     public string? Nature        { get; set; }   // Camp | HO | SD | null=All
     public int?    RecipientId   { get; set; }   // Filter by assigned person/recipient
+    public string? FundPool      { get; set; }   // FundPool code filter (e.g. FP002)
+    public string? AccountHead   { get; set; }   // Head filter (e.g. 'RENTAL COLLECTION')
+    public string? Mode          { get; set; }   // Mode filter (e.g. 'Cash', 'Bank')
 }
 
 // ── RESPONSE ─────────────────────────────────────────────────
