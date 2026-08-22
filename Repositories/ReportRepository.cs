@@ -220,6 +220,7 @@ public class ReportRepository : IReportRepository
                 ActiveContracts=rd.IsDBNull(rd.GetOrdinal("ActiveContracts"))?0:rd.GetInt32(rd.GetOrdinal("ActiveContracts")),
                 TotalMonthlyRent=rd.IsDBNull(rd.GetOrdinal("TotalMonthlyRent"))?0:rd.GetDecimal(rd.GetOrdinal("TotalMonthlyRent")),
                 TotalCollected=rd.IsDBNull(rd.GetOrdinal("TotalCollected"))?0:rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
+                TotalAdvance=rd.IsDBNull(rd.GetOrdinal("TotalAdvance"))?0:rd.GetDecimal(rd.GetOrdinal("TotalAdvance")),
                 TotalDue=rd.IsDBNull(rd.GetOrdinal("TotalDue"))?0:rd.GetDecimal(rd.GetOrdinal("TotalDue")),
                 CampExpense=rd.IsDBNull(rd.GetOrdinal("CampExpense"))?0:rd.GetDecimal(rd.GetOrdinal("CampExpense")),
                 HOAllocated=rd.IsDBNull(rd.GetOrdinal("HOAllocated"))?0:rd.GetDecimal(rd.GetOrdinal("HOAllocated")),
@@ -688,12 +689,13 @@ public class ReportRepository : IReportRepository
         var pTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(pTotal);
 
-        var rows    = new List<CampCollectionRow>();
-        var subTotal= new CampCollectionSubTotal();
+        var rows     = new List<CampCollectionRow>();
+        var subTotal = new CampCollectionSubTotal();
+        var cards    = new CampCollectionCards();
 
         await using (var rd = await cmd.ExecuteReaderAsync())
         {
-            // Result set 1: rows
+            // Result set 1: Camp-wise rows
             while (await rd.ReadAsync())
                 rows.Add(new CampCollectionRow {
                     CampId          = rd.IsDBNull(rd.GetOrdinal("CampId"))          ? 0  : rd.GetInt32(rd.GetOrdinal("CampId")),
@@ -707,12 +709,13 @@ public class ReportRepository : IReportRepository
                     ActiveContracts = rd.IsDBNull(rd.GetOrdinal("ActiveContracts")) ? 0  : rd.GetInt32(rd.GetOrdinal("ActiveContracts")),
                     TotalAmount     = rd.IsDBNull(rd.GetOrdinal("TotalAmount"))     ? 0  : rd.GetDecimal(rd.GetOrdinal("TotalAmount")),
                     TotalCollected  = rd.IsDBNull(rd.GetOrdinal("TotalCollected"))  ? 0  : rd.GetDecimal(rd.GetOrdinal("TotalCollected")),
+                    TotalAdvance    = rd.IsDBNull(rd.GetOrdinal("TotalAdvance"))    ? 0  : rd.GetDecimal(rd.GetOrdinal("TotalAdvance")),
                     TotalDue        = rd.IsDBNull(rd.GetOrdinal("TotalDue"))        ? 0  : rd.GetDecimal(rd.GetOrdinal("TotalDue")),
                     TotalPartners   = rd.IsDBNull(rd.GetOrdinal("TotalPartners"))   ? 0  : rd.GetInt32(rd.GetOrdinal("TotalPartners")),
                     TotalOwners     = rd.IsDBNull(rd.GetOrdinal("TotalOwners"))     ? 0  : rd.GetInt32(rd.GetOrdinal("TotalOwners")),
                 });
 
-            // Result set 2: sub totals
+            // Result set 2: Sub-totals
             await rd.NextResultAsync();
             if (await rd.ReadAsync())
                 subTotal = new CampCollectionSubTotal {
@@ -723,9 +726,20 @@ public class ReportRepository : IReportRepository
                     SubTotalActiveContracts = rd.IsDBNull(rd.GetOrdinal("SubTotalActiveContracts")) ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalActiveContracts")),
                     SubTotalAmount          = rd.IsDBNull(rd.GetOrdinal("SubTotalAmount"))          ? 0 : rd.GetDecimal(rd.GetOrdinal("SubTotalAmount")),
                     SubTotalCollected       = rd.IsDBNull(rd.GetOrdinal("SubTotalCollected"))       ? 0 : rd.GetDecimal(rd.GetOrdinal("SubTotalCollected")),
+                    SubTotalAdvance         = rd.IsDBNull(rd.GetOrdinal("SubTotalAdvance"))         ? 0 : rd.GetDecimal(rd.GetOrdinal("SubTotalAdvance")),
                     SubTotalDue             = rd.IsDBNull(rd.GetOrdinal("SubTotalDue"))             ? 0 : rd.GetDecimal(rd.GetOrdinal("SubTotalDue")),
                     SubTotalPartners        = rd.IsDBNull(rd.GetOrdinal("SubTotalPartners"))        ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalPartners")),
                     SubTotalOwners          = rd.IsDBNull(rd.GetOrdinal("SubTotalOwners"))          ? 0 : rd.GetInt32(rd.GetOrdinal("SubTotalOwners")),
+                };
+
+            // Result set 3: Summary cards
+            await rd.NextResultAsync();
+            if (await rd.ReadAsync())
+                cards = new CampCollectionCards {
+                    TotalCamps          = rd.IsDBNull(rd.GetOrdinal("TotalCamps"))          ? 0 : rd.GetInt32(rd.GetOrdinal("TotalCamps")),
+                    GrandTotalCollected = rd.IsDBNull(rd.GetOrdinal("GrandTotalCollected")) ? 0 : rd.GetDecimal(rd.GetOrdinal("GrandTotalCollected")),
+                    GrandTotalAdvance   = rd.IsDBNull(rd.GetOrdinal("GrandTotalAdvance"))   ? 0 : rd.GetDecimal(rd.GetOrdinal("GrandTotalAdvance")),
+                    GrandTotalDue       = rd.IsDBNull(rd.GetOrdinal("GrandTotalDue"))       ? 0 : rd.GetDecimal(rd.GetOrdinal("GrandTotalDue")),
                 };
         }
 
@@ -733,6 +747,7 @@ public class ReportRepository : IReportRepository
         return new CampCollectionReportResponse {
             Rows         = rows,
             SubTotal     = subTotal,
+            Cards        = cards,
             TotalRecords = totalRecords,
         };
     }
@@ -749,6 +764,9 @@ public class ReportRepository : IReportRepository
         cmd.Parameters.AddWithValue("@Month",          (object?)r.Month          ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@ContractStatus", (object?)r.ContractStatus ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RoomStatus",     (object?)r.Status         ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractId",     (object?)r.ContractId     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PageNumber",     r.ResolvedPage);
+        cmd.Parameters.AddWithValue("@PageSize",       r.ResolvedPageSize == int.MaxValue ? 2147483647 : r.ResolvedPageSize);
         var pTotal = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(pTotal);
 

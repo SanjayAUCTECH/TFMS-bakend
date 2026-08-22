@@ -289,9 +289,9 @@ public class PaymentRepository : IPaymentRepository
                         // ── Insert into ContractRoomsTrns (with CriId + InstallmentNo for exact revert) ──
                         await using var insCmd = new SqlCommand(@"
                             INSERT INTO ContractRoomsTrns
-                                (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Month, Description, CriId, InstallmentNo, CreatedAt)
+                                (ContractId, RoomId, CampId, TxnType, TxnRecordId, TotalAmount, Amount, TxnDate, Month, Description, CriId, InstallmentNo, PaymentStatus, CreatedAt)
                             VALUES
-                                (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @Amount, @Amount, @TxnDate, @Month, @Desc, @CriId, @InstallmentNo, GETDATE())", conn, txn);
+                                (@ContractId, @RoomId, @CampId, 'CR', @TxnRecordId, @Amount, @Amount, @TxnDate, @Month, @Desc, @CriId, @InstallmentNo, @PaymentStatus, GETDATE())", conn, txn);
                         insCmd.Parameters.AddWithValue("@ContractId",  p.ContractId);
                         insCmd.Parameters.AddWithValue("@RoomId",      room.RoomId);
                         insCmd.Parameters.AddWithValue("@CampId",      room.CampId);
@@ -303,9 +303,10 @@ public class PaymentRepository : IPaymentRepository
                         insCmd.Parameters.AddWithValue("@CriId",       room.ContractRoomInstallmentId.HasValue && room.ContractRoomInstallmentId > 0
                                                                             ? room.ContractRoomInstallmentId.Value : (object)DBNull.Value);
                         insCmd.Parameters.AddWithValue("@InstallmentNo", room.InstallmentNo.HasValue ? room.InstallmentNo.Value : (object)DBNull.Value);
+                        insCmd.Parameters.AddWithValue("@PaymentStatus", string.IsNullOrEmpty(room.Status) ? (object)DBNull.Value : room.Status);
                         await insCmd.ExecuteNonQueryAsync();
 
-                        // ── Update ContractRoomInstallments — cap to InstallAmount ─
+                        // ── Update ContractRoomInstallments — Status ONLY from API ─
                         if (room.ContractRoomInstallmentId.HasValue && room.ContractRoomInstallmentId > 0)
                         {
                             await using var criCmd = new SqlCommand(@"
@@ -319,15 +320,13 @@ public class PaymentRepository : IPaymentRepository
                                         ELSE InstallAmount - (ISNULL(PaidAmount, 0) + @Amount)
                                     END,
                                     PaidDate   = @PaidDate,
-                                    Status     = CASE
-                                        WHEN ISNULL(PaidAmount, 0) + @Amount >= InstallAmount THEN 'Paid'
-                                        WHEN ISNULL(PaidAmount, 0) + @Amount > 0 THEN 'Partial'
-                                        ELSE 'Pending' END,
+                                    Status     = CASE WHEN @Status IS NOT NULL AND @Status <> '' THEN @Status ELSE Status END,
                                     UpdatedAt  = GETDATE()
                                 WHERE Id = @Id", conn, txn);
                             criCmd.Parameters.AddWithValue("@Id",      room.ContractRoomInstallmentId.Value);
                             criCmd.Parameters.AddWithValue("@Amount",  room.Amount);
                             criCmd.Parameters.AddWithValue("@PaidDate", p.PaidDate ?? (object)DBNull.Value);
+                            criCmd.Parameters.AddWithValue("@Status",  (object?)room.Status ?? DBNull.Value);
                             await criCmd.ExecuteNonQueryAsync();
                         }
                         else if (room.InstallmentNo.HasValue)
@@ -344,10 +343,7 @@ public class PaymentRepository : IPaymentRepository
                                         ELSE InstallAmount - (ISNULL(PaidAmount, 0) + @Amount)
                                     END,
                                     PaidDate   = @PaidDate,
-                                    Status     = CASE
-                                        WHEN ISNULL(PaidAmount, 0) + @Amount >= InstallAmount THEN 'Paid'
-                                        WHEN ISNULL(PaidAmount, 0) + @Amount > 0 THEN 'Partial'
-                                        ELSE 'Pending' END,
+                                    Status     = CASE WHEN @Status IS NOT NULL AND @Status <> '' THEN @Status ELSE Status END,
                                     UpdatedAt  = GETDATE()
                                 WHERE ContractId = @ContractId AND RoomId = @RoomId AND InstallmentNo = @InstNo", conn, txn);
                             criCmd2.Parameters.AddWithValue("@ContractId", p.ContractId);
@@ -355,6 +351,7 @@ public class PaymentRepository : IPaymentRepository
                             criCmd2.Parameters.AddWithValue("@InstNo",     room.InstallmentNo.Value);
                             criCmd2.Parameters.AddWithValue("@Amount",     room.Amount);
                             criCmd2.Parameters.AddWithValue("@PaidDate",   p.PaidDate ?? (object)DBNull.Value);
+                            criCmd2.Parameters.AddWithValue("@Status",     (object?)room.Status ?? DBNull.Value);
                             await criCmd2.ExecuteNonQueryAsync();
                         }
                     }

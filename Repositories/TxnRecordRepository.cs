@@ -122,9 +122,6 @@ public class TxnRecordRepository : ITxnRecordRepository
                     UPDATE cri
                     SET cri.PaidAmount = CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END,
                         cri.Balance    = cri.InstallAmount-(CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END),
-                        cri.Status     = CASE WHEN (CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END)=0 THEN 'Pending'
-                                              WHEN (CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<0 THEN 0 ELSE ISNULL(cri.PaidAmount,0)-crt.Amount END)>=cri.InstallAmount THEN 'Paid'
-                                              ELSE 'Partial' END,
                         cri.PaidDate   = CASE WHEN ISNULL(cri.PaidAmount,0)-crt.Amount<=0 THEN NULL ELSE cri.PaidDate END,
                         cri.UpdatedAt  = GETDATE()
                     FROM ContractRoomInstallments cri
@@ -159,8 +156,8 @@ public class TxnRecordRepository : ITxnRecordRepository
                     await updCmd.ExecuteNonQueryAsync();
 
                     await using var insCmd = new SqlCommand(@"
-                        INSERT INTO ContractRoomsTrns(ContractId,RoomId,CampId,TxnType,TxnRecordId,TotalAmount,Amount,TxnDate,Month,Description,CriId,InstallmentNo,CreatedAt)
-                        VALUES(@ContractId,@RoomId,@CampId,'CR',@TxnRecordId,@Amount,@Amount,@TxnDate,@Month,@Desc,@CriId,@InstallmentNo,GETDATE())", conn, txn);
+                        INSERT INTO ContractRoomsTrns(ContractId,RoomId,CampId,TxnType,TxnRecordId,TotalAmount,Amount,TxnDate,Month,Description,CriId,InstallmentNo,PaymentStatus,CreatedAt)
+                        VALUES(@ContractId,@RoomId,@CampId,'CR',@TxnRecordId,@Amount,@Amount,@TxnDate,@Month,@Desc,@CriId,@InstallmentNo,@PaymentStatus,GETDATE())", conn, txn);
                     insCmd.Parameters.AddWithValue("@ContractId",   r.ContractId);
                     insCmd.Parameters.AddWithValue("@RoomId",       room.RoomId);
                     insCmd.Parameters.AddWithValue("@CampId",       room.CampId);
@@ -172,20 +169,22 @@ public class TxnRecordRepository : ITxnRecordRepository
                     insCmd.Parameters.AddWithValue("@CriId",        room.ContractRoomInstallmentId.HasValue && room.ContractRoomInstallmentId > 0
                                                                         ? room.ContractRoomInstallmentId.Value : (object)DBNull.Value);
                     insCmd.Parameters.AddWithValue("@InstallmentNo", room.InstallmentNo.HasValue ? room.InstallmentNo.Value : (object)DBNull.Value);
+                    insCmd.Parameters.AddWithValue("@PaymentStatus", string.IsNullOrEmpty(room.Status) ? (object)DBNull.Value : room.Status);
                     await insCmd.ExecuteNonQueryAsync();
 
-                    // Update ContractRoomInstallments
+                    // Update ContractRoomInstallments — Status ONLY from API
                     if (room.ContractRoomInstallmentId.HasValue && room.ContractRoomInstallmentId > 0)
                     {
                         await using var criCmd = new SqlCommand(@"
                             UPDATE ContractRoomInstallments
                             SET PaidAmount=@Amount, Balance=InstallAmount-@Amount, PaidDate=@PaidDate,
-                                Status=CASE WHEN @Amount>=InstallAmount THEN 'Paid' WHEN @Amount>0 THEN 'Partial' ELSE 'Pending' END,
+                                Status=CASE WHEN @Status IS NOT NULL AND @Status<>'' THEN @Status ELSE Status END,
                                 UpdatedAt=GETDATE()
                             WHERE Id=@Id", conn, txn);
                         criCmd.Parameters.AddWithValue("@Id",      room.ContractRoomInstallmentId.Value);
                         criCmd.Parameters.AddWithValue("@Amount",  room.Amount);
                         criCmd.Parameters.AddWithValue("@PaidDate", r.TxnDate);
+                        criCmd.Parameters.AddWithValue("@Status",  (object?)room.Status ?? DBNull.Value);
                         await criCmd.ExecuteNonQueryAsync();
                     }
                     else if (room.InstallmentNo.HasValue)
@@ -193,7 +192,7 @@ public class TxnRecordRepository : ITxnRecordRepository
                         await using var criCmd2 = new SqlCommand(@"
                             UPDATE ContractRoomInstallments
                             SET PaidAmount=@Amount, Balance=InstallAmount-@Amount, PaidDate=@PaidDate,
-                                Status=CASE WHEN @Amount>=InstallAmount THEN 'Paid' WHEN @Amount>0 THEN 'Partial' ELSE 'Pending' END,
+                                Status=CASE WHEN @Status IS NOT NULL AND @Status<>'' THEN @Status ELSE Status END,
                                 UpdatedAt=GETDATE()
                             WHERE ContractId=@ContractId AND RoomId=@RoomId AND InstallmentNo=@InstNo", conn, txn);
                         criCmd2.Parameters.AddWithValue("@ContractId", r.ContractId);
@@ -201,6 +200,7 @@ public class TxnRecordRepository : ITxnRecordRepository
                         criCmd2.Parameters.AddWithValue("@InstNo",     room.InstallmentNo.Value);
                         criCmd2.Parameters.AddWithValue("@Amount",     room.Amount);
                         criCmd2.Parameters.AddWithValue("@PaidDate",   r.TxnDate);
+                        criCmd2.Parameters.AddWithValue("@Status",     (object?)room.Status ?? DBNull.Value);
                         await criCmd2.ExecuteNonQueryAsync();
                     }
                 }

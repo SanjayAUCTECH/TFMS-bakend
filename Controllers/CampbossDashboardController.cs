@@ -105,68 +105,121 @@ public class CampbossDashboardController : BaseApiController
             }
         }
 
-        // ── 4. Camp-wise Collection from ContractRooms ───────────────────────
+        // ── 4. Camp-wise Collection from ContractRoomInstallments ──────────────
         var campCollections = new List<object>();
         await using (var cmd = new SqlCommand(
             $@"SELECT
-                cr.CampId,
-                ISNULL(c.Name,'')                           AS CampName,
-                ISNULL(c.Code,'')                           AS CampCode,
-                COUNT(DISTINCT cr.ContractId)               AS TotalContracts,
-                COUNT(cr.RoomId)                            AS TotalRooms,
-                ISNULL(SUM(cr.TotalAmount),  0)             AS TotalAmount,
-                ISNULL(SUM(cr.PaidAmount),   0)             AS CollectedAmount,
-                ISNULL(SUM(cr.Balance),      0)             AS PendingAmount,
-                ISNULL(SUM(cr.MonthlyAmount),0)             AS MonthlyAmount
-            FROM ContractRooms cr
-            LEFT JOIN Camps c ON c.Id = cr.CampId
-            WHERE cr.CampId IN ({campIdsStr})
-              AND ISNULL(cr.IsDeleted,0) = 0
-            GROUP BY cr.CampId, c.Name, c.Code
+                cri.CampId,
+                ISNULL(c.Name,'')                                        AS CampName,
+                ISNULL(c.Code,'')                                        AS CampCode,
+                COUNT(DISTINCT cri.ContractId)                           AS TotalContracts,
+                COUNT(DISTINCT cri.RoomId)                               AS TotalRooms,
+                ISNULL(SUM(cri.InstallAmount), 0)                        AS TotalAmount,
+
+                -- CollectedAmount: Paid + PaidPartial
+                ISNULL(SUM(CASE WHEN cri.Status IN ('Paid','PaidPartial')
+                                THEN cri.PaidAmount ELSE 0 END), 0)      AS CollectedAmount,
+
+                -- AdvanceCollection: Advanced + AdvancedPartial
+                ISNULL(SUM(CASE WHEN cri.Status IN ('Advanced','AdvancedPartial')
+                                THEN cri.PaidAmount ELSE 0 END), 0)      AS AdvanceCollection,
+
+                -- PendingAmount: Pending balance
+                ISNULL(SUM(CASE WHEN cri.Status = 'Pending'
+                                THEN cri.Balance ELSE 0 END), 0)         AS PendingAmount
+            FROM ContractRoomInstallments cri
+            LEFT JOIN Camps c ON c.Id = cri.CampId
+            WHERE cri.CampId IN ({campIdsStr})
+              AND ISNULL(cri.IsDeleted, 0) = 0
+            GROUP BY cri.CampId, c.Name, c.Code
             ORDER BY CollectedAmount DESC", conn))
         {
             await using var r = await cmd.ExecuteReaderAsync();
             while (await r.ReadAsync())
             {
-                var totalAmt     = r.IsDBNull(r.GetOrdinal("TotalAmount"))     ? 0m : r.GetDecimal(r.GetOrdinal("TotalAmount"));
-                var collectedAmt = r.IsDBNull(r.GetOrdinal("CollectedAmount")) ? 0m : r.GetDecimal(r.GetOrdinal("CollectedAmount"));
+                var totalAmt     = r.IsDBNull(r.GetOrdinal("TotalAmount"))        ? 0m : r.GetDecimal(r.GetOrdinal("TotalAmount"));
+                var collectedAmt = r.IsDBNull(r.GetOrdinal("CollectedAmount"))    ? 0m : r.GetDecimal(r.GetOrdinal("CollectedAmount"));
                 campCollections.Add(new
                 {
-                    campId           = r.GetInt32(r.GetOrdinal("CampId")),
-                    campName         = r.GetString(r.GetOrdinal("CampName")),
-                    campCode         = r.GetString(r.GetOrdinal("CampCode")),
-                    totalContracts   = r.GetInt32(r.GetOrdinal("TotalContracts")),
-                    totalRooms       = r.GetInt32(r.GetOrdinal("TotalRooms")),
-                    totalAmount      = totalAmt,
-                    collectedAmount  = collectedAmt,
-                    pendingAmount    = r.IsDBNull(r.GetOrdinal("PendingAmount"))  ? 0m : r.GetDecimal(r.GetOrdinal("PendingAmount")),
-                    monthlyAmount    = r.IsDBNull(r.GetOrdinal("MonthlyAmount")) ? 0m : r.GetDecimal(r.GetOrdinal("MonthlyAmount")),
-                    collectionPct    = totalAmt > 0 ? Math.Round(collectedAmt / totalAmt * 100, 1) : 0m,
+                    campId            = r.GetInt32(r.GetOrdinal("CampId")),
+                    campName          = r.GetString(r.GetOrdinal("CampName")),
+                    campCode          = r.GetString(r.GetOrdinal("CampCode")),
+                    totalContracts    = r.GetInt32(r.GetOrdinal("TotalContracts")),
+                    totalRooms        = r.GetInt32(r.GetOrdinal("TotalRooms")),
+                    totalAmount       = totalAmt,
+                    collectedAmount   = collectedAmt,
+                    advanceCollection = r.IsDBNull(r.GetOrdinal("AdvanceCollection"))? 0m : r.GetDecimal(r.GetOrdinal("AdvanceCollection")),
+                    pendingAmount     = r.IsDBNull(r.GetOrdinal("PendingAmount"))    ? 0m : r.GetDecimal(r.GetOrdinal("PendingAmount")),
+                    collectionPct     = totalAmt > 0 ? Math.Round(collectedAmt / totalAmt * 100, 1) : 0m,
                 });
             }
         }
 
-        // ── 5. Recent Transactions (Expenses where CampId in assigned camps) ─
+        // ── 5. Recent Transactions (Expenses + Incomes for assigned camps) ────
         var recentTransactions = new List<object>();
         await using (var cmd = new SqlCommand(
             $@"SELECT TOP 20
-                e.Id, e.ExpenseId, e.Date, e.Mode, e.Head, e.FundPool,
-                e.Amount, e.Nature, e.CampId,
-                ISNULL(c.Name,'') AS CampName,
-                e.RecipientRole, e.RecipientName, e.Purpose,
-                e.CreatedAt
-            FROM Expenses e
-            LEFT JOIN Camps c ON c.Id=e.CampId
-            WHERE e.IsDeleted=0 AND e.CampId IN ({campIdsStr})
-            ORDER BY e.Date DESC, e.Id DESC", conn))
+                txn.TxnType, txn.Id, txn.TxnRefId, txn.Date, txn.Mode,
+                txn.Head, txn.FundPool, txn.Amount, txn.Nature,
+                txn.CampId, txn.CampName, txn.RecipientRole,
+                txn.RecipientName, txn.Purpose, txn.CreatedAt
+            FROM (
+                -- Expenses
+                SELECT
+                    'Expense'             AS TxnType,
+                    e.Id,
+                    e.ExpenseId           AS TxnRefId,
+                    e.Date,
+                    ISNULL(e.Mode,'')     AS Mode,
+                    ISNULL(e.Head,'')     AS Head,
+                    ISNULL(e.FundPool,'') AS FundPool,
+                    e.Amount,
+                    ISNULL(e.Nature,'')   AS Nature,
+                    ISNULL(e.CampId,0)    AS CampId,
+                    ISNULL(c1.Name,'')    AS CampName,
+                    ISNULL(e.RecipientRole,'')  AS RecipientRole,
+                    ISNULL(e.RecipientName,'')  AS RecipientName,
+                    ISNULL(e.Purpose,'')        AS Purpose,
+                    e.CreatedAt
+                FROM Expenses e
+                LEFT JOIN Camps c1 ON c1.Id = e.CampId
+                WHERE e.IsDeleted = 0
+                  AND e.CampId IN ({campIdsStr})
+
+                UNION ALL
+
+                -- Incomes
+                SELECT
+                    'Income'              AS TxnType,
+                    i.Id,
+                    i.IncomeId            AS TxnRefId,
+                    i.Date,
+                    ISNULL(i.Mode,'')     AS Mode,
+                    ISNULL(i.Head,'')     AS Head,
+                    ISNULL(i.FundPool,'') AS FundPool,
+                    i.Amount,
+                    ''                    AS Nature,
+                    ISNULL(i.CampId,0)    AS CampId,
+                    ISNULL(c2.Name,'')    AS CampName,
+                    ISNULL(i.Source,'')   AS RecipientRole,
+                    ISNULL(i.TenantName, ISNULL(i.PartnerName,'')) AS RecipientName,
+                    ISNULL(i.Purpose,'')  AS Purpose,
+                    i.CreatedAt
+                FROM Incomes i
+                LEFT JOIN Camps c2 ON c2.Id = i.CampId
+                WHERE i.IsDeleted = 0
+                  AND i.CampId IN ({campIdsStr})
+            ) txn
+            ORDER BY txn.Date DESC, txn.Id DESC", conn))
         {
             await using var r = await cmd.ExecuteReaderAsync();
             while (await r.ReadAsync())
             {
                 recentTransactions.Add(new
                 {
+                    txnType       = r.IsDBNull(r.GetOrdinal("TxnType"))       ? "" : r.GetString(r.GetOrdinal("TxnType")),
                     id            = r.GetInt32(r.GetOrdinal("Id")),
-                    expenseId     = r.IsDBNull(r.GetOrdinal("ExpenseId"))     ? "" : r.GetString(r.GetOrdinal("ExpenseId")),
+                    txnRefId      = r.IsDBNull(r.GetOrdinal("TxnRefId"))      ? "" : r.GetString(r.GetOrdinal("TxnRefId")),
                     date          = r.GetDateTime(r.GetOrdinal("Date")).ToString("yyyy-MM-dd"),
                     mode          = r.IsDBNull(r.GetOrdinal("Mode"))          ? "" : r.GetString(r.GetOrdinal("Mode")),
                     head          = r.IsDBNull(r.GetOrdinal("Head"))          ? "" : r.GetString(r.GetOrdinal("Head")),

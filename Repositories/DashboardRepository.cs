@@ -57,7 +57,7 @@ public class DashboardRepository : IDashboardRepository
         var collYear  = filterYear ?? DateTime.UtcNow.Year;
         // Monthly Collections — all 12 months of year, 0 if no payment
         var collYearSuffix = collYear.ToString().Substring(2); // "26" for 2026
-        var collWhere      = new List<string> { "ISNULL(cri3.IsDeleted,0)=0", "cri3.Status='Paid'", $"RIGHT(cri3.Month,2)='{collYearSuffix}'" };
+        var collWhere      = new List<string> { "ISNULL(cri3.IsDeleted,0)=0", "cri3.Status IN ('Paid','PaidPartial')", $"RIGHT(cri3.Month,2)='{collYearSuffix}'" };
         if (campId.HasValue)   collWhere.Add("cri3.CampId=@CampId");
         if (tenantId.HasValue) collWhere.Add("ct3.TenantId=@TenantId");
         var collJoin3 = tenantId.HasValue ? "JOIN Contracts ct3 ON ct3.ContractId=cri3.ContractId" : "";
@@ -93,20 +93,30 @@ public class DashboardRepository : IDashboardRepository
             await using var r4 = await cmd4.ExecuteReaderAsync();
             while (await r4.ReadAsync()) stats.CampRevenue.Add(new DashCampRevenue{CampName=r4.GetString(0),MonthlyRevenue=r4.IsDBNull(1)?0:r4.GetDecimal(1)});
         }
-        // Query 5: TotalPaidAmount + TotalPendingAmount from ContractRoomInstallments
+        // Query 5: TotalPaidAmount + TotalAdvanceAmount + TotalPendingAmount from ContractRoomInstallments
         var payWhere = new List<string>();
         if (campId.HasValue)      payWhere.Add("cri2.CampId=@CampId");
         if (tenantId.HasValue)    payWhere.Add("ct2.TenantId=@TenantId");
         if (filterMonth.HasValue) payWhere.Add("MONTH(cri2.PaidDate)=@Month AND YEAR(cri2.PaidDate)=@Year2");
         var payJoin   = tenantId.HasValue ? "JOIN Contracts ct2 ON ct2.ContractId=cri2.ContractId" : "";
         var payFilter = payWhere.Count>0 ? "WHERE ISNULL(cri2.IsDeleted,0)=0 AND "+string.Join(" AND ",payWhere) : "WHERE ISNULL(cri2.IsDeleted,0)=0";
-        await using (var cmd5 = new SqlCommand($"SELECT ISNULL(SUM(CASE WHEN cri2.Status='Paid' THEN cri2.PaidAmount ELSE 0 END),0) TotalPaid, ISNULL(SUM(CASE WHEN cri2.Status='Pending' THEN cri2.InstallAmount ELSE 0 END),0) TotalPending FROM ContractRoomInstallments cri2 {payJoin} {payFilter}", conn))
+        await using (var cmd5 = new SqlCommand($@"
+            SELECT
+                ISNULL(SUM(CASE WHEN cri2.Status IN ('Paid','PaidPartial')         THEN cri2.PaidAmount ELSE 0 END),0) TotalPaid,
+                ISNULL(SUM(CASE WHEN cri2.Status IN ('Advanced','AdvancedPartial') THEN cri2.PaidAmount ELSE 0 END),0) TotalAdvance,
+                ISNULL(SUM(CASE WHEN cri2.Status='Pending'                         THEN cri2.InstallAmount ELSE 0 END),0) TotalPending
+            FROM ContractRoomInstallments cri2 {payJoin} {payFilter}", conn))
         {
             if (campId.HasValue)      cmd5.Parameters.AddWithValue("@CampId",   campId.Value);
             if (tenantId.HasValue)    cmd5.Parameters.AddWithValue("@TenantId", tenantId.Value);
             if (filterMonth.HasValue) { cmd5.Parameters.AddWithValue("@Month",filterMonth.Value); cmd5.Parameters.AddWithValue("@Year2",filterYear!.Value); }
             await using var r5 = await cmd5.ExecuteReaderAsync();
-            if (await r5.ReadAsync()) { stats.TotalPaidAmount=r5.IsDBNull(0)?0:r5.GetDecimal(0); stats.TotalPendingAmount=r5.IsDBNull(1)?0:r5.GetDecimal(1); }
+            if (await r5.ReadAsync())
+            {
+                stats.TotalPaidAmount    = r5.IsDBNull(0) ? 0 : r5.GetDecimal(0);
+                stats.TotalAdvanceAmount = r5.IsDBNull(1) ? 0 : r5.GetDecimal(1);
+                stats.TotalPendingAmount = r5.IsDBNull(2) ? 0 : r5.GetDecimal(2);
+            }
         }
         var ctWhere  = new List<string>();
         if (campId.HasValue)   ctWhere.Add("ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId=@CampId)");

@@ -176,7 +176,8 @@ public class CampReportRow
     public int     VacantRooms      { get; set; }
     public int     ActiveContracts  { get; set; }
     public decimal TotalMonthlyRent { get; set; }
-    public decimal TotalCollected   { get; set; }
+    public decimal TotalCollected   { get; set; }   // Paid + PaidPartial
+    public decimal TotalAdvance     { get; set; }   // Advanced + AdvancedPartial
     public decimal TotalDue         { get; set; }
     public decimal CampExpense      { get; set; }
     public decimal HOAllocated      { get; set; }
@@ -483,7 +484,8 @@ public class CampCollectionRow
     public int     TotalContracts      { get; set; }
     public int     ActiveContracts     { get; set; }
     public decimal TotalAmount         { get; set; }
-    public decimal TotalCollected      { get; set; }
+    public decimal TotalCollected      { get; set; }   // CRI Status='Paid'/'PaidPartial'
+    public decimal TotalAdvance        { get; set; }   // CRI Status='Advanced'/'AdvancedPartial'
     public decimal TotalDue            { get; set; }
     public int     TotalPartners       { get; set; }
     public int     TotalOwners         { get; set; }
@@ -498,15 +500,26 @@ public class CampCollectionSubTotal
     public int     SubTotalActiveContracts { get; set; }
     public decimal SubTotalAmount          { get; set; }
     public decimal SubTotalCollected       { get; set; }
+    public decimal SubTotalAdvance         { get; set; }
     public decimal SubTotalDue             { get; set; }
     public int     SubTotalPartners        { get; set; }
     public int     SubTotalOwners          { get; set; }
+}
+
+/// <summary>Summary cards shown at the top of Camp Collection Report.</summary>
+public class CampCollectionCards
+{
+    public int     TotalCamps           { get; set; }   // total camps in result
+    public decimal GrandTotalCollected  { get; set; }   // sum of CRI Paid + PaidPartial (date-filtered)
+    public decimal GrandTotalAdvance    { get; set; }   // sum of CRI Advanced + AdvancedPartial (date-filtered)
+    public decimal GrandTotalDue        { get; set; }   // sum of current outstanding balance
 }
 
 public class CampCollectionReportResponse
 {
     public List<CampCollectionRow> Rows         { get; set; } = new();
     public CampCollectionSubTotal  SubTotal     { get; set; } = new();
+    public CampCollectionCards     Cards        { get; set; } = new();
     public int                     TotalRecords { get; set; }
 }
 

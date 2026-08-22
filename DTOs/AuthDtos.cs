@@ -87,7 +87,8 @@ public class DashboardStatsResponse
     public List<DashCampOccupancy>     CampOccupancy      { get; set; } = new();
     public List<DashMonthlyCollection> MonthlyCollections { get; set; } = new();
     public List<DashCampRevenue>       CampRevenue        { get; set; } = new();
-    public decimal TotalPaidAmount    { get; set; }
+    public decimal TotalPaidAmount    { get; set; }   // CRI Status IN ('Paid','PaidPartial')
+    public decimal TotalAdvanceAmount { get; set; }   // CRI Status IN ('Advanced','AdvancedPartial')
     public decimal TotalPendingAmount { get; set; }
     public int     CompletedContracts { get; set; }
 }

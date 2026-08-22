@@ -62,7 +62,8 @@ public class ReportService : IReportService
     {
         var result = await _repo.GetCampCollectionReportAsync(request);
         return ApiResponse<CampCollectionReportResponse>.Ok(result, "Camp collection report retrieved.",
-            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize));
+            PaginationHelper.Build(result.TotalRecords, request.ResolvedPage, request.ResolvedPageSize),
+            result.Cards);
     }
 
     public async Task<ApiResponse<RoomWiseCollectionResponse>> GetRoomWiseCollectionReportAsync(ReportRequest request)

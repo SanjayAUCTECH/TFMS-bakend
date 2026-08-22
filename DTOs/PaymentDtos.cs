@@ -29,10 +29,11 @@ public class RoomPaymentItem
     public int      RoomId                    { get; set; }
     public int      CampId                    { get; set; }
     public decimal  Amount                    { get; set; }
-    public int?     ContractRoomInstallmentId { get; set; }  // ContractRoomInstallments.Id
+    public int?     ContractRoomInstallmentId { get; set; }
     public int?     InstallmentNo             { get; set; }
     public string   Month                     { get; set; } = string.Empty;
     public string?  DueDate                   { get; set; }
+    public string?  Status                    { get; set; }  // Status from API (Paid/Partial/Pending)
 }
 
 public class PaymentListRequest : Common.PagedRequest

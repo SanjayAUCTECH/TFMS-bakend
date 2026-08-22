@@ -52,7 +52,7 @@ BEGIN
     -- Pre-aggregate Current Income per FundPool
     -- ════════════════════════════════════════════════════════════
     -- CTE 1: Tenant Rental Collection via CRI (Month = @CriMonthLabel)
-    -- Use SUM per FundPool after distinct CRI records
+    -- Only Status IN ('Paid','PaidPartial') → these belong to CURRENT income
     ;WITH CTE_TenantCRI_Cur AS (
         SELECT i.FundPool,
                SUM(cri.PaidAmount) AS TenantCRIAmt
@@ -64,6 +64,7 @@ BEGIN
                AND cri2.PaidDate   = i2.[Date]
                AND ISNULL(cri2.IsDeleted,0) = 0
                AND cri2.Month = @CriMonthLabel
+               AND cri2.Status IN ('Paid', 'PaidPartial')   -- ✅ Current: only Paid/PaidPartial
             WHERE i2.Source = 'Tenant'
               AND i2.Head   = 'RENTAL COLLECTION'
               AND ISNULL(i2.IsDeleted,0) = 0
@@ -125,9 +126,9 @@ BEGIN
     -- ════════════════════════════════════════════════════════════
     -- Pre-aggregate Buffer Income per FundPool
     -- ════════════════════════════════════════════════════════════
-    -- CTE 5: Tenant CRI Buffer (Month > selected month)
-    -- Month format: 'Jul26','Aug26','Sep26' etc
-    -- Convert to date and compare > @CurTo
+    -- CTE 5: Tenant CRI Buffer
+    -- Only Status IN ('Advanced','AdvancedPartial') → advance payments = buffer income
+    -- Explicitly exclude Paid/PaidPartial so they never appear in buffer
     CTE_TenantCRI_Buf AS (
         SELECT i.FundPool,
                SUM(cri.PaidAmount) AS TenantCRIAmt
@@ -139,7 +140,9 @@ BEGIN
                AND cri2.PaidDate   = i2.[Date]
                AND ISNULL(cri2.IsDeleted,0) = 0
                AND cri2.PaidAmount > 0
-               AND cri2.Month <> @CriMonthLabel  -- exclude current month
+               AND cri2.Status IN ('Advanced', 'AdvancedPartial')   -- ✅ Buffer: only Advanced/AdvancedPartial
+               AND cri2.Status NOT IN ('Paid', 'PaidPartial')       -- ✅ Never mix with current income
+               AND cri2.Month <> @CriMonthLabel  -- exclude current month label
                AND TRY_CAST(
                        '01 ' + LEFT(cri2.Month, 3) + ' 20' + RIGHT(cri2.Month, 2) AS DATE
                    ) > @CurTo  -- future months only
