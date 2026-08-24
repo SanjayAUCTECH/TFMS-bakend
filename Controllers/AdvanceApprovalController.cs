@@ -216,9 +216,10 @@ public class AdvanceApprovalController : BaseApiController
 
         cmd.Parameters.AddWithValue("@PaymentDate", request.PaymentDate.Date);
         cmd.Parameters.AddWithValue("@Month",       request.Month.Trim());
-        cmd.Parameters.AddWithValue("@ContractId",  (object?)request.ContractId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@CampId",      (object?)request.CampId     ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@RoomId",      (object?)request.RoomId     ?? DBNull.Value);
+        // "" aur 0 ko NULL treat karo — filter nahi lagega tab
+        cmd.Parameters.AddWithValue("@ContractId",  string.IsNullOrWhiteSpace(request.ContractId) ? DBNull.Value : (object)request.ContractId.Trim());
+        cmd.Parameters.AddWithValue("@CampId",      (request.CampId is null or 0)  ? DBNull.Value : (object)request.CampId.Value);
+        cmd.Parameters.AddWithValue("@RoomId",      (request.RoomId is null or 0)  ? DBNull.Value : (object)request.RoomId.Value);
         cmd.Parameters.AddWithValue("@ApprovedBy",  CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
 
         var updatedCountParam = new SqlParameter("@UpdatedCount", SqlDbType.Int)

@@ -236,15 +236,71 @@ public class CampbossDashboardController : BaseApiController
             }
         }
 
+        // ── 6. My Transactions — Expenses where RecipientRole='Campboss' AND RecipientId=campbossId ──
+        var myTransactions = new List<object>();
+        decimal totalMyCollection = 0m;
+        await using (var cmd = new SqlCommand(
+            @"SELECT TOP 50
+                e.Id,
+                e.ExpenseId,
+                e.Date,
+                ISNULL(e.Mode,'')          AS Mode,
+                ISNULL(e.Head,'')          AS Head,
+                ISNULL(e.FundPool,'')      AS FundPool,
+                ISNULL(e.FundPoolName,'')  AS FundPoolName,
+                e.Amount,
+                ISNULL(e.Nature,'')        AS Nature,
+                ISNULL(e.CampId,0)         AS CampId,
+                ISNULL(c.Name,'')          AS CampName,
+                ISNULL(e.Purpose,'')       AS Purpose,
+                ISNULL(e.RecipientName,'') AS RecipientName,
+                e.CreatedAt
+            FROM Expenses e
+            LEFT JOIN Camps c ON c.Id = e.CampId
+            WHERE e.IsDeleted     = 0
+              AND e.RecipientRole = 'Campboss'
+              AND e.RecipientId   = @CampbossId
+            ORDER BY e.Date DESC, e.Id DESC", conn))
+        {
+            cmd.Parameters.AddWithValue("@CampbossId", campbossId);
+            await using var r = await cmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+            {
+                var amt = r.GetDecimal(r.GetOrdinal("Amount"));
+                totalMyCollection += amt;
+                myTransactions.Add(new
+                {
+                    id            = r.GetInt32(r.GetOrdinal("Id")),
+                    expenseId     = r.IsDBNull(r.GetOrdinal("ExpenseId"))     ? "" : r.GetString(r.GetOrdinal("ExpenseId")),
+                    date          = r.GetDateTime(r.GetOrdinal("Date")).ToString("yyyy-MM-dd"),
+                    mode          = r.IsDBNull(r.GetOrdinal("Mode"))          ? "" : r.GetString(r.GetOrdinal("Mode")),
+                    head          = r.IsDBNull(r.GetOrdinal("Head"))          ? "" : r.GetString(r.GetOrdinal("Head")),
+                    fundPool      = r.IsDBNull(r.GetOrdinal("FundPool"))      ? "" : r.GetString(r.GetOrdinal("FundPool")),
+                    fundPoolName  = r.IsDBNull(r.GetOrdinal("FundPoolName"))  ? "" : r.GetString(r.GetOrdinal("FundPoolName")),
+                    amount        = amt,
+                    nature        = r.IsDBNull(r.GetOrdinal("Nature"))        ? "" : r.GetString(r.GetOrdinal("Nature")),
+                    campId        = r.IsDBNull(r.GetOrdinal("CampId"))        ? 0  : r.GetInt32(r.GetOrdinal("CampId")),
+                    campName      = r.IsDBNull(r.GetOrdinal("CampName"))      ? "" : r.GetString(r.GetOrdinal("CampName")),
+                    recipientName = r.IsDBNull(r.GetOrdinal("RecipientName")) ? "" : r.GetString(r.GetOrdinal("RecipientName")),
+                    purpose       = r.IsDBNull(r.GetOrdinal("Purpose"))       ? "" : r.GetString(r.GetOrdinal("Purpose")),
+                    createdAt     = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+                });
+            }
+        }
+
         return Ok(ApiResponse<object>.Ok(new
         {
+            // ── Cards ─────────────────────────────────────────
             totalAssignedCamps = campIds.Count,
             totalRooms,
             vacantRooms,
             occupiedRooms,
+            totalMyCollection,          // Campboss ko total kitna mila
+            // ── Lists ─────────────────────────────────────────
             assignedCamps,
             campCollections,
-            recentTransactions
+            recentTransactions,
+            myTransactions
         }, "Campboss dashboard retrieved."));
     }
 }
