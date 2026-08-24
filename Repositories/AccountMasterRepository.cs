@@ -39,7 +39,7 @@ public class AccountMasterRepository : IAccountMasterRepository
 
         // Data
         var sql = $@"SELECT * FROM AccountMasters {where}
-            ORDER BY TransDate DESC, Id DESC
+            ORDER BY Id DESC
             OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
         await using var cmd = new SqlCommand(sql, conn);
         AddFilterParams(cmd, request);
