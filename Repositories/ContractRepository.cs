@@ -326,6 +326,10 @@ public class ContractRepository : IContractRepository
                                 PaymentMode   = r.IsDBNull(r.GetOrdinal("PaymentMode"))   ? "" : r.GetString(r.GetOrdinal("PaymentMode")),
                                 ChequeNumber  = r.IsDBNull(r.GetOrdinal("ChequeNumber"))  ? "" : r.GetString(r.GetOrdinal("ChequeNumber")),
                                 ClearanceDate = r.IsDBNull(r.GetOrdinal("ClearanceDate")) ? "" : r.GetString(r.GetOrdinal("ClearanceDate")),
+                                TxnId         = HasColumn(r, "TxnId") && !r.IsDBNull(r.GetOrdinal("TxnId")) ? r.GetString(r.GetOrdinal("TxnId")) : null,
+                                Description   = HasColumn(r, "Description") && !r.IsDBNull(r.GetOrdinal("Description")) ? r.GetString(r.GetOrdinal("Description")) : "",
+                                FundPoolName  = HasColumn(r, "FundPoolName") && !r.IsDBNull(r.GetOrdinal("FundPoolName")) ? r.GetString(r.GetOrdinal("FundPoolName")) : "",
+                                ReceivedBy    = HasColumn(r, "ReceivedBy") && !r.IsDBNull(r.GetOrdinal("ReceivedBy")) ? r.GetString(r.GetOrdinal("ReceivedBy")) : "",
                             });
                         }
                     }

@@ -9,7 +9,7 @@ public class Payment
     public DateTime DueDate         { get; set; }
     public decimal  PaidAmount      { get; set; }
     public DateTime? PaidDate       { get; set; }
-    public string   Status          { get; set; } = "Pending";   // Pending | Paid | Partial | Overdue
+    public string   Status          { get; set; } = "Pending";
     public string   PaymentMode     { get; set; } = string.Empty;
     public int?     PaymentModeId   { get; set; }
     public string   ChequeNumber    { get; set; } = string.Empty;
@@ -20,6 +20,7 @@ public class Payment
     public int?     FundPoolId      { get; set; }
     public string   FundPoolName    { get; set; } = string.Empty;
     public string   IssuedBy        { get; set; } = string.Empty;
+    public string?  TxnId           { get; set; }   // TxnRecords.TxnId
     // Audit
     public int?  AddedBy   { get; set; }
     public bool  IsDeleted { get; set; }

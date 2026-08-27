@@ -114,6 +114,58 @@ public class SecurityDepositController : BaseApiController
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    /// <summary>
+    /// DELETE api/securitydeposit/receive/{txnRecordId}
+    /// Deletes ONE received SD entry and reverts all updates/inserts:
+    ///   Contracts (paid/status), FundPools (balance), ContractRooms (paid/due)
+    ///   TxnRecords, Incomes, ContractRoomsTrns — all soft-deleted.
+    /// </summary>
+    [HttpDelete("receive/{txnRecordId:int}")]
+    public async Task<IActionResult> DeleteReceived(int txnRecordId)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_DeleteSecurityDeposit", conn)
+        {
+            CommandType    = CommandType.StoredProcedure,
+            CommandTimeout = 60
+        };
+        cmd.Parameters.AddWithValue("@TxnRecordId", txnRecordId);
+        cmd.Parameters.AddWithValue("@DeletedBy",   CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+
+        var newPaidParam = new SqlParameter("@NewPaid", SqlDbType.Decimal)
+            { Precision = 18, Scale = 2, Direction = ParameterDirection.Output };
+        var newStatusParam = new SqlParameter("@NewStatus", SqlDbType.NVarChar, 50)
+            { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(newPaidParam);
+        cmd.Parameters.Add(newStatusParam);
+
+        try
+        {
+            await cmd.ExecuteNonQueryAsync();
+        }
+        catch (SqlException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+
+        var newPaid   = newPaidParam.Value   == DBNull.Value ? 0m : (decimal)newPaidParam.Value;
+        var newStatus = newStatusParam.Value == DBNull.Value ? "" : (string)newStatusParam.Value;
+
+        await Log(ActivityType.Delete, ActivityModule.SecurityDeposit,
+            $"SD Receipt deleted: TxnRecordId {txnRecordId}, reverted. New status {newStatus}",
+            txnRecordId.ToString(), "SecurityDeposit");
+
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            txnRecordId,
+            totalPaid = newPaid,
+            status    = newStatus,
+        }, $"Security deposit receipt deleted and reverted. Status: {newStatus}"));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     /// <summary>POST api/securitydeposit/settle — Settle deposit (adjust / refund / forfeit)</summary>
     [HttpPost("settle")]
     public async Task<IActionResult> Settle([FromBody] SettleSecurityDepositRequest req)

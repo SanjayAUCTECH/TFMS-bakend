@@ -44,8 +44,9 @@ public class MISDashboardController : ControllerBase
                                                     : (object)request.Month.Trim());
 
         var response = new MISDashboardResponse();
-        var expenseDetails  = new List<MISExpenseDetailRow>();
-        var partnerDetails  = new List<(int PartnerId, string PartnerName, string CampName, decimal ShareAmount)>();
+        var expenseDetails      = new List<MISExpenseDetailRow>();
+        var expenseCategoryMap  = new Dictionary<string, decimal>();   // RS2: category → total
+        var partnerDetails      = new List<(int PartnerId, string PartnerName, string CampName, decimal ShareAmount)>();
 
         await using (var rd = await cmd.ExecuteReaderAsync())
         {
@@ -73,7 +74,6 @@ public class MISDashboardController : ControllerBase
 
             // ── RS2: Expense categories (totals only) ─────────────────
             await rd.NextResultAsync();
-            var expenseCategoryMap = new Dictionary<string, decimal>();
             while (await rd.ReadAsync())
             {
                 var cat = rd.IsDBNull(rd.GetOrdinal("Category")) ? "" : rd.GetString(rd.GetOrdinal("Category"));
@@ -129,18 +129,19 @@ public class MISDashboardController : ControllerBase
             .OrderBy(x => x)
             .ToList();
 
-        var pivotGroups = expenseDetails
-            .GroupBy(x => x.Category)
-            .ToList();
-
-        foreach (var grp in pivotGroups)
+        // Use RS2 category map as base — ensures ALL categories appear (even those with no camp breakdown)
+        foreach (var kvp in expenseCategoryMap)
         {
+            var cat     = kvp.Key;
+            var total   = kvp.Value;
+            var details = expenseDetails.Where(x => x.Category == cat).ToList();
+
             var pivotRow = new MISExpensePivotRow
             {
-                Category = grp.Key,
-                Total    = grp.Sum(x => x.Amount),
+                Category = cat,
+                Total    = total,
             };
-            foreach (var detail in grp)
+            foreach (var detail in details)
             {
                 if (!string.IsNullOrEmpty(detail.CampName))
                     pivotRow.CampAmounts[detail.CampName] = detail.Amount;
@@ -148,9 +149,10 @@ public class MISDashboardController : ControllerBase
             response.ExpenseData.Add(pivotRow);
         }
 
-        // Sort by total descending
+        // Sort: BIFURCATION first, then by total descending
         response.ExpenseData = response.ExpenseData
-            .OrderByDescending(x => x.Total)
+            .OrderByDescending(x => x.Category == "BIFURCATION")
+            .ThenByDescending(x => x.Total)
             .ToList();
 
         // ── Build pivot partner rows (partner × camp) ─────────────────

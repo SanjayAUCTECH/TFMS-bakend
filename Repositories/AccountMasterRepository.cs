@@ -24,6 +24,9 @@ public class AccountMasterRepository : IAccountMasterRepository
         if (request.RecipientId.HasValue)                where += " AND RecipientId=@RecipientId";
         if (!string.IsNullOrEmpty(request.FundPool))     where += " AND FundPool=@FundPool";
         if (!string.IsNullOrEmpty(request.Mode))         where += " AND Mode=@Mode";
+        if (request.CampId.HasValue)
+            where += @" AND (AccountId IN (SELECT AccountId FROM Incomes  WHERE CampId=@CampId AND ISNULL(IsDeleted,0)=0)
+                          OR AccountId IN (SELECT AccountId FROM Expenses WHERE CampId=@CampId AND ISNULL(IsDeleted,0)=0))";
         if (!string.IsNullOrEmpty(request.AccountHead))
             where += @" AND (AccountId IN (SELECT AccountId FROM Incomes WHERE Head=@AccountHead AND ISNULL(IsDeleted,0)=0)
                          OR AccountId IN (SELECT AccountId FROM Expenses WHERE Head=@AccountHead AND ISNULL(IsDeleted,0)=0))";
@@ -265,6 +268,7 @@ public class AccountMasterRepository : IAccountMasterRepository
         if (req.RecipientId.HasValue)                cmd.Parameters.AddWithValue("@RecipientId", req.RecipientId.Value);
         if (!string.IsNullOrEmpty(req.FundPool))     cmd.Parameters.AddWithValue("@FundPool",    req.FundPool);
         if (!string.IsNullOrEmpty(req.Mode))         cmd.Parameters.AddWithValue("@Mode",        req.Mode);
+        if (req.CampId.HasValue)                     cmd.Parameters.AddWithValue("@CampId",      req.CampId.Value);
         if (!string.IsNullOrEmpty(req.AccountHead))  cmd.Parameters.AddWithValue("@AccountHead", req.AccountHead);
         if (!string.IsNullOrEmpty(req.DateFrom) && DateTime.TryParse(req.DateFrom, out var df))
             cmd.Parameters.AddWithValue("@DateFrom", df.Date);

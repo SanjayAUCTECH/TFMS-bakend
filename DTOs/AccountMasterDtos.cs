@@ -60,6 +60,7 @@ public class AccountMasterListRequest : PagedRequest
     public string? FundPool      { get; set; }   // FundPool code filter (e.g. FP002)
     public string? AccountHead   { get; set; }   // Head filter (e.g. 'RENTAL COLLECTION')
     public string? Mode          { get; set; }   // Mode filter (e.g. 'Cash', 'Bank')
+    public int?    CampId        { get; set; }   // Camp filter
 }
 
 // ── RESPONSE ─────────────────────────────────────────────────

@@ -107,6 +107,11 @@ public class ContractPaymentResponse
     public string   PaymentMode   { get; set; } = string.Empty;
     public string   ChequeNumber  { get; set; } = string.Empty;
     public string   ClearanceDate { get; set; } = string.Empty;
+    // TxnRecords fields
+    public string?  TxnId         { get; set; }
+    public string?  Description   { get; set; }
+    public string?  FundPoolName  { get; set; }
+    public string?  ReceivedBy    { get; set; }
 }
 
 public class ContractResponse

@@ -206,11 +206,20 @@ public class ContractService : IContractService
         SdAdjustAmount    = c.SdAdjustAmount,
         Payments = c.Payments.Select(p => new ContractPaymentResponse
         {
-            Id = p.Id, InstallmentNo = p.InstallmentNo, Amount = p.Amount,
-            DueDate = p.DueDate, PaidAmount = p.PaidAmount, PaidDate = p.PaidDate,
-            Status = p.Status, PaymentMode = p.PaymentMode,
+            Id            = p.Id,
+            InstallmentNo = p.InstallmentNo,
+            Amount        = p.Amount,
+            DueDate       = p.DueDate,
+            PaidAmount    = p.PaidAmount,
+            PaidDate      = p.PaidDate,
+            Status        = p.Status,
+            PaymentMode   = p.PaymentMode,
             ChequeNumber  = p.ChequeNumber,
             ClearanceDate = p.ClearanceDate,
+            TxnId         = p.TxnId,
+            Description   = p.Description,
+            FundPoolName  = p.FundPoolName,
+            ReceivedBy    = p.ReceivedBy,
         }).ToList(),
     };
 }

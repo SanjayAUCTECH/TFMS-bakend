@@ -125,6 +125,7 @@ BEGIN
         FROM Expenses e
         WHERE e.IsDeleted = 0
           AND ISNULL(e.Head,'') <> ''
+          AND ISNULL(e.Head,'') <> 'Partner Profit'
           AND (@CampId   IS NULL OR e.CampId = @CampId)
           AND (@DateFrom IS NULL OR CAST(e.Date AS DATE) >= @DateFrom)
           AND (@DateTo   IS NULL OR CAST(e.Date AS DATE) <= @DateTo)
@@ -142,6 +143,7 @@ BEGIN
         LEFT JOIN Camps c ON c.Id = e.CampId AND c.IsDeleted = 0
         WHERE e.IsDeleted = 0
           AND ISNULL(e.Head,'') <> ''
+          AND ISNULL(e.Head,'') <> 'Partner Profit'
           AND (@CampId   IS NULL OR e.CampId = @CampId)
           AND (@DateFrom IS NULL OR CAST(e.Date AS DATE) >= @DateFrom)
           AND (@DateTo   IS NULL OR CAST(e.Date AS DATE) <= @DateTo)
@@ -165,6 +167,7 @@ BEGIN
         LEFT JOIN Camps c ON c.Id = e.CampId AND c.IsDeleted = 0
         WHERE e.IsDeleted = 0
           AND ISNULL(e.Head,'') <> ''
+          AND ISNULL(e.Head,'') <> 'Partner Profit'
           AND (@CampId   IS NULL OR e.CampId = @CampId)
           AND (@DateFrom IS NULL OR CAST(e.Date AS DATE) >= @DateFrom)
           AND (@DateTo   IS NULL OR CAST(e.Date AS DATE) <= @DateTo)
@@ -183,6 +186,7 @@ BEGIN
         LEFT JOIN Camps c ON c.Id = e.CampId AND c.IsDeleted = 0
         WHERE e.IsDeleted = 0
           AND ISNULL(e.Head,'') <> ''
+          AND ISNULL(e.Head,'') <> 'Partner Profit'
           AND (@CampId   IS NULL OR e.CampId = @CampId)
           AND (@DateFrom IS NULL OR CAST(e.Date AS DATE) >= @DateFrom)
           AND (@DateTo   IS NULL OR CAST(e.Date AS DATE) <= @DateTo)
