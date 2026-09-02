@@ -56,6 +56,8 @@ public static class ActivityModule
     public const string CampCampbosses         = "CampCampbosses";
     public const string ContractTerms          = "ContractTerms";
     public const string ContractRoomInstallments = "ContractRoomInstallments";
+    // ── Salon Management ────────────────────────────────────────────────────
+    public const string SalonMaster            = "SalonMaster";
 }
 
 // ── IActivityLogService ──────────────────────────────────────────────────────
