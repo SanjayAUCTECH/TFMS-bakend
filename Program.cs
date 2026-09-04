@@ -111,7 +111,10 @@ builder.Services.AddScoped<IPartnerTransRepository,  PartnerTransRepository>();
 builder.Services.AddScoped<IPartnerPayoutRepository, PartnerPayoutRepository>();
 builder.Services.AddScoped<IPartnerPayoutService,    PartnerPayoutService>();
 // Salon Management
-builder.Services.AddScoped<ISalonMasterRepository,   SalonMasterRepository>();
+builder.Services.AddScoped<ISalonMasterRepository,     SalonMasterRepository>();
+builder.Services.AddScoped<ISalonHeadMasterRepository, SalonHeadMasterRepository>();
+builder.Services.AddScoped<ISalonStaffAssignRepository, SalonStaffAssignRepository>();
+builder.Services.AddScoped<ISalonDailyCollectionRepository, SalonDailyCollectionRepository>();
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPartnerService,      PartnerService>();
@@ -145,7 +148,10 @@ builder.Services.AddScoped<IStaffService,        StaffService>();
 builder.Services.AddScoped<IMisService,          MisService>();
 builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
 // Salon Management
-builder.Services.AddScoped<ISalonMasterService,  SalonMasterService>();
+builder.Services.AddScoped<ISalonMasterService,      SalonMasterService>();
+builder.Services.AddScoped<ISalonHeadMasterService,  SalonHeadMasterService>();
+builder.Services.AddScoped<ISalonStaffAssignService, SalonStaffAssignService>();
+builder.Services.AddScoped<ISalonDailyCollectionService, SalonDailyCollectionService>();
 
 var app = builder.Build();
 

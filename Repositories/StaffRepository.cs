@@ -20,8 +20,10 @@ public class StaffRepository : IStaffRepository
         cmd.Parameters.AddWithValue("@SearchText",    (object?)request.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortBy",        (object?)request.SortBy     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SortDirection", request.ResolvedSortDir);
-        cmd.Parameters.AddWithValue("@Status",        (object?)request.Status     ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@CompanyId",     (object?)request.CompanyId  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status",        (object?)request.Status      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CompanyId",     (object?)request.CompanyId   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Designation",   (object?)request.Designation ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@JobTitle",      (object?)request.JobTitle    ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(total);
         var list = new List<Staff>();

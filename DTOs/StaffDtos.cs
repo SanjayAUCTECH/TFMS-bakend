@@ -122,7 +122,9 @@ public class UpdateStaffRequest
 
 public class StaffListRequest : PagedRequest
 {
-    public int? CompanyId { get; set; }   // optional company filter
+    public int?    CompanyId   { get; set; }   // optional company filter
+    public string? Designation { get; set; }   // optional designation filter
+    public string? JobTitle    { get; set; }   // optional job title filter
 }
 
 public class StaffResponse

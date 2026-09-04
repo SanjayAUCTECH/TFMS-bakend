@@ -36,12 +36,12 @@ public class SalonMasterService : ISalonMasterService
     {
         var newId = await _repo.CreateAsync(new SalonMaster
         {
-            Name           = request.Name.Trim(),
-            Address        = request.Address.Trim(),
-            Contact        = request.Contact.Trim(),
+            Name           = request.Name?.Trim(),
+            Address        = request.Address?.Trim(),
+            Contact        = request.Contact?.Trim(),
             Description    = request.Description?.Trim(),
             ThumbnailImage = request.ThumbnailImage?.Trim(),
-            Status         = request.Status,
+            Status         = request.Status ?? "Active",
             AddedBy        = userId
         });
 
@@ -59,12 +59,12 @@ public class SalonMasterService : ISalonMasterService
         await _repo.UpdateAsync(new SalonMaster
         {
             Id             = id,
-            Name           = request.Name.Trim(),
-            Address        = request.Address.Trim(),
-            Contact        = request.Contact.Trim(),
+            Name           = request.Name?.Trim(),
+            Address        = request.Address?.Trim(),
+            Contact        = request.Contact?.Trim(),
             Description    = request.Description?.Trim(),
             ThumbnailImage = request.ThumbnailImage?.Trim(),
-            Status         = request.Status,
+            Status         = request.Status ?? "Active",
             UpdatedBy      = userId
         });
 
