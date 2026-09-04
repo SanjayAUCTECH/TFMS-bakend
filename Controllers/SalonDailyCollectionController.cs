@@ -78,6 +78,52 @@ public class SalonDailyCollectionController : BaseApiController
         return result.Success ? Ok(result) : NotFound(result);
     }
 
+    // ── DELETE /api/SalonDailyCollection/by-date
+    // Deletes ALL SDCollection + SDExpence records for given Date + SalonId
+    // Query params: date (YYYY-MM-DD), salonId
+    [HttpDelete("by-date")]
+    public async Task<IActionResult> DeleteByDate(
+        [FromQuery] string date,
+        [FromQuery] int    salonId)
+    {
+        if (string.IsNullOrEmpty(date) || salonId <= 0)
+            return BadRequest(new { success = false, message = "date and salonId are required." });
+
+        if (!DateTime.TryParse(date, out var parsedDate))
+            return BadRequest(new { success = false, message = "Invalid date format. Use YYYY-MM-DD." });
+
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_DeleteSDCollectionByDate", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("@Date",      parsedDate.Date);
+        cmd.Parameters.AddWithValue("@SalonId",   salonId);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)CurrentUserName ?? DBNull.Value);
+
+        int collectionDeleted = 0, expenceDeleted = 0;
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            collectionDeleted = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+            expenceDeleted    = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+        }
+        await reader.CloseAsync();
+
+        await Log(ActivityType.Delete, ActivityModule.SalonMaster,
+            $"Deleted by date {date} SalonId {salonId}: {collectionDeleted} collections, {expenceDeleted} expenses",
+            date, "SDCollectionByDate");
+
+        return Ok(new
+        {
+            success = true,
+            message = $"Deleted {collectionDeleted} collection(s) and {expenceDeleted} expense(s) for {date}.",
+            data    = new { collectionDeleted, expenceDeleted, date, salonId }
+        });
+    }
+
     // ── GET /api/SalonDailyCollection/pivot ───────────────────────────────────
     // Pivot format: date as row, staff names as columns
     // All params optional: SalonId, StaffId, DateFrom, DateTo, SearchText, PageNumber, PageSize
@@ -110,7 +156,7 @@ public class SalonDailyCollectionController : BaseApiController
         };
         cmd.Parameters.Add(totalDatesParam);
 
-        await using var reader = await cmd.ExecuteReaderAsync();
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.Default);
 
         // Result 1: paged raw collection rows
         var rawRows = new List<(string Date, int CollectionId, int StaffId, string StaffName, decimal Amount)>();
@@ -152,9 +198,19 @@ public class SalonDailyCollectionController : BaseApiController
             grandCO      = reader.IsDBNull(2) ? 0 : reader.GetDecimal(2);
             grandExpense = reader.IsDBNull(3) ? 0 : reader.GetDecimal(3);
         }
+
+        // Result 5: TotalDates for pagination
+        await reader.NextResultAsync();
+        int totalDatesFromResultSet = 0;
+        if (await reader.ReadAsync())
+            totalDatesFromResultSet = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+
         await reader.CloseAsync();
 
+        // ── Read output param AFTER reader is closed ──────────────────────
         int totalDates = totalDatesParam.Value == DBNull.Value ? 0 : (int)totalDatesParam.Value;
+        // Use result set value as fallback if output param is 0
+        if (totalDates == 0) totalDates = totalDatesFromResultSet;
         int totalPages = (int)Math.Ceiling((double)totalDates / pageSize);
 
         // Build pivot
