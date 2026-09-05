@@ -8,7 +8,6 @@ namespace TFMS_software_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class SalonCompanyExpenseController : BaseApiController
 {
     private readonly ICompanyExpensePostingService _service;

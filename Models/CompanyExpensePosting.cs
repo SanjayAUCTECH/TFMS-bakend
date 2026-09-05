@@ -6,6 +6,7 @@ public class CompanyExpensePosting
     public DateTime  Date          { get; set; }
     public string    Type          { get; set; } = string.Empty;
     public string?   RecipientName { get; set; }
+    public int?      RecipientId   { get; set; }
     public string?   Head          { get; set; }
     public decimal   Amount        { get; set; }
     public string    Mode          { get; set; } = "Cash";

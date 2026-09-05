@@ -86,6 +86,7 @@ public class CompanyExpensePostingRepository : ICompanyExpensePostingRepository
         cmd.Parameters.AddWithValue("@Date",          model.Date);
         cmd.Parameters.AddWithValue("@Type",          model.Type);
         cmd.Parameters.AddWithValue("@RecipientName", (object?)model.RecipientName ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@RecipientId",   (object?)model.RecipientId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Head",          (object?)model.Head          ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Amount",        model.Amount);
         cmd.Parameters.AddWithValue("@Mode",          model.Mode);
@@ -117,6 +118,7 @@ public class CompanyExpensePostingRepository : ICompanyExpensePostingRepository
         cmd.Parameters.AddWithValue("@Date",          model.Date);
         cmd.Parameters.AddWithValue("@Type",          model.Type);
         cmd.Parameters.AddWithValue("@RecipientName", (object?)model.RecipientName ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@RecipientId",   (object?)model.RecipientId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Head",          (object?)model.Head          ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Amount",        model.Amount);
         cmd.Parameters.AddWithValue("@Mode",          model.Mode);
@@ -125,8 +127,8 @@ public class CompanyExpensePostingRepository : ICompanyExpensePostingRepository
         cmd.Parameters.AddWithValue("@Status",        model.Status);
         cmd.Parameters.AddWithValue("@UpdatedBy",     (object?)model.UpdatedBy?.ToString() ?? DBNull.Value);
 
-        int rows = await cmd.ExecuteNonQueryAsync();
-        return rows > 0;
+        await cmd.ExecuteNonQueryAsync(); // SET NOCOUNT ON — don't check rows count
+        return true;
     }
 
     // ── SOFT DELETE ────────────────────────────────────────────────────────────
@@ -143,8 +145,8 @@ public class CompanyExpensePostingRepository : ICompanyExpensePostingRepository
         cmd.Parameters.AddWithValue("@Id",        id);
         cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
 
-        int rows = await cmd.ExecuteNonQueryAsync();
-        return rows > 0;
+        await cmd.ExecuteNonQueryAsync(); // SET NOCOUNT ON — don't check rows count
+        return true;
     }
 
     // ── SUMMARY ────────────────────────────────────────────────────────────────
@@ -188,6 +190,7 @@ public class CompanyExpensePostingRepository : ICompanyExpensePostingRepository
         Date          = r.GetDateTime(r.GetOrdinal("Date")),
         Type          = r["Type"]?.ToString() ?? string.Empty,
         RecipientName = r.IsDBNull(r.GetOrdinal("RecipientName")) ? null : r["RecipientName"].ToString(),
+        RecipientId   = r.IsDBNull(r.GetOrdinal("RecipientId"))   ? null : r.GetInt32(r.GetOrdinal("RecipientId")),
         Head          = r.IsDBNull(r.GetOrdinal("Head"))          ? null : r["Head"].ToString(),
         Amount        = r.IsDBNull(r.GetOrdinal("Amount"))        ? 0    : r.GetDecimal(r.GetOrdinal("Amount")),
         Mode          = r["Mode"]?.ToString() ?? "Cash",

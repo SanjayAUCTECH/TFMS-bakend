@@ -14,10 +14,12 @@ public class CreateCompanyExpensePostingRequest
 
     [Required(ErrorMessage = "Type is required.")]
     [MaxLength(100)]
-    public string Type { get; set; } = string.Empty;  // Salary, Dewa, Rent, etc.
+    public string Type { get; set; } = string.Empty;
 
     [MaxLength(200)]
     public string? RecipientName { get; set; }
+
+    public int? RecipientId { get; set; }
 
     [MaxLength(200)]
     public string? Head { get; set; }
@@ -27,7 +29,7 @@ public class CreateCompanyExpensePostingRequest
     public decimal Amount { get; set; }
 
     [MaxLength(50)]
-    public string Mode { get; set; } = "Cash";  // Cash, Bank, Cheque, Online
+    public string Mode { get; set; } = "Cash";
 
     public int? SalonId { get; set; }
 
@@ -48,6 +50,8 @@ public class UpdateCompanyExpensePostingRequest
 
     [MaxLength(200)]
     public string? RecipientName { get; set; }
+
+    public int? RecipientId { get; set; }
 
     [MaxLength(200)]
     public string? Head { get; set; }
@@ -85,6 +89,7 @@ public class CompanyExpensePostingResponse
     public DateTime  Date          { get; set; }
     public string?   Type          { get; set; }
     public string?   RecipientName { get; set; }
+    public int?      RecipientId   { get; set; }
     public string?   Head          { get; set; }
     public decimal   Amount        { get; set; }
     public string?   Mode          { get; set; }
