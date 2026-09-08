@@ -37,28 +37,28 @@ public class SalonStaffReportRepository : ISalonStaffReportRepository
 
         await using var reader = await cmd.ExecuteReaderAsync();
 
-        // ── Result set 1: detail rows ──────────────────────────────────────
+        // ── Result set 1: Staff-wise detail rows ───────────────────────────
         while (await reader.ReadAsync())
         {
             list.Add(new SalonStaffReportRow
             {
                 AssignId        = reader.GetInt32(reader.GetOrdinal("AssignId")),
-                SalonId         = reader.GetInt32(reader.GetOrdinal("SalonId")),
-                SalonName       = reader["SalonName"]?.ToString(),
                 StaffId         = reader.GetInt32(reader.GetOrdinal("StaffId")),
                 StaffName       = reader["StaffName"]?.ToString(),
-                Percentage      = reader.IsDBNull(reader.GetOrdinal("Percentage"))      ? 0 : reader.GetDecimal(reader.GetOrdinal("Percentage")),
+                Percentage      = reader.IsDBNull(reader.GetOrdinal("Percentage"))      ? 0    : reader.GetDecimal(reader.GetOrdinal("Percentage")),
                 AssignStatus    = reader["AssignStatus"]?.ToString(),
-                TotalCollection = reader.IsDBNull(reader.GetOrdinal("TotalCollection")) ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalCollection")),
-                TotalDCExpense  = reader.IsDBNull(reader.GetOrdinal("TotalDCExpense"))  ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalDCExpense")),
-                TotalCOExpense  = reader.IsDBNull(reader.GetOrdinal("TotalCOExpense"))  ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalCOExpense")),
-                StaffProfit     = reader.IsDBNull(reader.GetOrdinal("StaffProfit"))     ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffProfit")),
-                CompanyRevenue  = reader.IsDBNull(reader.GetOrdinal("CompanyRevenue"))  ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyRevenue")),
-                SalaryPaid      = reader.IsDBNull(reader.GetOrdinal("SalaryPaid"))      ? 0 : reader.GetDecimal(reader.GetOrdinal("SalaryPaid")),
+                PayoutDateFrom  = reader.IsDBNull(reader.GetOrdinal("PayoutDateFrom"))  ? null : reader.GetDateTime(reader.GetOrdinal("PayoutDateFrom")),
+                PayoutDateTo    = reader.IsDBNull(reader.GetOrdinal("PayoutDateTo"))    ? null : reader.GetDateTime(reader.GetOrdinal("PayoutDateTo")),
+                TotalCollection = reader.IsDBNull(reader.GetOrdinal("TotalCollection")) ? 0    : reader.GetDecimal(reader.GetOrdinal("TotalCollection")),
+                TotalDCExpense  = reader.IsDBNull(reader.GetOrdinal("TotalDCExpense"))  ? 0    : reader.GetDecimal(reader.GetOrdinal("TotalDCExpense")),
+                TotalCOExpense  = reader.IsDBNull(reader.GetOrdinal("TotalCOExpense"))  ? 0    : reader.GetDecimal(reader.GetOrdinal("TotalCOExpense")),
+                StaffProfit     = reader.IsDBNull(reader.GetOrdinal("StaffProfit"))     ? 0    : reader.GetDecimal(reader.GetOrdinal("StaffProfit")),
+                CompanyRevenue  = reader.IsDBNull(reader.GetOrdinal("CompanyRevenue"))  ? 0    : reader.GetDecimal(reader.GetOrdinal("CompanyRevenue")),
+                SalaryPaid      = reader.IsDBNull(reader.GetOrdinal("SalaryPaid"))      ? 0    : reader.GetDecimal(reader.GetOrdinal("SalaryPaid")),
             });
         }
 
-        // ── Result set 2: cards ────────────────────────────────────────────
+        // ── Result set 2: Summary cards ────────────────────────────────────
         await reader.NextResultAsync();
         if (await reader.ReadAsync())
         {
@@ -74,9 +74,35 @@ public class SalonStaffReportRepository : ISalonStaffReportRepository
             };
         }
 
-        await reader.CloseAsync();
-        int total = totalParam.Value == DBNull.Value ? 0 : (int)totalParam.Value;
+        // ── Result set 3: Salary payment detail (date-wise per staff) ──────
+        await reader.NextResultAsync();
+        var salaryDict = new Dictionary<int, List<SalaryPaymentDetail>>();
+        while (await reader.ReadAsync())
+        {
+            int staffId = reader.GetInt32(reader.GetOrdinal("StaffId"));
+            var detail  = new SalaryPaymentDetail
+            {
+                StaffId      = staffId,
+                SalaryDate   = reader.GetDateTime(reader.GetOrdinal("SalaryDate")),
+                SalaryAmount = reader.IsDBNull(reader.GetOrdinal("SalaryAmount")) ? 0    : reader.GetDecimal(reader.GetOrdinal("SalaryAmount")),
+                Mode         = reader["Mode"]?.ToString(),
+                Description  = reader.IsDBNull(reader.GetOrdinal("Description"))  ? null : reader["Description"].ToString(),
+            };
+            if (!salaryDict.ContainsKey(staffId))
+                salaryDict[staffId] = new List<SalaryPaymentDetail>();
+            salaryDict[staffId].Add(detail);
+        }
 
+        await reader.CloseAsync();
+
+        // Attach salary payments array to each staff row
+        foreach (var row in list)
+        {
+            if (salaryDict.TryGetValue(row.StaffId, out var payments))
+                row.SalaryPayments = payments;
+        }
+
+        int total = totalParam.Value == DBNull.Value ? 0 : (int)totalParam.Value;
         return (list, total, cards);
     }
 }
