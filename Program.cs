@@ -119,6 +119,8 @@ builder.Services.AddScoped<ICompanyExpensePostingRepository, CompanyExpensePosti
 builder.Services.AddScoped<ISalonExpenseReportRepository,    SalonExpenseReportRepository>();
 builder.Services.AddScoped<ISalonFundBalanceRepository,      SalonFundBalanceRepository>();
 builder.Services.AddScoped<ISalonStaffReportRepository,      SalonStaffReportRepository>();
+builder.Services.AddScoped<ICurrentFundTransferRepository,   CurrentFundTransferRepository>();
+builder.Services.AddScoped<IBufferFundTransferRepository,    BufferFundTransferRepository>();
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPartnerService,      PartnerService>();
@@ -160,6 +162,8 @@ builder.Services.AddScoped<ICompanyExpensePostingService, CompanyExpensePostingS
 builder.Services.AddScoped<ISalonExpenseReportService,    SalonExpenseReportService>();
 builder.Services.AddScoped<ISalonFundBalanceService,      SalonFundBalanceService>();
 builder.Services.AddScoped<ISalonStaffReportService,      SalonStaffReportService>();
+builder.Services.AddScoped<ICurrentFundTransferService,   CurrentFundTransferService>();
+builder.Services.AddScoped<IBufferFundTransferService,    BufferFundTransferService>();
 
 var app = builder.Build();
 
