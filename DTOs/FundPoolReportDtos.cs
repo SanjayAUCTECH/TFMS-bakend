@@ -79,6 +79,7 @@ public class FundPoolReportSummary
     public decimal TotalIncome     { get; set; }
     public decimal TotalExpense    { get; set; }
     public decimal TotalPayments   { get; set; }
+    public string? ReportMonth     { get; set; }  // e.g. "September 2026", null if no filter
 }
 
 // ── Full Response ─────────────────────────────────────────────

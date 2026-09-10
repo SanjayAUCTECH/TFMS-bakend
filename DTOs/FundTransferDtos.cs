@@ -31,10 +31,12 @@ public class UpdateCurrentFundTransferRequest
 
 public class CurrentFundTransferListRequest : PagedRequest
 {
-    public int?    FundPoolId { get; set; }   // checks both From AND To
-    public string? Month      { get; set; }
-    public string? DateFrom   { get; set; }
-    public string? DateTo     { get; set; }
+    public int?    FundPoolId  { get; set; }   // checks both From AND To
+    public string? Month       { get; set; }
+    public string? DateFrom    { get; set; }
+    public string? DateTo      { get; set; }
+    public string? Status      { get; set; }
+    public string? SearchText  { get; set; }
 }
 
 public class CurrentFundTransferResponse
@@ -91,6 +93,8 @@ public class BufferFundTransferListRequest : PagedRequest
     public string? Month                 { get; set; }
     public string? DateFrom              { get; set; }
     public string? DateTo                { get; set; }
+    public string? Status                { get; set; }
+    public string? SearchText            { get; set; }
 }
 
 public class BufferFundTransferResponse

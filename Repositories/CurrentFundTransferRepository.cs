@@ -23,7 +23,7 @@ public class CurrentFundTransferRepository : ICurrentFundTransferRepository
         cmd.Parameters.AddWithValue("@SearchText",  (object?)request.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@FundPoolId",  (object?)request.FundPoolId  ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CurrentMonth",(object?)request.Month       ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@Status",      (object?)request.Status         ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status",      (object?)request.Status      ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@DateFrom",    string.IsNullOrEmpty(request.DateFrom) ? DBNull.Value : (object)DateTime.Parse(request.DateFrom));
         cmd.Parameters.AddWithValue("@DateTo",      string.IsNullOrEmpty(request.DateTo)   ? DBNull.Value : (object)DateTime.Parse(request.DateTo));
 
@@ -101,22 +101,35 @@ public class CurrentFundTransferRepository : ICurrentFundTransferRepository
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private static CurrentFundTransferResponse Map(SqlDataReader r) => new()
+    // Helper: returns column ordinal if it exists, otherwise -1
+    private static int SafeOrdinal(SqlDataReader r, string columnName)
     {
-        CurrentFundTransferId = r.GetInt32(r.GetOrdinal("CurrentFundTransferId")),
-        CurrentTransferDate   = r.GetDateTime(r.GetOrdinal("CurrentTransferDate")),
-        FromCurrentFundPoolId = r.GetInt32(r.GetOrdinal("FromCurrentFundPoolId")),
-        FromFundPoolName      = r["FromFundPoolName"]?.ToString(),
-        ToCurrentFundPoolId   = r.IsDBNull(r.GetOrdinal("ToCurrentFundPoolId")) ? null : r.GetInt32(r.GetOrdinal("ToCurrentFundPoolId")),
-        ToFundPoolName        = r.IsDBNull(r.GetOrdinal("ToFundPoolName"))      ? null : r["ToFundPoolName"].ToString(),
-        CurrentAmount         = r.IsDBNull(r.GetOrdinal("CurrentAmount"))       ? 0    : r.GetDecimal(r.GetOrdinal("CurrentAmount")),
-        CurrentMonth          = r["CurrentMonth"]?.ToString(),
-        Description           = r.IsDBNull(r.GetOrdinal("Description"))         ? null : r["Description"].ToString(),
-        Status                = r["Status"]?.ToString(),
-        AddedBy               = r.IsDBNull(r.GetOrdinal("AddedBy"))             ? null : r["AddedBy"].ToString(),
-        CreatedAt             = r.GetDateTime(r.GetOrdinal("CreatedAt")),
-        UpdatedAt             = r.IsDBNull(r.GetOrdinal("UpdatedAt"))           ? null : r.GetDateTime(r.GetOrdinal("UpdatedAt")),
-        TransactionType       = r.IsDBNull(r.GetOrdinal("TransactionType"))     ? null : r["TransactionType"].ToString(),
-        SignedAmount          = r.IsDBNull(r.GetOrdinal("SignedAmount"))        ? 0    : r.GetDecimal(r.GetOrdinal("SignedAmount")),
-    };
+        try { return r.GetOrdinal(columnName); }
+        catch (IndexOutOfRangeException) { return -1; }
+    }
+
+    private static CurrentFundTransferResponse Map(SqlDataReader r)
+    {
+        var transactionTypeOrdinal = SafeOrdinal(r, "TransactionType");
+        var signedAmountOrdinal    = SafeOrdinal(r, "SignedAmount");
+
+        return new()
+        {
+            CurrentFundTransferId = r.GetInt32(r.GetOrdinal("CurrentFundTransferId")),
+            CurrentTransferDate   = r.GetDateTime(r.GetOrdinal("CurrentTransferDate")),
+            FromCurrentFundPoolId = r.GetInt32(r.GetOrdinal("FromCurrentFundPoolId")),
+            FromFundPoolName      = r["FromFundPoolName"]?.ToString(),
+            ToCurrentFundPoolId   = r.IsDBNull(r.GetOrdinal("ToCurrentFundPoolId")) ? null : r.GetInt32(r.GetOrdinal("ToCurrentFundPoolId")),
+            ToFundPoolName        = r.IsDBNull(r.GetOrdinal("ToFundPoolName"))      ? null : r["ToFundPoolName"].ToString(),
+            CurrentAmount         = r.IsDBNull(r.GetOrdinal("CurrentAmount"))       ? 0    : r.GetDecimal(r.GetOrdinal("CurrentAmount")),
+            CurrentMonth          = r["CurrentMonth"]?.ToString(),
+            Description           = r.IsDBNull(r.GetOrdinal("Description"))         ? null : r["Description"].ToString(),
+            Status                = r["Status"]?.ToString(),
+            AddedBy               = r.IsDBNull(r.GetOrdinal("AddedBy"))             ? null : r["AddedBy"].ToString(),
+            CreatedAt             = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+            UpdatedAt             = r.IsDBNull(r.GetOrdinal("UpdatedAt"))           ? null : r.GetDateTime(r.GetOrdinal("UpdatedAt")),
+            TransactionType       = transactionTypeOrdinal < 0 || r.IsDBNull(transactionTypeOrdinal) ? null : r.GetString(transactionTypeOrdinal),
+            SignedAmount          = signedAmountOrdinal    < 0 || r.IsDBNull(signedAmountOrdinal)    ? 0    : r.GetDecimal(signedAmountOrdinal),
+        };
+    }
 }

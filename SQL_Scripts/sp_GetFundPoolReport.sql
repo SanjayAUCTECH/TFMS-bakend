@@ -48,6 +48,11 @@ BEGIN
       AND (@SearchText IS NULL OR fp.Name LIKE '%'+@SearchText+'%'
                                OR fp.Code LIKE '%'+@SearchText+'%');
 
+    -- ── CurrentFundTransfer month label (matches CurrentMonth column)
+    -- Same format as @OmciMonthLabel: 'September 2026'
+    DECLARE @CftMonthLabel NVARCHAR(20) =
+        DATENAME(MONTH, @CurFrom) + ' ' + CAST(@SelYear AS NVARCHAR(4));
+
     -- ════════════════════════════════════════════════════════════
     -- Pre-aggregate Current Income per FundPool
     -- ════════════════════════════════════════════════════════════
@@ -202,6 +207,62 @@ BEGIN
           AND NOT (e.RecipientRole = 'Owner' AND e.Head = 'LANDLORD CHO')
           AND e.[Date] >= @BufFrom
         GROUP BY e.FundPool
+    ),
+
+    -- ════════════════════════════════════════════════════════════
+    -- CTE 9 & 10: CurrentFundTransfer adjustments
+    -- Filter: CurrentMonth = 'September 2026' AND IsDeleted = 0
+    -- FromCurrentFundPoolId → amount goes OUT  (subtract from balance)
+    -- ToCurrentFundPoolId   → amount comes IN  (add to balance)
+    -- ════════════════════════════════════════════════════════════
+    CTE_CFT_Out AS (
+        -- Fund pools that SENT money → their balance decreases
+        SELECT cft.FromCurrentFundPoolId AS FundPoolId,
+               SUM(cft.CurrentAmount)    AS TransferOutAmt
+        FROM CurrentFundTransfer cft
+        WHERE ISNULL(cft.IsDeleted, 0) = 0
+          AND cft.CurrentMonth = @CftMonthLabel
+          AND cft.Status = 'Active'
+        GROUP BY cft.FromCurrentFundPoolId
+    ),
+    CTE_CFT_In AS (
+        -- Fund pools that RECEIVED money → their balance increases
+        SELECT cft.ToCurrentFundPoolId AS FundPoolId,
+               SUM(cft.CurrentAmount)  AS TransferInAmt
+        FROM CurrentFundTransfer cft
+        WHERE ISNULL(cft.IsDeleted, 0) = 0
+          AND cft.CurrentMonth = @CftMonthLabel
+          AND cft.Status = 'Active'
+          AND cft.ToCurrentFundPoolId IS NOT NULL
+        GROUP BY cft.ToCurrentFundPoolId
+    ),
+
+    -- ════════════════════════════════════════════════════════════
+    -- CTE 11 & 12: BufferFundTransfer adjustments
+    -- Filter: BufferMonth = 'September 2026' AND IsDeleted = 0
+    -- FromBufferFundPoolId → amount goes OUT  (subtract from bufferTotalAmount)
+    -- ToBufferFundPoolId   → amount comes IN  (add to bufferTotalAmount)
+    -- ════════════════════════════════════════════════════════════
+    CTE_BFT_Out AS (
+        -- Fund pools that SENT buffer money → buffer balance decreases
+        SELECT bft.FromBufferFundPoolId AS FundPoolId,
+               SUM(bft.BufferAmount)    AS BufferTransferOutAmt
+        FROM BufferFundTransfer bft
+        WHERE ISNULL(bft.IsDeleted, 0) = 0
+          AND bft.BufferMonth = @CftMonthLabel
+          AND bft.Status = 'Active'
+        GROUP BY bft.FromBufferFundPoolId
+    ),
+    CTE_BFT_In AS (
+        -- Fund pools that RECEIVED buffer money → buffer balance increases
+        SELECT bft.ToBufferFundPoolId AS FundPoolId,
+               SUM(bft.BufferAmount)  AS BufferTransferInAmt
+        FROM BufferFundTransfer bft
+        WHERE ISNULL(bft.IsDeleted, 0) = 0
+          AND bft.BufferMonth = @CftMonthLabel
+          AND bft.Status = 'Active'
+          AND bft.ToBufferFundPoolId IS NOT NULL
+        GROUP BY bft.ToBufferFundPoolId
     )
 
     -- ════════════════════════════════════════════════════════════
@@ -212,7 +273,13 @@ BEGIN
         fp.Code                                                     AS FundPoolCode,
         fp.Name                                                     AS FundPoolName,
         fp.Status,
-        fp.Balance                                                  AS CurrentBalance,
+
+        -- CurrentBalance = FundPool.Balance
+        --   + transfers received (ToCurrentFundPoolId = this pool)
+        --   - transfers sent     (FromCurrentFundPoolId = this pool)
+        fp.Balance
+        + ISNULL(cft_in.TransferInAmt,  0)
+        - ISNULL(cft_out.TransferOutAmt, 0)                        AS CurrentBalance,
 
         -- Current Income = CRI Tenant Rental + Other Income
         ISNULL(cur_t.TenantCRIAmt, 0)
@@ -242,8 +309,12 @@ BEGIN
         + ISNULL(buf_e.OtherExpAmt, 0)                             AS BufferTotalExpense,
 
         -- Buffer Total Amount = Buffer Income + Buffer Expense
+        --   + BufferFundTransfer received (ToBufferFundPoolId = this pool)
+        --   - BufferFundTransfer sent     (FromBufferFundPoolId = this pool)
         ISNULL(buf_t.TenantCRIAmt,0) + ISNULL(buf_o.OtherIncAmt,0)
-        + ISNULL(buf_ow.OwnerAmt,0)  + ISNULL(buf_e.OtherExpAmt,0) AS BufferTotalAmount,
+        + ISNULL(buf_ow.OwnerAmt,0)  + ISNULL(buf_e.OtherExpAmt,0)
+        + ISNULL(bft_in.BufferTransferInAmt,  0)
+        - ISNULL(bft_out.BufferTransferOutAmt, 0)                  AS BufferTotalAmount,
 
         -- Buffer Difference = Buffer Income - Buffer Expense
         (ISNULL(buf_t.TenantCRIAmt,0) + ISNULL(buf_o.OtherIncAmt,0))
@@ -263,6 +334,12 @@ BEGIN
     LEFT JOIN CTE_OtherIncome_Buf  buf_o  ON buf_o.FundPool  = fp.Code
     LEFT JOIN CTE_OwnerOMCI_Buf    buf_ow ON buf_ow.FundPool = fp.Code
     LEFT JOIN CTE_OtherExpense_Buf buf_e  ON buf_e.FundPool  = fp.Code
+    -- CurrentFundTransfer adjustments (join on FundPool.Id)
+    LEFT JOIN CTE_CFT_Out          cft_out ON cft_out.FundPoolId = fp.Id
+    LEFT JOIN CTE_CFT_In           cft_in  ON cft_in.FundPoolId  = fp.Id
+    -- BufferFundTransfer adjustments (join on FundPool.Id)
+    LEFT JOIN CTE_BFT_Out          bft_out ON bft_out.FundPoolId = fp.Id
+    LEFT JOIN CTE_BFT_In           bft_in  ON bft_in.FundPoolId  = fp.Id
 
     WHERE ISNULL(fp.IsDeleted, 0) = 0
       AND (@FundPoolId IS NULL OR fp.Id = @FundPoolId)

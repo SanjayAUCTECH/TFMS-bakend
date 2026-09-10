@@ -104,23 +104,36 @@ public class BufferFundTransferRepository : IBufferFundTransferRepository
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private static BufferFundTransferResponse Map(SqlDataReader r) => new()
+    // Helper: returns column ordinal if it exists, otherwise -1
+    private static int SafeOrdinal(SqlDataReader r, string columnName)
     {
-        BufferFundTransferId  = r.GetInt32(r.GetOrdinal("BufferFundTransferId")),
-        BufferTransferDate    = r.GetDateTime(r.GetOrdinal("BufferTransferDate")),
-        FromBufferFundPoolId  = r.GetInt32(r.GetOrdinal("FromBufferFundPoolId")),
-        FromFundPoolName      = r["FromFundPoolName"]?.ToString(),
-        ToBufferFundPoolId    = r.IsDBNull(r.GetOrdinal("ToBufferFundPoolId"))    ? null : r.GetInt32(r.GetOrdinal("ToBufferFundPoolId")),
-        ToFundPoolName        = r.IsDBNull(r.GetOrdinal("ToFundPoolName"))        ? null : r["ToFundPoolName"].ToString(),
-        CurrentFundTransferId = r.IsDBNull(r.GetOrdinal("CurrentFundTransferId")) ? null : r.GetInt32(r.GetOrdinal("CurrentFundTransferId")),
-        BufferAmount          = r.IsDBNull(r.GetOrdinal("BufferAmount"))          ? 0    : r.GetDecimal(r.GetOrdinal("BufferAmount")),
-        BufferMonth           = r["BufferMonth"]?.ToString(),
-        Description           = r.IsDBNull(r.GetOrdinal("Description"))           ? null : r["Description"].ToString(),
-        Status                = r["Status"]?.ToString(),
-        AddedBy               = r.IsDBNull(r.GetOrdinal("AddedBy"))               ? null : r["AddedBy"].ToString(),
-        CreatedAt             = r.GetDateTime(r.GetOrdinal("CreatedAt")),
-        UpdatedAt             = r.IsDBNull(r.GetOrdinal("UpdatedAt"))             ? null : r.GetDateTime(r.GetOrdinal("UpdatedAt")),
-        TransactionType       = r.IsDBNull(r.GetOrdinal("TransactionType"))       ? null : r["TransactionType"].ToString(),
-        SignedAmount          = r.IsDBNull(r.GetOrdinal("SignedAmount"))          ? 0    : r.GetDecimal(r.GetOrdinal("SignedAmount")),
-    };
+        try { return r.GetOrdinal(columnName); }
+        catch (IndexOutOfRangeException) { return -1; }
+    }
+
+    private static BufferFundTransferResponse Map(SqlDataReader r)
+    {
+        var transactionTypeOrdinal = SafeOrdinal(r, "TransactionType");
+        var signedAmountOrdinal    = SafeOrdinal(r, "SignedAmount");
+
+        return new()
+        {
+            BufferFundTransferId  = r.GetInt32(r.GetOrdinal("BufferFundTransferId")),
+            BufferTransferDate    = r.GetDateTime(r.GetOrdinal("BufferTransferDate")),
+            FromBufferFundPoolId  = r.GetInt32(r.GetOrdinal("FromBufferFundPoolId")),
+            FromFundPoolName      = r["FromFundPoolName"]?.ToString(),
+            ToBufferFundPoolId    = r.IsDBNull(r.GetOrdinal("ToBufferFundPoolId"))    ? null : r.GetInt32(r.GetOrdinal("ToBufferFundPoolId")),
+            ToFundPoolName        = r.IsDBNull(r.GetOrdinal("ToFundPoolName"))        ? null : r["ToFundPoolName"].ToString(),
+            CurrentFundTransferId = r.IsDBNull(r.GetOrdinal("CurrentFundTransferId")) ? null : r.GetInt32(r.GetOrdinal("CurrentFundTransferId")),
+            BufferAmount          = r.IsDBNull(r.GetOrdinal("BufferAmount"))          ? 0    : r.GetDecimal(r.GetOrdinal("BufferAmount")),
+            BufferMonth           = r["BufferMonth"]?.ToString(),
+            Description           = r.IsDBNull(r.GetOrdinal("Description"))           ? null : r["Description"].ToString(),
+            Status                = r["Status"]?.ToString(),
+            AddedBy               = r.IsDBNull(r.GetOrdinal("AddedBy"))               ? null : r["AddedBy"].ToString(),
+            CreatedAt             = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+            UpdatedAt             = r.IsDBNull(r.GetOrdinal("UpdatedAt"))             ? null : r.GetDateTime(r.GetOrdinal("UpdatedAt")),
+            TransactionType       = transactionTypeOrdinal < 0 || r.IsDBNull(transactionTypeOrdinal) ? null : r.GetString(transactionTypeOrdinal),
+            SignedAmount          = signedAmountOrdinal    < 0 || r.IsDBNull(signedAmountOrdinal)    ? 0    : r.GetDecimal(signedAmountOrdinal),
+        };
+    }
 }

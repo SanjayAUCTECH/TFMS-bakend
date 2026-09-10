@@ -137,6 +137,10 @@ public class FundPoolReportController : ControllerBase
             TotalIncome     = response.Rows.Sum(r => r.TotalIncome),
             TotalExpense    = response.Rows.Sum(r => r.TotalExpense),
             TotalPayments   = response.Rows.Sum(r => r.TotalPaymentsReceived),
+            ReportMonth     = (request.Month.HasValue && request.Year.HasValue)
+                                ? new DateTime(request.Year.Value, request.Month.Value, 1)
+                                      .ToString("MMMM yyyy")   // e.g. "September 2026"
+                                : null,
         };
 
         return Ok(ApiResponse<FundPoolReportResponse>.Ok(
