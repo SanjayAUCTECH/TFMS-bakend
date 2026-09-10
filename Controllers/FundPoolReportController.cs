@@ -131,16 +131,18 @@ public class FundPoolReportController : ControllerBase
         // Build summary from rows
         response.Summary = new FundPoolReportSummary
         {
-            TotalFundPools  = totalRecords,
-            ActiveFundPools = response.Rows.Count(r => r.Status == "Active"),
-            TotalBalance    = response.Rows.Sum(r => r.CurrentBalance),
-            TotalIncome     = response.Rows.Sum(r => r.TotalIncome),
-            TotalExpense    = response.Rows.Sum(r => r.TotalExpense),
-            TotalPayments   = response.Rows.Sum(r => r.TotalPaymentsReceived),
-            ReportMonth     = (request.Month.HasValue && request.Year.HasValue)
-                                ? new DateTime(request.Year.Value, request.Month.Value, 1)
-                                      .ToString("MMMM yyyy")   // e.g. "September 2026"
-                                : null,
+            TotalFundPools    = totalRecords,
+            ActiveFundPools   = response.Rows.Count(r => r.Status == "Active"),
+            TotalBalance      = response.Rows.Sum(r => r.CurrentBalance),
+            TotalBufferAmount = response.Rows.Sum(r => r.BufferTotalAmount),
+            GrandTotal        = response.Rows.Sum(r => r.CurrentBalance) + response.Rows.Sum(r => r.BufferTotalAmount),
+            TotalIncome       = response.Rows.Sum(r => r.TotalIncome),
+            TotalExpense      = response.Rows.Sum(r => r.TotalExpense),
+            TotalPayments     = response.Rows.Sum(r => r.TotalPaymentsReceived),
+            ReportMonth       = (request.Month.HasValue && request.Year.HasValue)
+                                    ? new DateTime(request.Year.Value, request.Month.Value, 1)
+                                          .ToString("MMMM yyyy")
+                                    : null,
         };
 
         return Ok(ApiResponse<FundPoolReportResponse>.Ok(

@@ -34,6 +34,7 @@ public class FundPoolReportRow
     public decimal  BufferTotalExpense     { get; set; }
     public decimal  BufferTotalAmount      { get; set; }
     public decimal  BufferNetAmount        { get; set; }
+    public decimal  NetTotal               => CurrentBalance + BufferTotalAmount;  // row-wise total
     public int      IncomeCount            { get; set; }
     public int      ExpenseCount           { get; set; }
     public int      PaymentCount           { get; set; }
@@ -73,13 +74,15 @@ public class FundPoolTxnRow
 // ── Summary cards ─────────────────────────────────────────────
 public class FundPoolReportSummary
 {
-    public int     TotalFundPools  { get; set; }
-    public int     ActiveFundPools { get; set; }
-    public decimal TotalBalance    { get; set; }
-    public decimal TotalIncome     { get; set; }
-    public decimal TotalExpense    { get; set; }
-    public decimal TotalPayments   { get; set; }
-    public string? ReportMonth     { get; set; }  // e.g. "September 2026", null if no filter
+    public int     TotalFundPools        { get; set; }
+    public int     ActiveFundPools       { get; set; }
+    public decimal TotalBalance          { get; set; }   // sum of CurrentBalance (all pools)
+    public decimal TotalBufferAmount     { get; set; }   // sum of BufferTotalAmount (all pools)
+    public decimal GrandTotal            { get; set; }   // TotalBalance + TotalBufferAmount
+    public decimal TotalIncome           { get; set; }
+    public decimal TotalExpense          { get; set; }
+    public decimal TotalPayments         { get; set; }
+    public string? ReportMonth           { get; set; }   // e.g. "September 2026"
 }
 
 // ── Full Response ─────────────────────────────────────────────

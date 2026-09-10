@@ -17,27 +17,26 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- ── Resolve selected month boundaries ────────────────────────
+    -- ── Date variables ────────────────────────────────────────────
     DECLARE @SelYear  INT  = ISNULL(@Year,  YEAR(GETDATE()));
     DECLARE @SelMonth INT  = ISNULL(@Month, MONTH(GETDATE()));
 
-    -- Current month date range
-    DECLARE @CurFrom DATE = DATEFROMPARTS(@SelYear, @SelMonth, 1);
-    DECLARE @CurTo   DATE = EOMONTH(DATEFROMPARTS(@SelYear, @SelMonth, 1));
+    -- ── SINGLE MONTH range (for TotalIncome, TotalExpense, NetAmount etc.) ──
+    DECLARE @MonFrom DATE = DATEFROMPARTS(@SelYear, @SelMonth, 1);
+    DECLARE @MonTo   DATE = EOMONTH(DATEFROMPARTS(@SelYear, @SelMonth, 1));
 
-    -- Buffer starts NEXT month
-    DECLARE @BufFrom DATE = DATEADD(MONTH, 1, @CurFrom);
+    -- ── CUMULATIVE range Jan→SelectedMonth (for CurrentBalance, BufferTotalIncome) ──
+    DECLARE @RngFrom DATE = DATEFROMPARTS(@SelYear, 1, 1);
+    DECLARE @RngTo   DATE = @MonTo;
 
-    -- Month labels
-    -- CRI format: 'Jul26'
-    DECLARE @CriMonthLabel NVARCHAR(10) =
-        LEFT(DATENAME(MONTH, @CurFrom), 3) + RIGHT(CAST(@SelYear AS NVARCHAR(4)), 2);
-    -- CRI buffer: all months > current → we use PaidDate >= @BufFrom
+    -- Buffer starts NEXT month after selected month
+    DECLARE @BufFrom DATE = DATEADD(MONTH, 1, @MonFrom);
 
-    -- OMCI format: 'Jul 2026'
+    -- Month labels for CRI (e.g. 'Aug26') and OMCI (e.g. 'Aug 2026') — single month
+    DECLARE @CriMonthLabel  NVARCHAR(10) =
+        LEFT(DATENAME(MONTH, @MonFrom), 3) + RIGHT(CAST(@SelYear AS NVARCHAR(4)), 2);
     DECLARE @OmciMonthLabel NVARCHAR(20) =
-        LEFT(DATENAME(MONTH, @CurFrom), 3) + ' ' + CAST(@SelYear AS NVARCHAR(4));
-    -- OMCI buffer: Month string converted to date > @CurTo
+        LEFT(DATENAME(MONTH, @MonFrom), 3) + ' ' + CAST(@SelYear AS NVARCHAR(4));
 
     -- ── Total count ───────────────────────────────────────────────
     SELECT @TotalRecords = COUNT(*)
@@ -48,17 +47,14 @@ BEGIN
       AND (@SearchText IS NULL OR fp.Name LIKE '%'+@SearchText+'%'
                                OR fp.Code LIKE '%'+@SearchText+'%');
 
-    -- ── CurrentFundTransfer month label (matches CurrentMonth column)
-    -- Same format as @OmciMonthLabel: 'September 2026'
-    DECLARE @CftMonthLabel NVARCHAR(20) =
-        DATENAME(MONTH, @CurFrom) + ' ' + CAST(@SelYear AS NVARCHAR(4));
+    -- ════════════════════════════════════════════════════════════
+    -- ██ SINGLE MONTH CTEs — TotalIncome, TotalExpense, NetAmount
+    -- ════════════════════════════════════════════════════════════
 
-    -- ════════════════════════════════════════════════════════════
-    -- Pre-aggregate Current Income per FundPool
-    -- ════════════════════════════════════════════════════════════
-    -- CTE 1: Tenant Rental Collection via CRI (Month = @CriMonthLabel)
-    -- Only Status IN ('Paid','PaidPartial') → these belong to CURRENT income
-    ;WITH CTE_TenantCRI_Cur AS (
+    ;WITH
+
+    -- CTE 1: Tenant CRI — single selected month only
+    CTE_TenantCRI_Mon AS (
         SELECT i.FundPool,
                SUM(cri.PaidAmount) AS TenantCRIAmt
         FROM (
@@ -68,8 +64,8 @@ BEGIN
                 ON cri2.ContractId = i2.ContractId
                AND cri2.PaidDate   = i2.[Date]
                AND ISNULL(cri2.IsDeleted,0) = 0
-               AND cri2.Month = @CriMonthLabel
-               AND cri2.Status IN ('Paid', 'PaidPartial')   -- ✅ Current: only Paid/PaidPartial
+               AND cri2.Month  = @CriMonthLabel
+               AND cri2.Status IN ('Paid', 'PaidPartial')
             WHERE i2.Source = 'Tenant'
               AND i2.Head   = 'RENTAL COLLECTION'
               AND ISNULL(i2.IsDeleted,0) = 0
@@ -77,29 +73,26 @@ BEGIN
         INNER JOIN ContractRoomInstallments cri ON cri.Id = i.Id
         GROUP BY i.FundPool
     ),
-    -- CTE 2: Other Income (exclude Tenant RENTAL COLLECTION) for current month
-    CTE_OtherIncome_Cur AS (
-        SELECT i.FundPool,
-               SUM(i.Amount) AS OtherIncAmt
+
+    -- CTE 2: Other Income — single month
+    CTE_OtherIncome_Mon AS (
+        SELECT i.FundPool, SUM(i.Amount) AS OtherIncAmt
         FROM Incomes i
         WHERE ISNULL(i.IsDeleted,0) = 0
           AND NOT (i.Source = 'Tenant' AND i.Head = 'RENTAL COLLECTION')
-          AND i.[Date] >= @CurFrom
-          AND i.[Date] <= @CurTo
+          AND i.[Date] >= @MonFrom AND i.[Date] <= @MonTo
         GROUP BY i.FundPool
     ),
-    -- CTE 3: Owner Payment via OMCI (Month = @OmciMonthLabel) for current month
-    -- Extract OcCode from Expenses.Purpose pattern: 'Owner Payment - OC-xxxxx - ...'
-    CTE_OwnerOMCI_Cur AS (
-        SELECT e.FundPool,
-               SUM(omci.Amount) AS OwnerAmt
+
+    -- CTE 3: Owner OMCI — single month
+    CTE_OwnerOMCI_Mon AS (
+        SELECT e.FundPool, SUM(omci.Amount) AS OwnerAmt
         FROM Expenses e
         INNER JOIN OwnerContracts oc
             ON oc.OcCode = LTRIM(RTRIM(
                               SUBSTRING(e.Purpose,
                                   CHARINDEX('- ', e.Purpose) + 2,
-                                  CHARINDEX(' - Inst', e.Purpose)
-                                  - CHARINDEX('- ', e.Purpose) - 2)
+                                  CHARINDEX(' - Inst', e.Purpose) - CHARINDEX('- ', e.Purpose) - 2)
                            ))
            AND ISNULL(oc.IsDeleted,0) = 0
         INNER JOIN OwnerMonthlyContractInstallments omci
@@ -108,35 +101,61 @@ BEGIN
            AND omci.Month    = @OmciMonthLabel
            AND ISNULL(omci.IsDeleted,0) = 0
         WHERE e.RecipientRole = 'Owner'
-          AND e.Head          = 'LANDLORD CHO'
+          AND e.Head = 'LANDLORD CHO'
           AND ISNULL(e.IsDeleted,0) = 0
-          AND e.[Date] >= @CurFrom
-          AND e.[Date] <= @CurTo
+          AND e.[Date] >= @MonFrom AND e.[Date] <= @MonTo
           AND CHARINDEX('- ', e.Purpose) > 0
           AND CHARINDEX(' - Inst', e.Purpose) > 0
         GROUP BY e.FundPool
     ),
-    -- CTE 4: Other Expense (exclude Owner LANDLORD CHO) for current month
-    CTE_OtherExpense_Cur AS (
-        SELECT e.FundPool,
-               SUM(e.Amount) AS OtherExpAmt
+
+    -- CTE 4: Other Expense — single month
+    CTE_OtherExpense_Mon AS (
+        SELECT e.FundPool, SUM(e.Amount) AS OtherExpAmt
         FROM Expenses e
         WHERE ISNULL(e.IsDeleted,0) = 0
           AND NOT (e.RecipientRole = 'Owner' AND e.Head = 'LANDLORD CHO')
-          AND e.[Date] >= @CurFrom
-          AND e.[Date] <= @CurTo
+          AND e.[Date] >= @MonFrom AND e.[Date] <= @MonTo
         GROUP BY e.FundPool
     ),
 
     -- ════════════════════════════════════════════════════════════
-    -- Pre-aggregate Buffer Income per FundPool
+    -- ██ CUMULATIVE CTEs — CurrentBalance (Jan → SelectedMonth)
     -- ════════════════════════════════════════════════════════════
-    -- CTE 5: Tenant CRI Buffer
-    -- Only Status IN ('Advanced','AdvancedPartial') → advance payments = buffer income
-    -- Explicitly exclude Paid/PaidPartial so they never appear in buffer
-    CTE_TenantCRI_Buf AS (
-        SELECT i.FundPool,
-               SUM(cri.PaidAmount) AS TenantCRIAmt
+
+    -- CTE 5: CurrentFundTransfer OUT — cumulative range
+    CTE_CFT_Out AS (
+        SELECT cft.FromCurrentFundPoolId AS FundPoolId,
+               SUM(cft.CurrentAmount)    AS TransferOutAmt
+        FROM CurrentFundTransfer cft
+        WHERE ISNULL(cft.IsDeleted, 0) = 0
+          AND cft.Status = 'Active'
+          AND TRY_CAST('01 ' + cft.CurrentMonth AS DATE) >= @RngFrom
+          AND TRY_CAST('01 ' + cft.CurrentMonth AS DATE) <= @RngTo
+        GROUP BY cft.FromCurrentFundPoolId
+    ),
+
+    -- CTE 6: CurrentFundTransfer IN — cumulative range
+    CTE_CFT_In AS (
+        SELECT cft.ToCurrentFundPoolId AS FundPoolId,
+               SUM(cft.CurrentAmount)  AS TransferInAmt
+        FROM CurrentFundTransfer cft
+        WHERE ISNULL(cft.IsDeleted, 0) = 0
+          AND cft.Status = 'Active'
+          AND cft.ToCurrentFundPoolId IS NOT NULL
+          AND TRY_CAST('01 ' + cft.CurrentMonth AS DATE) >= @RngFrom
+          AND TRY_CAST('01 ' + cft.CurrentMonth AS DATE) <= @RngTo
+        GROUP BY cft.ToCurrentFundPoolId
+    ),
+
+    -- ════════════════════════════════════════════════════════════
+    -- ██ BUFFER CTEs — BufferTotalIncome (cumulative Jan→SelectedMonth)
+    --                  BufferTotalExpense, BufferTotalAmount, BufferNetAmount (single month)
+    -- ════════════════════════════════════════════════════════════
+
+    -- CTE 7: Tenant CRI Buffer SINGLE MONTH — for BufferTotalIncome
+    CTE_TenantCRI_Buf_Rng AS (
+        SELECT i.FundPool, SUM(cri.PaidAmount) AS TenantCRIAmt
         FROM (
             SELECT DISTINCT i2.FundPool, cri2.Id, cri2.PaidAmount
             FROM Incomes i2
@@ -145,12 +164,11 @@ BEGIN
                AND cri2.PaidDate   = i2.[Date]
                AND ISNULL(cri2.IsDeleted,0) = 0
                AND cri2.PaidAmount > 0
-               AND cri2.Status IN ('Advanced', 'AdvancedPartial')   -- ✅ Buffer: only Advanced/AdvancedPartial
-               AND cri2.Status NOT IN ('Paid', 'PaidPartial')       -- ✅ Never mix with current income
-               AND cri2.Month <> @CriMonthLabel  -- exclude current month label
+               AND cri2.Status IN ('Advanced', 'AdvancedPartial')
+               AND cri2.Status NOT IN ('Paid', 'PaidPartial')
                AND TRY_CAST(
                        '01 ' + LEFT(cri2.Month, 3) + ' 20' + RIGHT(cri2.Month, 2) AS DATE
-                   ) > @CurTo  -- future months only
+                   ) > @MonTo   -- future beyond selected month
             WHERE i2.Source = 'Tenant'
               AND i2.Head   = 'RENTAL COLLECTION'
               AND ISNULL(i2.IsDeleted,0) = 0
@@ -158,188 +176,152 @@ BEGIN
         INNER JOIN ContractRoomInstallments cri ON cri.Id = i.Id
         GROUP BY i.FundPool
     ),
-    -- CTE 6: Other Income Buffer
-    CTE_OtherIncome_Buf AS (
-        SELECT i.FundPool,
-               SUM(i.Amount) AS OtherIncAmt
+
+    -- CTE 8: Other Income Buffer SINGLE MONTH — for BufferTotalIncome
+    CTE_OtherIncome_Buf_Rng AS (
+        SELECT i.FundPool, SUM(i.Amount) AS OtherIncAmt
         FROM Incomes i
         WHERE ISNULL(i.IsDeleted,0) = 0
           AND NOT (i.Source = 'Tenant' AND i.Head = 'RENTAL COLLECTION')
           AND i.[Date] >= @BufFrom
         GROUP BY i.FundPool
     ),
-    -- CTE 7: Owner OMCI Buffer
-    -- Convert OMCI Month string 'Jul 2026' -> date, filter > @CurTo
+
+    -- CTE 9: BufferFundTransfer OUT — CUMULATIVE (Jan → SelectedMonth) for BufferTotalAmount
+    CTE_BFT_Out AS (
+        SELECT bft.FromBufferFundPoolId AS FundPoolId,
+               SUM(bft.BufferAmount)    AS BufferTransferOutAmt
+        FROM BufferFundTransfer bft
+        WHERE ISNULL(bft.IsDeleted, 0) = 0
+          AND bft.Status = 'Active'
+          AND TRY_CAST('01 ' + bft.BufferMonth AS DATE) >= @RngFrom
+          AND TRY_CAST('01 ' + bft.BufferMonth AS DATE) <= @RngTo
+        GROUP BY bft.FromBufferFundPoolId
+    ),
+
+    -- CTE 10: BufferFundTransfer IN — CUMULATIVE (Jan → SelectedMonth) for BufferTotalAmount
+    CTE_BFT_In AS (
+        SELECT bft.ToBufferFundPoolId AS FundPoolId,
+               SUM(bft.BufferAmount)  AS BufferTransferInAmt
+        FROM BufferFundTransfer bft
+        WHERE ISNULL(bft.IsDeleted, 0) = 0
+          AND bft.Status = 'Active'
+          AND bft.ToBufferFundPoolId IS NOT NULL
+          AND TRY_CAST('01 ' + bft.BufferMonth AS DATE) >= @RngFrom
+          AND TRY_CAST('01 ' + bft.BufferMonth AS DATE) <= @RngTo
+        GROUP BY bft.ToBufferFundPoolId
+    ),
+
+    -- CTE 11: Owner OMCI Buffer — single month (for BufferTotalExpense)
     CTE_OwnerOMCI_Buf AS (
-        SELECT e.FundPool,
-               SUM(omci.Amount) AS OwnerAmt
+        SELECT e.FundPool, SUM(omci.Amount) AS OwnerAmt
         FROM Expenses e
         INNER JOIN OwnerContracts oc
             ON oc.OcCode = LTRIM(RTRIM(
                               SUBSTRING(e.Purpose,
                                   CHARINDEX('- ', e.Purpose) + 2,
-                                  CHARINDEX(' - Inst', e.Purpose)
-                                  - CHARINDEX('- ', e.Purpose) - 2)
+                                  CHARINDEX(' - Inst', e.Purpose) - CHARINDEX('- ', e.Purpose) - 2)
                            ))
            AND ISNULL(oc.IsDeleted,0) = 0
         INNER JOIN OwnerMonthlyContractInstallments omci
             ON omci.OwnerContractId = oc.Id
            AND omci.PaidDate = e.[Date]
-           -- Buffer: OMCI.Month converted to date > @CurTo
-           AND TRY_CAST(
-                   '01 ' + omci.Month AS DATE
-               ) > @CurTo
+           AND TRY_CAST('01 ' + omci.Month AS DATE) > @MonTo   -- future only
            AND ISNULL(omci.IsDeleted,0) = 0
         WHERE e.RecipientRole = 'Owner'
-          AND e.Head          = 'LANDLORD CHO'
+          AND e.Head = 'LANDLORD CHO'
           AND ISNULL(e.IsDeleted,0) = 0
           AND e.[Date] >= @BufFrom
           AND CHARINDEX('- ', e.Purpose) > 0
           AND CHARINDEX(' - Inst', e.Purpose) > 0
         GROUP BY e.FundPool
     ),
-    -- CTE 8: Other Expense Buffer
+
+    -- CTE 12: Other Expense Buffer — single month (for BufferTotalExpense)
     CTE_OtherExpense_Buf AS (
-        SELECT e.FundPool,
-               SUM(e.Amount) AS OtherExpAmt
+        SELECT e.FundPool, SUM(e.Amount) AS OtherExpAmt
         FROM Expenses e
         WHERE ISNULL(e.IsDeleted,0) = 0
           AND NOT (e.RecipientRole = 'Owner' AND e.Head = 'LANDLORD CHO')
           AND e.[Date] >= @BufFrom
         GROUP BY e.FundPool
-    ),
-
-    -- ════════════════════════════════════════════════════════════
-    -- CTE 9 & 10: CurrentFundTransfer adjustments
-    -- Filter: CurrentMonth = 'September 2026' AND IsDeleted = 0
-    -- FromCurrentFundPoolId → amount goes OUT  (subtract from balance)
-    -- ToCurrentFundPoolId   → amount comes IN  (add to balance)
-    -- ════════════════════════════════════════════════════════════
-    CTE_CFT_Out AS (
-        -- Fund pools that SENT money → their balance decreases
-        SELECT cft.FromCurrentFundPoolId AS FundPoolId,
-               SUM(cft.CurrentAmount)    AS TransferOutAmt
-        FROM CurrentFundTransfer cft
-        WHERE ISNULL(cft.IsDeleted, 0) = 0
-          AND cft.CurrentMonth = @CftMonthLabel
-          AND cft.Status = 'Active'
-        GROUP BY cft.FromCurrentFundPoolId
-    ),
-    CTE_CFT_In AS (
-        -- Fund pools that RECEIVED money → their balance increases
-        SELECT cft.ToCurrentFundPoolId AS FundPoolId,
-               SUM(cft.CurrentAmount)  AS TransferInAmt
-        FROM CurrentFundTransfer cft
-        WHERE ISNULL(cft.IsDeleted, 0) = 0
-          AND cft.CurrentMonth = @CftMonthLabel
-          AND cft.Status = 'Active'
-          AND cft.ToCurrentFundPoolId IS NOT NULL
-        GROUP BY cft.ToCurrentFundPoolId
-    ),
-
-    -- ════════════════════════════════════════════════════════════
-    -- CTE 11 & 12: BufferFundTransfer adjustments
-    -- Filter: BufferMonth = 'September 2026' AND IsDeleted = 0
-    -- FromBufferFundPoolId → amount goes OUT  (subtract from bufferTotalAmount)
-    -- ToBufferFundPoolId   → amount comes IN  (add to bufferTotalAmount)
-    -- ════════════════════════════════════════════════════════════
-    CTE_BFT_Out AS (
-        -- Fund pools that SENT buffer money → buffer balance decreases
-        SELECT bft.FromBufferFundPoolId AS FundPoolId,
-               SUM(bft.BufferAmount)    AS BufferTransferOutAmt
-        FROM BufferFundTransfer bft
-        WHERE ISNULL(bft.IsDeleted, 0) = 0
-          AND bft.BufferMonth = @CftMonthLabel
-          AND bft.Status = 'Active'
-        GROUP BY bft.FromBufferFundPoolId
-    ),
-    CTE_BFT_In AS (
-        -- Fund pools that RECEIVED buffer money → buffer balance increases
-        SELECT bft.ToBufferFundPoolId AS FundPoolId,
-               SUM(bft.BufferAmount)  AS BufferTransferInAmt
-        FROM BufferFundTransfer bft
-        WHERE ISNULL(bft.IsDeleted, 0) = 0
-          AND bft.BufferMonth = @CftMonthLabel
-          AND bft.Status = 'Active'
-          AND bft.ToBufferFundPoolId IS NOT NULL
-        GROUP BY bft.ToBufferFundPoolId
     )
 
     -- ════════════════════════════════════════════════════════════
-    -- RESULT SET 1: Current + Buffer per Fund Pool
+    -- RESULT SET 1
     -- ════════════════════════════════════════════════════════════
     SELECT
-        fp.Id                                                       AS FundPoolId,
-        fp.Code                                                     AS FundPoolCode,
-        fp.Name                                                     AS FundPoolName,
+        fp.Id                                                        AS FundPoolId,
+        fp.Code                                                      AS FundPoolCode,
+        fp.Name                                                      AS FundPoolName,
         fp.Status,
 
-        -- CurrentBalance = FundPool.Balance
-        --   + transfers received (ToCurrentFundPoolId = this pool)
-        --   - transfers sent     (FromCurrentFundPoolId = this pool)
+        -- ✅ CUMULATIVE: CurrentBalance = FundPool.Balance
+        --    + CFT received (Jan → SelectedMonth)
+        --    - CFT sent     (Jan → SelectedMonth)
         fp.Balance
-        + ISNULL(cft_in.TransferInAmt,  0)
-        - ISNULL(cft_out.TransferOutAmt, 0)                        AS CurrentBalance,
+        + ISNULL(cft_in.TransferInAmt,   0)
+        - ISNULL(cft_out.TransferOutAmt,  0)                        AS CurrentBalance,
 
-        -- Current Income = CRI Tenant Rental + Other Income
-        ISNULL(cur_t.TenantCRIAmt, 0)
-        + ISNULL(cur_o.OtherIncAmt, 0)                             AS TotalIncome,
+        -- ✅ SINGLE MONTH: TotalIncome
+        ISNULL(mon_t.TenantCRIAmt, 0)
+        + ISNULL(mon_o.OtherIncAmt, 0)                              AS TotalIncome,
 
-        -- Current Expense = Owner OMCI + Other Expense
-        ISNULL(cur_ow.OwnerAmt, 0)
-        + ISNULL(cur_e.OtherExpAmt, 0)                             AS TotalExpense,
+        -- ✅ SINGLE MONTH: TotalExpense
+        ISNULL(mon_ow.OwnerAmt, 0)
+        + ISNULL(mon_e.OtherExpAmt, 0)                              AS TotalExpense,
 
-        -- Total Amount = Total Income + Total Expense
-        ISNULL(cur_t.TenantCRIAmt, 0) + ISNULL(cur_o.OtherIncAmt, 0)
-        + ISNULL(cur_ow.OwnerAmt, 0)  + ISNULL(cur_e.OtherExpAmt, 0) AS TotalPaymentsReceived,
+        -- ✅ SINGLE MONTH: TotalPaymentsReceived
+        ISNULL(mon_t.TenantCRIAmt, 0) + ISNULL(mon_o.OtherIncAmt, 0)
+        + ISNULL(mon_ow.OwnerAmt,  0) + ISNULL(mon_e.OtherExpAmt,  0) AS TotalPaymentsReceived,
 
-        -- Difference = Income - Expense
-        (ISNULL(cur_t.TenantCRIAmt,0) + ISNULL(cur_o.OtherIncAmt,0))
-        - (ISNULL(cur_ow.OwnerAmt,0) + ISNULL(cur_e.OtherExpAmt,0)) AS NetAmount,
+        -- ✅ SINGLE MONTH: NetAmount
+        ( ISNULL(mon_t.TenantCRIAmt,0) + ISNULL(mon_o.OtherIncAmt,0) )
+        - ( ISNULL(mon_ow.OwnerAmt,0) + ISNULL(mon_e.OtherExpAmt,0) ) AS NetAmount,
 
-        -- BufferAmount (for backward compat)
+        -- ✅ SINGLE MONTH: BufferAmount (same as BufferTotalIncome)
         ISNULL(buf_t.TenantCRIAmt,0) + ISNULL(buf_o.OtherIncAmt,0) AS BufferAmount,
 
-        -- Buffer Income
+        -- ✅ SINGLE MONTH: BufferTotalIncome
         ISNULL(buf_t.TenantCRIAmt, 0)
-        + ISNULL(buf_o.OtherIncAmt, 0)                             AS BufferTotalIncome,
+        + ISNULL(buf_o.OtherIncAmt, 0)                              AS BufferTotalIncome,
 
-        -- Buffer Expense
+        -- ✅ SINGLE MONTH: BufferTotalExpense
         ISNULL(buf_ow.OwnerAmt, 0)
-        + ISNULL(buf_e.OtherExpAmt, 0)                             AS BufferTotalExpense,
+        + ISNULL(buf_e.OtherExpAmt, 0)                              AS BufferTotalExpense,
 
-        -- Buffer Total Amount = Buffer Income + Buffer Expense
-        --   + BufferFundTransfer received (ToBufferFundPoolId = this pool)
-        --   - BufferFundTransfer sent     (FromBufferFundPoolId = this pool)
-        ISNULL(buf_t.TenantCRIAmt,0) + ISNULL(buf_o.OtherIncAmt,0)
-        + ISNULL(buf_ow.OwnerAmt,0)  + ISNULL(buf_e.OtherExpAmt,0)
+        -- ✅ CUMULATIVE: BufferTotalAmount (Jan → SelectedMonth)
+        --    + BFT received - BFT sent (cumulative)
+        ISNULL(buf_t.TenantCRIAmt,0)  + ISNULL(buf_o.OtherIncAmt,0)
+        + ISNULL(buf_ow.OwnerAmt,0)   + ISNULL(buf_e.OtherExpAmt,0)
         + ISNULL(bft_in.BufferTransferInAmt,  0)
-        - ISNULL(bft_out.BufferTransferOutAmt, 0)                  AS BufferTotalAmount,
+        - ISNULL(bft_out.BufferTransferOutAmt, 0)                   AS BufferTotalAmount,
 
-        -- Buffer Difference = Buffer Income - Buffer Expense
-        (ISNULL(buf_t.TenantCRIAmt,0) + ISNULL(buf_o.OtherIncAmt,0))
-        - (ISNULL(buf_ow.OwnerAmt,0)  + ISNULL(buf_e.OtherExpAmt,0)) AS BufferNetAmount,
+        -- ✅ SINGLE MONTH: BufferNetAmount
+        ( ISNULL(buf_t.TenantCRIAmt,0) + ISNULL(buf_o.OtherIncAmt,0) )
+        - ( ISNULL(buf_ow.OwnerAmt,0)  + ISNULL(buf_e.OtherExpAmt,0) ) AS BufferNetAmount,
 
         0 AS IncomeCount, 0 AS ExpenseCount, 0 AS PaymentCount,
         fp.CreatedAt, fp.UpdatedAt
 
     FROM FundPools fp
-    -- Current CTEs
-    LEFT JOIN CTE_TenantCRI_Cur    cur_t  ON cur_t.FundPool  = fp.Code
-    LEFT JOIN CTE_OtherIncome_Cur  cur_o  ON cur_o.FundPool  = fp.Code
-    LEFT JOIN CTE_OwnerOMCI_Cur    cur_ow ON cur_ow.FundPool = fp.Code
-    LEFT JOIN CTE_OtherExpense_Cur cur_e  ON cur_e.FundPool  = fp.Code
-    -- Buffer CTEs
-    LEFT JOIN CTE_TenantCRI_Buf    buf_t  ON buf_t.FundPool  = fp.Code
-    LEFT JOIN CTE_OtherIncome_Buf  buf_o  ON buf_o.FundPool  = fp.Code
-    LEFT JOIN CTE_OwnerOMCI_Buf    buf_ow ON buf_ow.FundPool = fp.Code
-    LEFT JOIN CTE_OtherExpense_Buf buf_e  ON buf_e.FundPool  = fp.Code
-    -- CurrentFundTransfer adjustments (join on FundPool.Id)
-    LEFT JOIN CTE_CFT_Out          cft_out ON cft_out.FundPoolId = fp.Id
-    LEFT JOIN CTE_CFT_In           cft_in  ON cft_in.FundPoolId  = fp.Id
-    -- BufferFundTransfer adjustments (join on FundPool.Id)
-    LEFT JOIN CTE_BFT_Out          bft_out ON bft_out.FundPoolId = fp.Id
-    LEFT JOIN CTE_BFT_In           bft_in  ON bft_in.FundPoolId  = fp.Id
+    -- Single month CTEs
+    LEFT JOIN CTE_TenantCRI_Mon     mon_t   ON mon_t.FundPool  = fp.Code
+    LEFT JOIN CTE_OtherIncome_Mon   mon_o   ON mon_o.FundPool  = fp.Code
+    LEFT JOIN CTE_OwnerOMCI_Mon     mon_ow  ON mon_ow.FundPool = fp.Code
+    LEFT JOIN CTE_OtherExpense_Mon  mon_e   ON mon_e.FundPool  = fp.Code
+    -- Cumulative CTEs (CurrentBalance)
+    LEFT JOIN CTE_CFT_Out           cft_out ON cft_out.FundPoolId = fp.Id
+    LEFT JOIN CTE_CFT_In            cft_in  ON cft_in.FundPoolId  = fp.Id
+    -- Cumulative Buffer Income CTEs (BufferTotalIncome)
+    LEFT JOIN CTE_TenantCRI_Buf_Rng buf_t   ON buf_t.FundPool  = fp.Code
+    LEFT JOIN CTE_OtherIncome_Buf_Rng buf_o ON buf_o.FundPool  = fp.Code
+    -- Single month Buffer Expense CTEs
+    LEFT JOIN CTE_OwnerOMCI_Buf     buf_ow  ON buf_ow.FundPool = fp.Code
+    LEFT JOIN CTE_OtherExpense_Buf  buf_e   ON buf_e.FundPool  = fp.Code
+    -- Single month BufferFundTransfer CTEs
+    LEFT JOIN CTE_BFT_Out           bft_out ON bft_out.FundPoolId = fp.Id
+    LEFT JOIN CTE_BFT_In            bft_in  ON bft_in.FundPoolId  = fp.Id
 
     WHERE ISNULL(fp.IsDeleted, 0) = 0
       AND (@FundPoolId IS NULL OR fp.Id = @FundPoolId)
@@ -351,9 +333,8 @@ BEGIN
     FETCH NEXT @PageSize ROWS ONLY;
 
     -- ════════════════════════════════════════════════════════════
-    -- RESULT SET 2: Buffer rows (same data as RS1 buffer columns, all fund pools)
+    -- RESULT SET 2: Empty (buffer data already in RS1 columns)
     -- ════════════════════════════════════════════════════════════
-    -- Empty result set for backward compatibility
     SELECT
         0 AS FundPoolId, '' AS FundPoolCode, '' AS FundPoolName, '' AS Status,
         CAST(0 AS DECIMAL(18,2)) AS CurrentBalance,
@@ -362,10 +343,10 @@ BEGIN
         CAST(0 AS DECIMAL(18,2)) AS TotalPaymentsReceived,
         CAST(0 AS DECIMAL(18,2)) AS NetAmount,
         CAST(0 AS DECIMAL(18,2)) AS BufferTotalAmount
-    WHERE 1 = 0;  -- empty set, buffer data is in RS1 columns
+    WHERE 1 = 0;
 
     -- ════════════════════════════════════════════════════════════
-    -- RESULT SET 3: Transactions (single fund pool drill-down)
+    -- RESULT SET 3: Transactions drill-down (single fund pool)
     -- ════════════════════════════════════════════════════════════
     IF @FundPoolId IS NOT NULL
     BEGIN
@@ -375,16 +356,16 @@ BEGIN
                    ISNULL(i.CampName,'') CampName, ISNULL(i.Purpose,'') Purpose,
                    ISNULL(i.VoucherNo,'') VoucherNo, i.CreatedAt
             FROM Incomes i
-            WHERE i.FundPool=(SELECT Code FROM FundPools WHERE Id=@FundPoolId AND ISNULL(IsDeleted,0)=0)
-              AND ISNULL(i.IsDeleted,0)=0
-              AND i.[Date] >= @CurFrom AND i.[Date] <= @CurTo
+            WHERE i.FundPool = (SELECT Code FROM FundPools WHERE Id=@FundPoolId AND ISNULL(IsDeleted,0)=0)
+              AND ISNULL(i.IsDeleted,0) = 0
+              AND i.[Date] >= @MonFrom AND i.[Date] <= @MonTo
             UNION ALL
             SELECT 'Expense', e.[Date], e.Amount, e.Head, e.Mode,
                    ISNULL(e.CampName,''), ISNULL(e.Purpose,''), ISNULL(e.VoucherNo,''), e.CreatedAt
             FROM Expenses e
-            WHERE e.FundPool=(SELECT Code FROM FundPools WHERE Id=@FundPoolId AND ISNULL(IsDeleted,0)=0)
-              AND ISNULL(e.IsDeleted,0)=0
-              AND e.[Date] >= @CurFrom AND e.[Date] <= @CurTo
+            WHERE e.FundPool = (SELECT Code FROM FundPools WHERE Id=@FundPoolId AND ISNULL(IsDeleted,0)=0)
+              AND ISNULL(e.IsDeleted,0) = 0
+              AND e.[Date] >= @MonFrom AND e.[Date] <= @MonTo
         ) txn ORDER BY txn.TxnDate DESC;
     END
 END
