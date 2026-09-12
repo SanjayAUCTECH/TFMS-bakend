@@ -20,11 +20,9 @@ public class SalonFundBalanceRepository : ISalonFundBalanceRepository
             CommandType = CommandType.StoredProcedure
         };
 
-        cmd.Parameters.AddWithValue("@SalonId",  (object?)request.SalonId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@DateFrom",
-            string.IsNullOrEmpty(request.DateFrom) ? DBNull.Value : (object)DateTime.Parse(request.DateFrom));
-        cmd.Parameters.AddWithValue("@DateTo",
-            string.IsNullOrEmpty(request.DateTo)   ? DBNull.Value : (object)DateTime.Parse(request.DateTo));
+        cmd.Parameters.AddWithValue("@SalonId", (object?)request.SalonId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Month",   (object?)request.Month   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Year",    (object?)request.Year    ?? DBNull.Value);
 
         await using var reader = await cmd.ExecuteReaderAsync();
 
@@ -32,20 +30,19 @@ public class SalonFundBalanceRepository : ISalonFundBalanceRepository
         {
             return new SalonFundBalanceResponse
             {
-                CurrentClosingDateFrom       = reader.IsDBNull(reader.GetOrdinal("CurrentClosingDateFrom")) ? null : reader.GetDateTime(reader.GetOrdinal("CurrentClosingDateFrom")),
-                CurrentClosingDateTo         = reader.IsDBNull(reader.GetOrdinal("CurrentClosingDateTo"))   ? null : reader.GetDateTime(reader.GetOrdinal("CurrentClosingDateTo")),
+                ReportMonth                  = reader.IsDBNull(reader.GetOrdinal("ReportMonth"))                  ? null : reader.GetString(reader.GetOrdinal("ReportMonth")),
 
-                StaffPreviousMonthClosing    = reader.IsDBNull(reader.GetOrdinal("StaffPreviousMonthClosing"))  ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffPreviousMonthClosing")),
-                StaffCurrentClosing          = reader.IsDBNull(reader.GetOrdinal("StaffCurrentClosing"))        ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffCurrentClosing")),
-                TotalStaffShare              = reader.IsDBNull(reader.GetOrdinal("TotalStaffShare"))            ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalStaffShare")),
-                StaffSalaryPaid              = reader.IsDBNull(reader.GetOrdinal("StaffSalaryPaid"))            ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffSalaryPaid")),
-                StaffClosingBalance          = reader.IsDBNull(reader.GetOrdinal("StaffClosingBalance"))        ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffClosingBalance")),
+                StaffPreviousMonthClosing    = reader.IsDBNull(reader.GetOrdinal("StaffPreviousMonthClosing"))    ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffPreviousMonthClosing")),
+                StaffCurrentClosing          = reader.IsDBNull(reader.GetOrdinal("StaffCurrentClosing"))          ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffCurrentClosing")),
+                TotalStaffShare              = reader.IsDBNull(reader.GetOrdinal("TotalStaffShare"))              ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalStaffShare")),
+                StaffSalaryPaid              = reader.IsDBNull(reader.GetOrdinal("StaffSalaryPaid"))              ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffSalaryPaid")),
+                StaffClosingBalance          = reader.IsDBNull(reader.GetOrdinal("StaffClosingBalance"))          ? 0 : reader.GetDecimal(reader.GetOrdinal("StaffClosingBalance")),
 
-                CompanyPreviousMonthClosing  = reader.IsDBNull(reader.GetOrdinal("CompanyPreviousMonthClosing")) ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyPreviousMonthClosing")),
-                CompanyCurrentClosing        = reader.IsDBNull(reader.GetOrdinal("CompanyCurrentClosing"))       ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyCurrentClosing")),
-                TotalCompanyRevenue          = reader.IsDBNull(reader.GetOrdinal("TotalCompanyRevenue"))         ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalCompanyRevenue")),
-                CompanyExpense               = reader.IsDBNull(reader.GetOrdinal("CompanyExpense"))              ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyExpense")),
-                CompanyClosingBalance        = reader.IsDBNull(reader.GetOrdinal("CompanyClosingBalance"))       ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyClosingBalance")),
+                CompanyPreviousMonthClosing  = reader.IsDBNull(reader.GetOrdinal("CompanyPreviousMonthClosing"))  ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyPreviousMonthClosing")),
+                CompanyCurrentClosing        = reader.IsDBNull(reader.GetOrdinal("CompanyCurrentClosing"))        ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyCurrentClosing")),
+                TotalCompanyRevenue          = reader.IsDBNull(reader.GetOrdinal("TotalCompanyRevenue"))          ? 0 : reader.GetDecimal(reader.GetOrdinal("TotalCompanyRevenue")),
+                CompanyExpense               = reader.IsDBNull(reader.GetOrdinal("CompanyExpense"))               ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyExpense")),
+                CompanyClosingBalance        = reader.IsDBNull(reader.GetOrdinal("CompanyClosingBalance"))        ? 0 : reader.GetDecimal(reader.GetOrdinal("CompanyClosingBalance")),
             };
         }
 

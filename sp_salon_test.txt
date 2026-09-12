@@ -1,0 +1,3 @@
+ReportMonth                         StaffPreviousMonthClosing StaffCurrentClosing  TotalStaffShare      StaffSalaryPaid      StaffClosingBalance  CompanyPreviousMonthClosing CompanyCurrentClosing TotalCompanyRevenue  CompanyExpense       CompanyClosingBalance
+----------------------------------- ------------------------- -------------------- -------------------- -------------------- -------------------- --------------------------- --------------------- -------------------- -------------------- ---------------------
+August 2026                                          -1455.80              9601.60              8145.80              7050.00              1095.80                    19847.80              14696.90             34544.70              2520.00              32024.70
