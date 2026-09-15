@@ -1,7 +1,7 @@
 -- ============================================================
 -- SALON FUND BALANCE
 -- Source: ClosingPayout + CompanyExpensePosting
--- Filter: Month + Year (instead of DateFrom/DateTo)
+-- Filter: Month + Year
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE sp_GetSalonFundBalance
@@ -12,15 +12,15 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- ── Date boundaries from Month/Year ──────────────────────────
+    -- ── Date boundaries ───────────────────────────────────────────
     DECLARE @SelYear  INT  = ISNULL(@Year,  YEAR(GETDATE()));
     DECLARE @SelMonth INT  = ISNULL(@Month, MONTH(GETDATE()));
 
     DECLARE @MonFrom DATE = DATEFROMPARTS(@SelYear, @SelMonth, 1);
     DECLARE @MonTo   DATE = EOMONTH(DATEFROMPARTS(@SelYear, @SelMonth, 1));
 
-    -- ── Step 1: Current Closing — selected month ka ClosingPayout ─
-    -- DateFrom >= @MonFrom AND DateTo <= @MonTo
+    -- ── Step 1: Current Closing — selected month ──────────────────
+    -- ClosingPayout where DateFrom >= @MonFrom AND DateTo <= @MonTo
     DECLARE @StaffCurrent   DECIMAL(18,2) = 0;
     DECLARE @CompanyCurrent DECIMAL(18,2) = 0;
 
@@ -33,11 +33,9 @@ BEGIN
       AND DateTo    <= @MonTo
       AND (@SalonId IS NULL OR SalonId = @SalonId);
 
-    -- ── Step 2: Previous Month Closing ───────────────────────────
-    -- All ClosingPayout BEFORE selected month (DateTo < @MonFrom)
-    -- MINUS all CompanyExpensePosting BEFORE selected month (Date < @MonFrom)
-    -- This gives net balance carried forward
-
+    -- ── Step 2: Previous Closing ──────────────────────────────────
+    -- ClosingPayout BEFORE selected month (DateTo < @MonFrom)
+    -- MINUS CompanyExpensePosting BEFORE selected month (Date < @MonFrom)
     DECLARE @StaffPayoutBefore   DECIMAL(18,2) = 0;
     DECLARE @CompanyPayoutBefore DECIMAL(18,2) = 0;
 
@@ -49,9 +47,8 @@ BEGIN
       AND DateTo    < @MonFrom
       AND (@SalonId IS NULL OR SalonId = @SalonId);
 
-    -- Previous month expenses (before selected month)
-    DECLARE @StaffPaidBefore   DECIMAL(18,2) = 0;
-    DECLARE @CompanyExpBefore  DECIMAL(18,2) = 0;
+    DECLARE @StaffPaidBefore  DECIMAL(18,2) = 0;
+    DECLARE @CompanyExpBefore DECIMAL(18,2) = 0;
 
     SELECT
         @StaffPaidBefore  = ISNULL(SUM(CASE WHEN LOWER(ISNULL(Head,'')) = 'salary' THEN Amount ELSE 0 END), 0),
@@ -61,7 +58,7 @@ BEGIN
       AND Date      < @MonFrom
       AND (@SalonId IS NULL OR SalonId = @SalonId);
 
-    -- Previous Month Closing = Payout Before - Expense Before
+    -- Previous Closing = Payout Before - Expense Before
     DECLARE @StaffPrevious   DECIMAL(18,2) = @StaffPayoutBefore   - @StaffPaidBefore;
     DECLARE @CompanyPrevious DECIMAL(18,2) = @CompanyPayoutBefore - @CompanyExpBefore;
 
@@ -89,25 +86,22 @@ BEGIN
 
     -- ── Result ────────────────────────────────────────────────────
     SELECT
-        -- Report month label
         DATENAME(MONTH, @MonFrom) + ' ' + CAST(@SelYear AS NVARCHAR(4))
-                                   AS ReportMonth,
+                                  AS ReportMonth,
 
-        -- Staff breakdown
-        @StaffPrevious             AS StaffPreviousMonthClosing,
-        @StaffCurrent              AS StaffCurrentClosing,
-        @TotalStaff                AS TotalStaffShare,
-        @StaffPaid                 AS StaffSalaryPaid,
-        @StaffBalance              AS StaffClosingBalance,
+        @StaffPrevious            AS StaffPreviousMonthClosing,
+        @StaffCurrent             AS StaffCurrentClosing,
+        @TotalStaff               AS TotalStaffShare,
+        @StaffPaid                AS StaffSalaryPaid,
+        @StaffBalance             AS StaffClosingBalance,
 
-        -- Company breakdown
-        @CompanyPrevious           AS CompanyPreviousMonthClosing,
-        @CompanyCurrent            AS CompanyCurrentClosing,
-        @TotalCompany              AS TotalCompanyRevenue,
-        @CompanyExpense            AS CompanyExpense,
-        @CompanyBalance            AS CompanyClosingBalance;
+        @CompanyPrevious          AS CompanyPreviousMonthClosing,
+        @CompanyCurrent           AS CompanyCurrentClosing,
+        @TotalCompany             AS TotalCompanyRevenue,
+        @CompanyExpense           AS CompanyExpense,
+        @CompanyBalance           AS CompanyClosingBalance;
 END;
 GO
 
-PRINT 'sp_GetSalonFundBalance updated with Month/Year filter.';
+PRINT 'sp_GetSalonFundBalance restored with Month/Year filter.';
 GO
