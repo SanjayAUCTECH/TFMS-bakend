@@ -41,6 +41,7 @@ public class Contract
     // ── Security Deposit Settlement ───────────────────────────────────────
     public decimal       SdForfeitAmount { get; set; }   // SD-FRF
     public decimal       SdRefundAmount  { get; set; }   // SD-REF
+    public string        SdRefundPaymentStatuses { get; set; } = string.Empty;  // Comma-separated payment statuses
     public decimal       SdAdjustAmount  { get; set; }   // SD-ADJ
     // ─────────────────────────────────────────────────────────────────────
     public DateTime      CreatedAt       { get; set; }

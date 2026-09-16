@@ -203,6 +203,7 @@ public class ContractService : IContractService
         LastPaymentDate   = c.LastPaymentDate?.ToString("yyyy-MM-dd"),
         SdForfeitAmount   = c.SdForfeitAmount,
         SdRefundAmount    = c.SdRefundAmount,
+        SdRefundPaymentStatuses = c.SdRefundPaymentStatuses,
         SdAdjustAmount    = c.SdAdjustAmount,
         Payments = c.Payments.Select(p => new ContractPaymentResponse
         {

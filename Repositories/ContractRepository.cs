@@ -117,6 +117,54 @@ public class ContractRepository : IContractRepository
 
             foreach (var c in list)
                 c.RoomDetails = roomDetailMap.TryGetValue(c.ContractId, out var rds) ? rds : new();
+
+            // ── SD-REF Amount (ContractRoomsTrns → TxnType='SD-REF') ───────────────
+            await using var cmdSDRef = new SqlCommand($@"
+                SELECT crt.ContractId,
+                       SUM(crt.Amount) AS SDRefundTotal
+                FROM ContractRoomsTrns crt
+                WHERE crt.ContractId IN ({contractIds})
+                  AND crt.TxnType = 'SD-REF'
+                  AND ISNULL(crt.IsDeleted, 0) = 0
+                GROUP BY crt.ContractId", conn2);
+            await using var rdrSDRef = await cmdSDRef.ExecuteReaderAsync();
+            var sdRefundAmountMap = new Dictionary<string, decimal>();
+            while (await rdrSDRef.ReadAsync())
+            {
+                var cid = rdrSDRef.GetString(0);
+                var total = rdrSDRef.IsDBNull(1) ? 0m : rdrSDRef.GetDecimal(1);
+                sdRefundAmountMap[cid] = total;
+            }
+            await rdrSDRef.CloseAsync();
+
+            // ── SD-CR PaymentStatus (ContractRoomsTrns → TxnType='SD-CR') ──────────
+            await using var cmdSDCR = new SqlCommand($@"
+                SELECT crt.ContractId,
+                       STRING_AGG(crt.PaymentStatus, ', ') AS PaymentStatuses
+                FROM ContractRoomsTrns crt
+                WHERE crt.ContractId IN ({contractIds})
+                  AND crt.TxnType = 'SD-CR'
+                  AND ISNULL(crt.IsDeleted, 0) = 0
+                GROUP BY crt.ContractId", conn2);
+            await using var rdrSDCR = await cmdSDCR.ExecuteReaderAsync();
+            var sdPaymentStatusMap = new Dictionary<string, string>();
+            while (await rdrSDCR.ReadAsync())
+            {
+                var cid = rdrSDCR.GetString(0);
+                var statuses = rdrSDCR.IsDBNull(1) ? "" : rdrSDCR.GetString(1);
+                sdPaymentStatusMap[cid] = statuses;
+            }
+            await rdrSDCR.CloseAsync();
+
+            // Assign both to contracts
+            foreach (var c in list)
+            {
+                if (sdRefundAmountMap.TryGetValue(c.ContractId, out var refundAmt))
+                    c.SdRefundAmount = refundAmt;
+
+                if (sdPaymentStatusMap.TryGetValue(c.ContractId, out var statuses))
+                    c.SdRefundPaymentStatuses = statuses;
+            }
         }
 
         return (list, totalCount);

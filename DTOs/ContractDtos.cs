@@ -154,6 +154,7 @@ public class ContractResponse
     // ── Security Deposit Settlement ────────────────────────────────────────
     public decimal  SdForfeitAmount   { get; set; }   // SD-FRF — penalty/damage forfeited
     public decimal  SdRefundAmount    { get; set; }   // SD-REF — refunded to tenant
+    public string   SdRefundPaymentStatuses { get; set; } = string.Empty;  // Comma-separated payment statuses
     public decimal  SdAdjustAmount    { get; set; }   // SD-ADJ — adjusted against rent
     // ──────────────────────────────────────────────────────────────────────
     public List<ContractRoomDetail>     Rooms    { get; set; } = new();
