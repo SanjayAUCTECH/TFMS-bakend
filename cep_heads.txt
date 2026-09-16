@@ -1,0 +1,18 @@
+Head                                                                                                                                                                                                    
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+AIR CONDITION                                                                                                                                                                                           
+Cashier Salary                                                                                                                                                                                          
+DEWA                                                                                                                                                                                                    
+DREC                                                                                                                                                                                                    
+INTERNET                                                                                                                                                                                                
+LICENSE                                                                                                                                                                                                 
+MAINTENANCE                                                                                                                                                                                             
+MISC                                                                                                                                                                                                    
+RENT                                                                                                                                                                                                    
+SALARY                                                                                                                                                                                                  
+SKIPS                                                                                                                                                                                                   
+TRADE LICENSE                                                                                                                                                                                           
+VISA                                                                                                                                                                                                    
+WPS                                                                                                                                                                                                     
+
+(14 rows affected)

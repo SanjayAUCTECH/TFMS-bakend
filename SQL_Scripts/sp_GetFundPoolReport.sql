@@ -256,7 +256,7 @@ BEGIN
         fp.Name                                                      AS FundPoolName,
         fp.Status,
 
-        -- ✅ CUMULATIVE: CurrentBalance = FundPool.Balance
+        -- ✅ CUMULATIVE: CurrentBalance = FundPools.Balance
         --    + CFT received (Jan → SelectedMonth)
         --    - CFT sent     (Jan → SelectedMonth)
         fp.Balance
