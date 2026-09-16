@@ -78,6 +78,7 @@ public class SecurityDepositController : BaseApiController
         cmd.Parameters.AddWithValue("@FundPoolName",  req.FundPoolName ?? "");
         cmd.Parameters.AddWithValue("@ReceivedBy",    req.ReceivedBy ?? "Admin");
         cmd.Parameters.AddWithValue("@Notes",         req.Notes ?? "");
+        cmd.Parameters.AddWithValue("@PaymentStatus", req.PaymentStatus == "Advanced" ? "Advanced" : "Paid");
 
         var pNewPaid   = new SqlParameter("@NewPaid",   SqlDbType.Decimal) { Direction = ParameterDirection.Output, Precision = 18, Scale = 2 };
         var pNewStatus = new SqlParameter("@NewStatus", SqlDbType.NVarChar, 50) { Direction = ParameterDirection.Output };
@@ -163,6 +164,53 @@ public class SecurityDepositController : BaseApiController
             totalPaid = newPaid,
             status    = newStatus,
         }, $"Security deposit receipt deleted and reverted. Status: {newStatus}"));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    /// <summary>
+    /// PATCH api/securitydeposit/trns/{contractId}/payment-status
+    /// ContractRoomsTrns ki us contractId ki SAARI rows ka PaymentStatus update karo
+    /// TxnType = 'SD-CR' filter bhi lagega — sirf SD rows update hongi
+    /// Values: 'Paid' | 'Advanced'
+    /// </summary>
+    [HttpPatch("trns/{contractId}/payment-status")]
+    public async Task<IActionResult> UpdateTrnsPaymentStatus(string contractId, [FromBody] UpdateTrnsPaymentStatusRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.PaymentStatus))
+            return BadRequest(ApiResponse<object>.Fail("PaymentStatus required."));
+
+        if (req.PaymentStatus != "Paid" && req.PaymentStatus != "Advanced")
+            return BadRequest(ApiResponse<object>.Fail("PaymentStatus must be 'Paid' or 'Advanced'."));
+
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand(@"
+            UPDATE ContractRoomsTrns
+            SET    PaymentStatus = @PaymentStatus,
+                   UpdatedAt     = GETDATE()
+            WHERE  ContractId             = @ContractId
+              AND  TxnType               = 'SD-CR'
+              AND  ISNULL(IsDeleted, 0)  = 0;
+
+            SELECT @@ROWCOUNT AS AffectedRows;", conn);
+
+        cmd.Parameters.AddWithValue("@ContractId",    contractId);
+        cmd.Parameters.AddWithValue("@PaymentStatus", req.PaymentStatus);
+
+        var affected = (int)(await cmd.ExecuteScalarAsync() ?? 0);
+
+        if (affected == 0)
+            return NotFound(ApiResponse<object>.Fail(
+                $"No SD-CR records found for ContractId '{contractId}' or already deleted."));
+
+        await Log(ActivityType.Update, ActivityModule.SecurityDeposit,
+            $"ContractRoomsTrns SD-CR rows for Contract '{contractId}' PaymentStatus updated to '{req.PaymentStatus}' ({affected} rows)",
+            contractId, "ContractRoomsTrns");
+
+        return Ok(ApiResponse<object>.Ok(
+            new { contractId, paymentStatus = req.PaymentStatus, updatedRows = affected },
+            $"PaymentStatus updated to '{req.PaymentStatus}' for {affected} row(s)."));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
