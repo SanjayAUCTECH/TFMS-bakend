@@ -403,10 +403,11 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
     }
 
     // ──────────────────────────────────────────────────────────────
-    // DELETE — soft-delete by Month + Year (+ optional PartnerId)
+    // DELETE — soft-delete by ToDate (+ optional PartnerId)
+    // Also deletes related PartnerTrans records
     // ──────────────────────────────────────────────────────────────
     public async Task<int> DeleteMonthlyPayoutAsync(
-        int month, int year, int? partnerId, int? deletedBy)
+        DateTime toDate, int? partnerId, int? deletedBy)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
@@ -415,14 +416,17 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
         {
             CommandType = System.Data.CommandType.StoredProcedure
         };
-        cmd.Parameters.AddWithValue("@Month",     month);
-        cmd.Parameters.AddWithValue("@Year",      year);
+        cmd.Parameters.AddWithValue("@ToDate",    toDate);
         cmd.Parameters.AddWithValue("@PartnerId", (object?)partnerId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@DeletedBy", (object?)deletedBy ?? DBNull.Value);
 
         await using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
-            return reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+        {
+            // Return TotalDeletedCount (3rd column)
+            var totalDeleted = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+            return totalDeleted;
+        }
         return 0;
     }
 

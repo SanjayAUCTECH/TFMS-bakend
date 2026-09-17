@@ -224,18 +224,18 @@ public class SavePartnerMonthlyPayoutResponse
     public DateTime ToDate     { get; set; }
 }
 
-// ── Delete MonthlyPayout (by month/year) ─────────────────────
+// ── Delete MonthlyPayout (by ToDate) ──────────────────────────
 public class DeletePartnerMonthlyPayoutRequest
 {
-    public int  Month     { get; set; }
-    public int  Year      { get; set; }
-    public int? PartnerId { get; set; }
+    public DateTime ToDate     { get; set; }
+    public int?     PartnerId  { get; set; }
 }
 
 public class DeletePartnerMonthlyPayoutResponse
 {
-    public int    DeletedCount { get; set; }
-    public string MonthLabel   { get; set; } = string.Empty;
+    public int      DeletedCount { get; set; }
+    public DateTime ToDate       { get; set; }
+    public string   PeriodLabel  { get; set; } = string.Empty;
 }
 
 // ── MonthlyPayout List Request ────────────────────────────────

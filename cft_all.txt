@@ -1,4 +1,0 @@
-CurrentFundTransferId FromCurrentFundPoolId ToCurrentFundPoolId CurrentAmount        CurrentMonth         Status              
---------------------- --------------------- ------------------- -------------------- -------------------- --------------------
-
-(0 rows affected)

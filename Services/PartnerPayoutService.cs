@@ -126,30 +126,26 @@ public class PartnerPayoutService : IPartnerPayoutService
             $"{savedCount} partner payout records saved successfully.");
     }
 
-    // ── DELETE PartnerMonthlyPayout by month ──────────────────────
+    // ── DELETE PartnerMonthlyPayout by ToDate ─────────────────────
     public async Task<ApiResponse<DeletePartnerMonthlyPayoutResponse>> DeleteMonthlyPayoutAsync(
         DeletePartnerMonthlyPayoutRequest request, int? userId)
     {
-        if (request.Month < 1 || request.Month > 12)
-            return ApiResponse<DeletePartnerMonthlyPayoutResponse>.Fail("Month must be between 1 and 12.");
-        if (request.Year < 2000 || request.Year > 2100)
-            return ApiResponse<DeletePartnerMonthlyPayoutResponse>.Fail("Invalid year.");
-
-        var monthLabel = new DateTime(request.Year, request.Month, 1).ToString("MMMM yyyy");
+        var periodLabel = $"{request.ToDate:dd MMM yyyy}";
         var deletedCount = await _repo.DeleteMonthlyPayoutAsync(
-            request.Month, request.Year, request.PartnerId, userId);
+            request.ToDate, request.PartnerId, userId);
 
         if (deletedCount == 0)
             return ApiResponse<DeletePartnerMonthlyPayoutResponse>.Fail(
-                $"No records found for {monthLabel} to delete.");
+                $"No records found for ToDate {periodLabel} to delete.");
 
         return ApiResponse<DeletePartnerMonthlyPayoutResponse>.Ok(
             new DeletePartnerMonthlyPayoutResponse
             {
                 DeletedCount = deletedCount,
-                MonthLabel   = monthLabel,
+                ToDate       = request.ToDate,
+                PeriodLabel  = periodLabel,
             },
-            $"{deletedCount} records deleted for {monthLabel}.");
+            $"{deletedCount} records deleted for ToDate {periodLabel}.");
     }
 
     // ── GET PartnerMonthlyPayout list ─────────────────────────────

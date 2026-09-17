@@ -378,4 +378,61 @@ public class ClosingPayoutController : BaseApiController
             }
         });
     }
+
+    // ── DELETE /api/ClosingPayout/delete ──────────────────────────────────────
+    // Soft-delete ClosingPayout records by ToDate
+    // Optional filters: SalonId, StaffId
+    // Body: { "toDate": "2026-07-31", "salonId": 1, "staffId": 5 }
+    [HttpDelete("delete")]
+    public async Task<IActionResult> Delete([FromBody] DeleteClosingPayoutRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("sp_DeleteClosingPayout", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("@ToDate",    request.ToDate);
+        cmd.Parameters.AddWithValue("@SalonId",   (object?)request.SalonId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@StaffId",   (object?)request.StaffId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DeletedBy", (object?)CurrentUserId ?? DBNull.Value);
+
+        var deletedCount = 0;
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            deletedCount = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+        }
+
+        if (deletedCount == 0)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = $"No records found for ToDate {request.ToDate:dd MMM yyyy} to delete.",
+                data    = (object?)null
+            });
+        }
+
+        var periodLabel = $"{request.ToDate:dd MMM yyyy}";
+        
+        await Log(ActivityType.Delete, ActivityModule.SalonMaster,
+            $"Deleted ClosingPayout: {deletedCount} record(s) for ToDate {periodLabel}",
+            request.ToDate.ToString("yyyy-MM-dd"), "ClosingPayout");
+
+        return Ok(new
+        {
+            success = true,
+            message = $"{deletedCount} record(s) deleted for ToDate {periodLabel}.",
+            data    = new DeleteClosingPayoutResponse
+            {
+                DeletedCount = deletedCount,
+                ToDate       = request.ToDate,
+                PeriodLabel  = periodLabel
+            }
+        });
+    }
 }

@@ -47,3 +47,19 @@ public class ClosingPayoutResponse
     public string? DateFrom             { get; set; }
     public string? DateTo               { get; set; }
 }
+
+/// <summary>Delete ClosingPayout by ToDate</summary>
+public class DeleteClosingPayoutRequest
+{
+    public DateTime ToDate    { get; set; }
+    public int?     SalonId   { get; set; }  // Optional: null = delete all salons
+    public int?     StaffId   { get; set; }  // Optional: null = delete all staff
+}
+
+/// <summary>Delete ClosingPayout response</summary>
+public class DeleteClosingPayoutResponse
+{
+    public int      DeletedCount { get; set; }
+    public DateTime ToDate       { get; set; }
+    public string   PeriodLabel  { get; set; } = string.Empty;
+}

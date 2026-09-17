@@ -85,33 +85,59 @@ GO
 
 -- ================================================================
 -- 2. sp_DeletePartnerMonthlyPayout
---    Soft-delete by Month + Year (deletes all partners for that month)
---    OR by specific PartnerId + Month + Year
+--    Soft-delete by ToDate
+--    OR by specific PartnerId + ToDate
+--    ALSO deletes related PartnerTrans records (Type='Payout')
 -- ================================================================
 CREATE OR ALTER PROCEDURE sp_DeletePartnerMonthlyPayout
-    @Month     INT,
-    @Year      INT,
-    @PartnerId INT       = NULL,  -- NULL = delete all partners for that month
+    @ToDate    DATE,
+    @PartnerId INT       = NULL,  -- NULL = delete all partners for that ToDate
     @DeletedBy INT       = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+    
+    DECLARE @DeletedPayoutCount INT = 0;
+    DECLARE @DeletedTransCount INT = 0;
 
+    -- Step 1: Soft-delete from PartnerMonthlyPayout
     UPDATE PartnerMonthlyPayout
     SET    IsDeleted  = 1,
            UpdatedBy  = @DeletedBy,
            UpdatedAt  = GETDATE()
     WHERE
         ISNULL(IsDeleted, 0) = 0
-        AND MONTH(FromDate) = @Month
-        AND YEAR(FromDate)  = @Year
+        AND ToDate = @ToDate
         AND (@PartnerId IS NULL OR PartnerId = @PartnerId);
+    
+    SET @DeletedPayoutCount = @@ROWCOUNT;
 
-    SELECT @@ROWCOUNT AS DeletedCount;
+    -- Step 2: Soft-delete from PartnerTrans 
+    -- Remark format: 'Monthly Payout: DD-MM-YYYY to DD-MM-YYYY'
+    -- Extract ToDate from Remark and match
+    DECLARE @ToDateStr NVARCHAR(10) = FORMAT(@ToDate, 'dd-MM-yyyy');
+    DECLARE @RemarkPattern NVARCHAR(100) = '%Monthly Payout:%to ' + @ToDateStr + '%';
+
+    UPDATE PartnerTrans
+    SET    IsDeleted  = 1,
+           UpdatedBy  = @DeletedBy,
+           UpdatedAt  = GETDATE()
+    WHERE
+        ISNULL(IsDeleted, 0) = 0
+        AND Type = 'Payout'
+        AND Remark LIKE @RemarkPattern
+        AND (@PartnerId IS NULL OR PartnerId = @PartnerId);
+    
+    SET @DeletedTransCount = @@ROWCOUNT;
+
+    -- Return counts
+    SELECT @DeletedPayoutCount AS DeletedPayoutCount, 
+           @DeletedTransCount AS DeletedTransCount,
+           (@DeletedPayoutCount + @DeletedTransCount) AS TotalDeletedCount;
 END
 GO
 
-PRINT 'sp_DeletePartnerMonthlyPayout created.';
+PRINT 'sp_DeletePartnerMonthlyPayout created with PartnerTrans cascade delete.';
 GO
 
 PRINT 'All PartnerMonthlyPayout procedures created successfully.';

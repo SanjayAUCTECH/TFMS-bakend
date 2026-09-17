@@ -29,8 +29,8 @@ public interface IPartnerPayoutRepository
     /// <summary>Save partner monthly payout totals.</summary>
     Task<int> SaveMonthlyPayoutAsync(SavePartnerMonthlyPayoutRequest request, int? userId);
 
-    /// <summary>Soft-delete partner monthly payout by month/year (optionally by partnerId).</summary>
-    Task<int> DeleteMonthlyPayoutAsync(int month, int year, int? partnerId, int? deletedBy);
+    /// <summary>Soft-delete partner monthly payout by ToDate (optionally by partnerId).</summary>
+    Task<int> DeleteMonthlyPayoutAsync(DateTime toDate, int? partnerId, int? deletedBy);
 
     /// <summary>Get PartnerMonthlyPayout records with pagination and date filter.</summary>
     Task<(IEnumerable<PartnerMonthlyPayoutResponse> Data, int Total)> GetMonthlyPayoutListAsync(GetPartnerMonthlyPayoutListRequest request);
