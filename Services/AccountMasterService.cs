@@ -49,8 +49,7 @@ public class AccountMasterService : IAccountMasterService
         {
             if (string.IsNullOrWhiteSpace(h.PaymentType) || (h.PaymentType != "Income" && h.PaymentType != "Expense"))
                 return ApiResponse<AccountMasterDetailResponse>.Fail($"Invalid PaymentType '{h.PaymentType}'. Must be 'Income' or 'Expense'.");
-            if (h.Amount <= 0)
-                return ApiResponse<AccountMasterDetailResponse>.Fail("Each head amount must be greater than 0.");
+            // Amount validation removed - negative amounts are now allowed
         }
 
         // Resolve FundPool
