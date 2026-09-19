@@ -56,6 +56,7 @@ public class UserListRequest : PagedRequest
     public string? Role        { get; set; }
     public string? Source      { get; set; }
     public string? Designation { get; set; }
+    public bool?   ViewStatus  { get; set; }
 }
 
 public class UserResponse
@@ -72,6 +73,7 @@ public class UserResponse
     public string   Email       { get; set; } = string.Empty;
     public bool     IsAdmin     { get; set; }
     public string   Designation { get; set; } = string.Empty;
+    public bool     ViewStatus  { get; set; }
     public string   LoginAccess { get; set; } = string.Empty;
     public string   Status      { get; set; } = string.Empty;
     public string   MenuAccess  { get; set; } = "{}";

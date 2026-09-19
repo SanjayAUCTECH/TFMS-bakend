@@ -24,6 +24,7 @@ public class UserRepository : IUserRepository
         cmd.Parameters.AddWithValue("@Source",        (object?)request.Source      ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",        (object?)request.Status      ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Designation",   (object?)request.Designation ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ViewStatus",    (object?)request.ViewStatus  ?? DBNull.Value);
         var total = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(total);
         var list = new List<AppUser>();
@@ -198,6 +199,7 @@ public class UserRepository : IUserRepository
         Email        = r.IsDBNull(r.GetOrdinal("Email"))       ? "" : r.GetString(r.GetOrdinal("Email")),
         IsAdmin      = r.GetBoolean(r.GetOrdinal("IsAdmin")),
         Designation  = r.IsDBNull(r.GetOrdinal("Designation")) ? "" : r.GetString(r.GetOrdinal("Designation")),
+        ViewStatus   = r.IsDBNull(r.GetOrdinal("ViewStatus"))  ? false : r.GetBoolean(r.GetOrdinal("ViewStatus")),
         LoginAccess  = r.GetString(r.GetOrdinal("LoginAccess")),
         Status       = r.GetString(r.GetOrdinal("Status")),
         MenuAccess   = r.IsDBNull(r.GetOrdinal("MenuAccess"))  ? "{}" : r.GetString(r.GetOrdinal("MenuAccess")),
