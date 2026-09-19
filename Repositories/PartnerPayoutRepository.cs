@@ -134,6 +134,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 CampId                 = reader.GetInt32(reader.GetOrdinal("CampId")),
                 CampName               = S(reader, "CampName"),
                 CampIncome             = D(reader, "CampIncome"),
+                OutsourceAmount        = D(reader, "OutsourceAmount"),
+                NetIncome              = D(reader, "NetIncome"),
                 CampExpense            = D(reader, "CampExpense"),
                 HOExpense              = D(reader, "HOExpense"),
                 TotalExpense           = D(reader, "TotalExpense"),
@@ -158,14 +160,16 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
             {
                 response.Summary.Add(new PartnerPayoutSummaryRow
                 {
-                    PartnerId          = reader.GetInt32(reader.GetOrdinal("PartnerId")),
-                    PartnerName        = S(reader, "PartnerName"),
-                    TotalCampIncome    = D(reader, "TotalCampIncome"),
-                    TotalCampExpense   = D(reader, "TotalCampExpense"),
-                    TotalHOExpense     = D(reader, "TotalHOExpense"),
-                    TotalAllExpense    = D(reader, "TotalAllExpense"),
-                    TotalBenefitAmount = D(reader, "TotalBenefitAmount"),
-                    PartnerShareAmount = D(reader, "PartnerShareAmount"),
+                    PartnerId            = reader.GetInt32(reader.GetOrdinal("PartnerId")),
+                    PartnerName          = S(reader, "PartnerName"),
+                    TotalCampIncome      = D(reader, "TotalCampIncome"),
+                    TotalOutsourceAmount = D(reader, "TotalOutsourceAmount"),
+                    TotalNetIncome       = D(reader, "TotalNetIncome"),
+                    TotalCampExpense     = D(reader, "TotalCampExpense"),
+                    TotalHOExpense       = D(reader, "TotalHOExpense"),
+                    TotalAllExpense      = D(reader, "TotalAllExpense"),
+                    TotalBenefitAmount   = D(reader, "TotalBenefitAmount"),
+                    PartnerShareAmount   = D(reader, "PartnerShareAmount"),
                 });
             }
         }
@@ -203,6 +207,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
         dt.Columns.Add("TotalExpense",            typeof(decimal));
         dt.Columns.Add("BenefitAmount",           typeof(decimal));
         dt.Columns.Add("PartnerInvestmentIncome", typeof(decimal));
+        dt.Columns.Add("OutsourceAmount",         typeof(decimal));
+        dt.Columns.Add("NetIncome",               typeof(decimal));
 
         foreach (var row in request.Rows)
         {
@@ -215,7 +221,9 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 row.HOExpense,
                 row.TotalExpense,
                 row.BenefitAmount,
-                row.PartnerInvestmentIncome
+                row.PartnerInvestmentIncome,
+                row.OutsourceAmount,
+                row.NetIncome
             );
         }
 
@@ -272,6 +280,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 HOExpense             = D(reader, "HOExpense"),
                 TotalExpense          = D(reader, "TotalExpense"),
                 BenefitAmount         = D(reader, "BenefitAmount"),
+                OutsourceAmount       = D(reader, "OutsourceAmount"),
+                NetIncome             = D(reader, "NetIncome"),
                 AddedBy               = reader.IsDBNull(reader.GetOrdinal("AddedBy"))
                                             ? null : reader.GetInt32(reader.GetOrdinal("AddedBy")),
                 CreatedAt             = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
@@ -329,6 +339,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 TotalExpense          = D(reader, "TotalExpense"),
                 BenefitAmount         = D(reader, "BenefitAmount"),
                 CampPayoutAmount      = D(reader, "CampPayoutAmount"),
+                OutsourceAmount       = D(reader, "OutsourceAmount"),
+                NetIncome             = D(reader, "NetIncome"),
             });
         }
 
@@ -340,16 +352,18 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 var partnerId = reader.GetInt32(reader.GetOrdinal("PartnerId"));
                 var partnerRow = new PartnerPayoutTotalRow
                 {
-                    PartnerId          = partnerId,
-                    PartnerName        = S(reader, "PartnerName"),
-                    PartnerCode        = S(reader, "PartnerCode"),
-                    TotalIncome        = D(reader, "TotalIncome"),
-                    TotalCampExpense   = D(reader, "TotalCampExpense"),
-                    TotalHOExpense     = D(reader, "TotalHOExpense"),
-                    TotalExpense       = D(reader, "TotalExpense"),
-                    TotalBenefitAmount = D(reader, "TotalBenefitAmount"),
-                    TotalPayoutAmount  = D(reader, "TotalPayoutAmount"),
-                    TotalCamps         = reader.IsDBNull(reader.GetOrdinal("TotalCamps"))
+                    PartnerId            = partnerId,
+                    PartnerName          = S(reader, "PartnerName"),
+                    PartnerCode          = S(reader, "PartnerCode"),
+                    TotalIncome          = D(reader, "TotalIncome"),
+                    TotalCampExpense     = D(reader, "TotalCampExpense"),
+                    TotalHOExpense       = D(reader, "TotalHOExpense"),
+                    TotalExpense         = D(reader, "TotalExpense"),
+                    TotalBenefitAmount   = D(reader, "TotalBenefitAmount"),
+                    TotalPayoutAmount    = D(reader, "TotalPayoutAmount"),
+                    TotalOutsourceAmount = D(reader, "TotalOutsourceAmount"),
+                    TotalNetIncome       = D(reader, "TotalNetIncome"),
+                    TotalCamps           = reader.IsDBNull(reader.GetOrdinal("TotalCamps"))
                                             ? 0 : reader.GetInt32(reader.GetOrdinal("TotalCamps")),
                     Camps = campRows.Where(c => c.PartnerId == partnerId).ToList()
                 };
@@ -387,12 +401,15 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
         dt.Columns.Add("TotalAllExpense",       typeof(decimal));
         dt.Columns.Add("TotalBenefitAmount",    typeof(decimal));
         dt.Columns.Add("PartnerShareAmount",    typeof(decimal));
+        dt.Columns.Add("OutsourceAmount",       typeof(decimal));
+        dt.Columns.Add("NetIncome",             typeof(decimal));
 
         foreach (var r in request.Rows)
             dt.Rows.Add(r.PartnerId, r.CampPartnerPercentage,
                         r.TotalCampIncome, r.TotalCampExpense,
                         r.TotalHOExpense,  r.TotalAllExpense,
-                        r.TotalBenefitAmount, r.PartnerShareAmount);
+                        r.TotalBenefitAmount, r.PartnerShareAmount,
+                        r.OutsourceAmount, r.NetIncome);
 
         var tvp = cmd.Parameters.AddWithValue("@Rows", dt);
         tvp.SqlDbType  = System.Data.SqlDbType.Structured;
@@ -474,6 +491,8 @@ public class PartnerPayoutRepository : IPartnerPayoutRepository
                 TotalAllExpense       = D(reader, "TotalAllExpense"),
                 TotalBenefitAmount    = D(reader, "TotalBenefitAmount"),
                 PartnerShareAmount    = D(reader, "PartnerShareAmount"),
+                OutsourceAmount       = D(reader, "OutsourceAmount"),
+                NetIncome             = D(reader, "NetIncome"),
                 AddedBy               = reader.IsDBNull(reader.GetOrdinal("AddedBy"))
                                             ? null : reader.GetInt32(reader.GetOrdinal("AddedBy")),
                 CreatedAt             = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),

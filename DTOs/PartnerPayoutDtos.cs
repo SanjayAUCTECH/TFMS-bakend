@@ -53,6 +53,8 @@ public class PartnerCampPayoutRow
     public int      CampId                 { get; set; }
     public string   CampName               { get; set; } = string.Empty;
     public decimal  CampIncome             { get; set; }
+    public decimal  OutsourceAmount        { get; set; }
+    public decimal  NetIncome              { get; set; }
     public decimal  CampExpense            { get; set; }
     public decimal  HOExpense              { get; set; }
     public decimal  TotalExpense           { get; set; }
@@ -74,6 +76,8 @@ public class PartnerPayoutSummaryRow
     public int      PartnerId             { get; set; }
     public string   PartnerName           { get; set; } = string.Empty;
     public decimal  TotalCampIncome       { get; set; }
+    public decimal  TotalOutsourceAmount  { get; set; }
+    public decimal  TotalNetIncome        { get; set; }
     public decimal  TotalCampExpense      { get; set; }
     public decimal  TotalHOExpense        { get; set; }
     public decimal  TotalAllExpense       { get; set; }
@@ -106,6 +110,8 @@ public class PartnerMonthlyCampPayoutResponse
     public decimal  HOExpense             { get; set; }
     public decimal  TotalExpense          { get; set; }
     public decimal  BenefitAmount         { get; set; }
+    public decimal  OutsourceAmount       { get; set; }
+    public decimal  NetIncome             { get; set; }
     public int?     AddedBy               { get; set; }
     public DateTime CreatedAt             { get; set; }
     public DateTime UpdatedAt             { get; set; }
@@ -131,6 +137,8 @@ public class PartnerMonthlyCampPayoutItem
     public decimal  TotalExpense            { get; set; }
     public decimal  BenefitAmount           { get; set; }
     public decimal  PartnerInvestmentIncome { get; set; }
+    public decimal  OutsourceAmount         { get; set; }
+    public decimal  NetIncome               { get; set; }
 }
 
 // ── Save CampPayout Response ──────────────────────────────────
@@ -169,6 +177,8 @@ public class PartnerPayoutCampRow
     public decimal  TotalExpense          { get; set; }
     public decimal  BenefitAmount         { get; set; }
     public decimal  CampPayoutAmount      { get; set; }
+    public decimal  OutsourceAmount       { get; set; }
+    public decimal  NetIncome             { get; set; }
 }
 
 // ── Payout by month — partner total row ──────────────────────
@@ -183,6 +193,8 @@ public class PartnerPayoutTotalRow
     public decimal  TotalExpense          { get; set; }
     public decimal  TotalBenefitAmount    { get; set; }
     public decimal  TotalPayoutAmount     { get; set; }
+    public decimal  TotalOutsourceAmount  { get; set; }
+    public decimal  TotalNetIncome        { get; set; }
     public int      TotalCamps            { get; set; }
     public List<PartnerPayoutCampRow> Camps { get; set; } = new();
 }
@@ -215,6 +227,8 @@ public class PartnerMonthlyPayoutItem
     public decimal TotalAllExpense       { get; set; }
     public decimal TotalBenefitAmount    { get; set; }
     public decimal PartnerShareAmount    { get; set; }
+    public decimal OutsourceAmount       { get; set; }
+    public decimal NetIncome             { get; set; }
 }
 
 public class SavePartnerMonthlyPayoutResponse
@@ -277,6 +291,8 @@ public class PartnerMonthlyPayoutResponse
     public decimal  TotalAllExpense       { get; set; }
     public decimal  TotalBenefitAmount    { get; set; }
     public decimal  PartnerShareAmount    { get; set; }
+    public decimal  OutsourceAmount       { get; set; }
+    public decimal  NetIncome             { get; set; }
     public int?     AddedBy               { get; set; }
     public DateTime CreatedAt             { get; set; }
     public DateTime UpdatedAt             { get; set; }

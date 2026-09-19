@@ -77,10 +77,20 @@ public class PartnerPayoutService : IPartnerPayoutService
         GetMonthlyCampPayoutAsync(GetPartnerMonthlyCampPayoutRequest request)
     {
         var (data, total) = await _repo.GetMonthlyCampPayoutAsync(request);
+        
+        // Calculate totals for cards
+        var dataList = data.ToList();
+        var cards = new
+        {
+            totalOutsourceAmount = dataList.Sum(x => x.OutsourceAmount),
+            totalNetIncome = dataList.Sum(x => x.NetIncome)
+        };
+        
         return ApiResponse<IEnumerable<PartnerMonthlyCampPayoutResponse>>.Ok(
-            data,
+            dataList,
             "Records retrieved successfully.",
-            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize)
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize),
+            cards
         );
     }
 
