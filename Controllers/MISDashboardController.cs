@@ -55,6 +55,12 @@ public class MISDashboardController : ControllerBase
             {
                 var collected  = rd.IsDBNull(rd.GetOrdinal("Collected"))  ? 0m : rd.GetDecimal(rd.GetOrdinal("Collected"));
                 var receivedSd = rd.IsDBNull(rd.GetOrdinal("ReceivedSD")) ? 0m : rd.GetDecimal(rd.GetOrdinal("ReceivedSD"));
+                
+                // New outsource fields (all decimal from OutsourceMoney table)
+                var outsource          = rd.IsDBNull(rd.GetOrdinal("Outsource"))          ? 0m : rd.GetDecimal(rd.GetOrdinal("Outsource"));
+                var outsourceRental    = rd.IsDBNull(rd.GetOrdinal("OutsourceRental"))    ? 0m : rd.GetDecimal(rd.GetOrdinal("OutsourceRental"));
+                var outsourceCollected = rd.IsDBNull(rd.GetOrdinal("OutsourceCollected")) ? 0m : rd.GetDecimal(rd.GetOrdinal("OutsourceCollected"));
+                
                 response.CollectionData.Add(new MISCollectionRow
                 {
                     CampId     = rd.IsDBNull(rd.GetOrdinal("CampId"))   ? 0  : rd.GetInt32(rd.GetOrdinal("CampId")),
@@ -69,6 +75,11 @@ public class MISDashboardController : ControllerBase
                     Discount   = rd.IsDBNull(rd.GetOrdinal("Discount"))  ? 0m : rd.GetDecimal(rd.GetOrdinal("Discount")),
                     Balance    = rd.IsDBNull(rd.GetOrdinal("Balance"))   ? 0m : rd.GetDecimal(rd.GetOrdinal("Balance")),
                     ReceivedSD = receivedSd,
+                    
+                    // New outsource fields
+                    Outsource          = outsource,
+                    OutsourceRental    = outsourceRental,
+                    OutsourceCollected = outsourceCollected,
                 });
             }
 

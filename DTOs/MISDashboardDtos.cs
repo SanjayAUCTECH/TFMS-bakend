@@ -13,18 +13,24 @@ public class MISDashboardRequest
 // ── RS1: Collection row per camp ──────────────────────────────────────────
 public class MISCollectionRow
 {
-    public int     CampId     { get; set; }
-    public string  CampCode   { get; set; } = string.Empty;
-    public string  CampName   { get; set; } = string.Empty;   // "property" in UI
-    public int     NetUnits   { get; set; }
-    public int     Occupied   { get; set; }
-    public int     Vacant     { get; set; }
-    public decimal AvgRent    { get; set; }
-    public decimal Rental     { get; set; }
-    public decimal Collected  { get; set; }
-    public decimal Discount   { get; set; }
-    public decimal Balance    { get; set; }
-    public decimal ReceivedSD { get; set; }
+    public int     CampId            { get; set; }
+    public string  CampCode          { get; set; } = string.Empty;
+    public string  CampName          { get; set; } = string.Empty;   // "property" in UI
+    public int     NetUnits          { get; set; }
+    public int     Occupied          { get; set; }
+    public int     Vacant            { get; set; }
+    public decimal AvgRent           { get; set; }
+    public decimal Rental            { get; set; }
+    public decimal Collected         { get; set; }
+    public decimal Discount          { get; set; }
+    public decimal Balance           { get; set; }
+    public decimal ReceivedSD        { get; set; }
+    
+    // ── New Outsource fields ──────────────────────────────────────────────
+    public decimal Outsource         { get; set; }  // Outsource amount (from OutsourceMoney table)
+    public decimal OutsourceRental   { get; set; }  // Rental - Outsource
+    public decimal OutsourceCollected{ get; set; }  // Collected - Outsource
+    
     public decimal GrandTotal => Collected + ReceivedSD;  // Rental + SD
 }
 
