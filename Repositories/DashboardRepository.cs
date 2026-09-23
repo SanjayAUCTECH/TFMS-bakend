@@ -46,8 +46,42 @@ public class DashboardRepository : IDashboardRepository
             }
         }
 
-        var campWhere = campId.HasValue ? "WHERE c.Status='Active' AND c.IsDeleted=0 AND c.Id=@CampId" : "WHERE c.Status='Active' AND c.IsDeleted=0";
-        await using (var cmd2 = new SqlCommand($@"SELECT c.Name CampName,COUNT(r.Id) TotalRooms,SUM(CASE WHEN r.Status='Occupied' THEN 1 ELSE 0 END) Occupied,SUM(CASE WHEN r.Status='Vacant' THEN 1 ELSE 0 END) Vacant FROM Camps c LEFT JOIN Rooms r ON r.CampId=c.Id AND r.IsDeleted=0 {campWhere} GROUP BY c.Id,c.Name ORDER BY c.Name", conn))
+        // CampOccupancy — now uses ContractRoomInstallments with month filtering
+        var campWhere = campId.HasValue ? "AND ca.Id=@CampId" : "";
+        // Build month filter for ContractRoomInstallments
+        var monthFilter = "";
+        if (filterMonth.HasValue && filterYear.HasValue)
+        {
+            var campMonth = $"{new[] {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[filterMonth.Value - 1]}{filterYear.Value.ToString().Substring(2)}";
+            monthFilter = $"AND cri0.Month = '{campMonth}'";
+        }
+        await using (var cmd2 = new SqlCommand($@"
+            SELECT
+                ca.Name AS CampName,
+                COUNT(r.Id) AS TotalRooms,
+                ISNULL(
+                (
+                    SELECT COUNT(DISTINCT cri0.RoomNo)
+                    FROM ContractRoomInstallments cri0
+                    WHERE ISNULL(cri0.IsDeleted, 0) = 0
+                      AND cri0.CampId = ca.Id
+                      AND cri0.RoomNo IS NOT NULL
+                      {monthFilter}
+                ), 0) AS Occupied,
+                COUNT(r.Id) - ISNULL(
+                (
+                    SELECT COUNT(DISTINCT cri0.RoomNo)
+                    FROM ContractRoomInstallments cri0
+                    WHERE ISNULL(cri0.IsDeleted, 0) = 0
+                      AND cri0.CampId = ca.Id
+                      AND cri0.RoomNo IS NOT NULL
+                      {monthFilter}
+                ), 0) AS Vacant
+            FROM Camps ca
+            LEFT JOIN Rooms r ON r.CampId = ca.Id AND r.IsDeleted = 0
+            WHERE ca.Status = 'Active' AND ca.IsDeleted = 0 {campWhere}
+            GROUP BY ca.Id, ca.Name
+            ORDER BY ca.Name", conn))
         {
             if (campId.HasValue) cmd2.Parameters.AddWithValue("@CampId", campId.Value);
             await using var r2 = await cmd2.ExecuteReaderAsync();
