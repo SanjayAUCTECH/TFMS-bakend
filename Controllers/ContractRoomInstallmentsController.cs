@@ -158,6 +158,210 @@ public class ContractRoomInstallmentsController : BaseApiController
 
         return Ok(ApiResponse<object?>.Ok(null, $"Room installments regenerated for {contractId}."));
     }
+
+    /// <summary>
+    /// GET api/contractroominstallments/monthwise-occupied
+    /// Get month-wise occupied rooms from ContractRoomInstallments
+    /// Filters: month (optional), PageNumber, PageSize
+    /// Only includes rooms from Active or Completed contracts
+    /// Uses stored procedure: sp_GetMonthwiseOccupiedRooms
+    /// </summary>
+    [HttpGet("monthwise-occupied")]
+    public async Task<IActionResult> GetMonthwiseOccupiedRooms(
+        [FromQuery] string? month = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        // Call stored procedure
+        await using var cmd = new SqlCommand("sp_GetMonthwiseOccupiedRooms", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        
+        cmd.Parameters.AddWithValue("@Month", (object?)month ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
+        cmd.Parameters.AddWithValue("@PageSize", pageSize);
+        
+        var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int)
+        {
+            Direction = ParameterDirection.Output
+        };
+        cmd.Parameters.Add(totalParam);
+
+        var occupiedRooms = new List<object>();
+        await using var rd = await cmd.ExecuteReaderAsync();
+        while (await rd.ReadAsync())
+        {
+            occupiedRooms.Add(new
+            {
+                id                 = rd.GetInt32(rd.GetOrdinal("Id")),
+                contractId         = rd.GetString(rd.GetOrdinal("ContractId")),
+                campId             = rd.GetInt32(rd.GetOrdinal("CampId")),
+                campName           = rd.GetString(rd.GetOrdinal("CampName")),
+                roomId             = rd.GetInt32(rd.GetOrdinal("RoomId")),
+                roomNo             = rd.GetString(rd.GetOrdinal("RoomNo")),
+                month              = rd.GetString(rd.GetOrdinal("Month")),
+                dueDate            = rd.GetDateTime(rd.GetOrdinal("DueDate")),
+                installmentNo      = rd.GetInt32(rd.GetOrdinal("InstallmentNo")),
+                installAmount      = rd.GetDecimal(rd.GetOrdinal("InstallAmount")),
+                installmentStatus  = rd.GetString(rd.GetOrdinal("InstallmentStatus")),
+                paidAmount         = rd.GetDecimal(rd.GetOrdinal("PaidAmount")),
+                balance            = rd.GetDecimal(rd.GetOrdinal("Balance")),
+                contractStatus     = rd.GetString(rd.GetOrdinal("ContractStatus")),
+                tenantId           = rd.GetInt32(rd.GetOrdinal("TenantId")),
+                startDate          = rd.GetDateTime(rd.GetOrdinal("StartDate")),
+                endDate            = rd.GetDateTime(rd.GetOrdinal("EndDate")),
+                contractType       = rd.GetString(rd.GetOrdinal("ContractType"))
+            });
+        }
+        
+        await rd.CloseAsync();
+        
+        // Get total records from OUTPUT parameter
+        int totalRecords = (int)(totalParam.Value ?? 0);
+
+        // Calculate total pages
+        int totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+        // Get summary statistics (from all data, not just current page)
+        var uniqueRooms = occupiedRooms
+            .Select(r => new { 
+                campId = ((dynamic)r).campId, 
+                roomId = ((dynamic)r).roomId 
+            })
+            .Distinct()
+            .Count();
+
+        var summary = new
+        {
+            month = month ?? "All",
+            totalOccupiedRooms = totalRecords,
+            uniqueOccupiedRooms = uniqueRooms,
+            currentPageRecords = occupiedRooms.Count,
+            message = month != null 
+                ? $"All rooms in ContractRoomInstallments for {month} are occupied"
+                : "All occupied rooms from Active/Completed contracts"
+        };
+
+        var pagination = new
+        {
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            totalRecords = totalRecords,
+            totalPages = totalPages,
+            hasNextPage = pageNumber < totalPages,
+            hasPreviousPage = pageNumber > 1
+        };
+
+        var message = month != null 
+            ? $"Month-wise occupied rooms retrieved for {month}."
+            : "All occupied rooms retrieved.";
+
+        return Ok(ApiResponse<object>.Ok(
+            new { 
+                summary, 
+                occupiedRooms, 
+                totalRecords = totalRecords 
+            },
+            message,
+            pagination: PaginationHelper.Build(totalRecords, pageNumber, pageSize)));
+    }
+
+    /// <summary>
+    /// GET api/contractroominstallments/monthwise-vacant
+    /// Get month-wise vacant/empty rooms
+    /// Returns rooms that are NOT in ContractRoomInstallments for the specified month
+    /// Filters: month (optional), PageNumber, PageSize
+    /// Uses stored procedure: sp_GetMonthwiseVacantRooms
+    /// </summary>
+    [HttpGet("monthwise-vacant")]
+    public async Task<IActionResult> GetMonthwiseVacantRooms(
+        [FromQuery] string? month = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        // Call stored procedure
+        await using var cmd = new SqlCommand("sp_GetMonthwiseVacantRooms", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        
+        cmd.Parameters.AddWithValue("@Month", (object?)month ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
+        cmd.Parameters.AddWithValue("@PageSize", pageSize);
+        
+        var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int)
+        {
+            Direction = ParameterDirection.Output
+        };
+        cmd.Parameters.Add(totalParam);
+
+        var vacantRooms = new List<object>();
+        await using var rd = await cmd.ExecuteReaderAsync();
+        while (await rd.ReadAsync())
+        {
+            vacantRooms.Add(new
+            {
+                roomId        = rd.GetInt32(rd.GetOrdinal("RoomId")),
+                roomNo        = rd.IsDBNull(rd.GetOrdinal("RoomNo")) ? "" : rd.GetString(rd.GetOrdinal("RoomNo")),
+                campId        = rd.IsDBNull(rd.GetOrdinal("CampId")) ? 0 : rd.GetInt32(rd.GetOrdinal("CampId")),
+                campName      = rd.IsDBNull(rd.GetOrdinal("CampName")) ? "" : rd.GetString(rd.GetOrdinal("CampName")),
+                floorId       = rd.IsDBNull(rd.GetOrdinal("FloorId")) ? (int?)null : rd.GetInt32(rd.GetOrdinal("FloorId")),
+                floorName     = rd.IsDBNull(rd.GetOrdinal("FloorName")) ? "" : rd.GetString(rd.GetOrdinal("FloorName")),
+                occupied      = rd.GetBoolean(rd.GetOrdinal("Occupied")),
+                monthlyPrice  = rd.IsDBNull(rd.GetOrdinal("MonthlyPrice")) ? 0m : rd.GetDecimal(rd.GetOrdinal("MonthlyPrice")),
+                roomStatus    = rd.IsDBNull(rd.GetOrdinal("RoomStatus")) ? "" : rd.GetString(rd.GetOrdinal("RoomStatus")),
+                otherDetails  = rd.IsDBNull(rd.GetOrdinal("OtherDetails")) ? "" : rd.GetString(rd.GetOrdinal("OtherDetails"))
+            });
+        }
+        
+        await rd.CloseAsync();
+        
+        // Get total records from OUTPUT parameter
+        int totalRecords = (int)(totalParam.Value ?? 0);
+
+        // Calculate total pages
+        int totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+        var summary = new
+        {
+            month = month ?? "All",
+            totalVacantRooms = totalRecords,
+            currentPageRecords = vacantRooms.Count,
+            message = month != null 
+                ? $"Vacant rooms for {month} (not in ContractRoomInstallments)"
+                : "All vacant rooms (not in any active/completed contracts)"
+        };
+
+        var pagination = new
+        {
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            totalRecords = totalRecords,
+            totalPages = totalPages,
+            hasNextPage = pageNumber < totalPages,
+            hasPreviousPage = pageNumber > 1
+        };
+
+        var message = month != null 
+            ? $"Month-wise vacant rooms retrieved for {month}."
+            : "All vacant rooms retrieved.";
+
+        return Ok(ApiResponse<object>.Ok(
+            new { 
+                summary, 
+                vacantRooms, 
+                totalRecords = totalRecords 
+            },
+            message,
+            pagination: PaginationHelper.Build(totalRecords, pageNumber, pageSize)));
+    }
 }
 
 public class UpdateRoomInstallmentRequest
