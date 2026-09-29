@@ -79,6 +79,7 @@ public class TxnRecordListRequest
     public int?    TenantId    { get; set; }
     public int?    CampId      { get; set; }
     public string? TxnType     { get; set; }
+    public string? Month       { get; set; } // Optional filter for TxnDate month (format: Jul26, Aug26, etc.)
     public int ResolvedPage     => PageNumber is > 0 ? PageNumber.Value : 1;
     public int ResolvedPageSize => (PageSize  is > 0) ? PageSize.Value  : 500;
 }

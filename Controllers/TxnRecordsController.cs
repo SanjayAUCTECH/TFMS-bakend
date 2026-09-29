@@ -17,7 +17,7 @@ public class TxnRecordsController : BaseApiController
     public TxnRecordsController(ITxnRecordRepository repo, IActivityLogService log)
     { _repo = repo; _activityLog = log; }
 
-    /// <summary>GET api/txnrecords?contractId=CNT001&tenantId=1&campId=2&txnType=DR</summary>
+    /// <summary>GET api/txnrecords?contractId=CNT001&tenantId=1&campId=2&txnType=DR&month=Jul26</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] TxnRecordListRequest request)
     {

@@ -21,6 +21,7 @@ public class TxnRecordRepository : ITxnRecordRepository
         cmd.Parameters.AddWithValue("@TenantId",   (object?)r.TenantId   ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CampId",     (object?)r.CampId     ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@TxnType",    (object?)r.TxnType    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Month",      (object?)r.Month      ?? DBNull.Value);
         var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
         cmd.Parameters.Add(totalParam);
         var list = new List<TxnRecord>();

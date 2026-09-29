@@ -1,11 +1,57 @@
--- =============================================
--- Stored Procedure: sp_GetMonthwiseVacantRooms
--- Description: Get month-wise vacant/empty rooms
---              Returns rooms that are NOT in ContractRoomInstallments
---              for the specified month
---              Supports pagination and camp filter
--- =============================================
+USE [TFMS_TestSoftwareDB];
+GO
 
+-- Update sp_GetMonthwiseOccupiedRooms
+CREATE OR ALTER PROCEDURE sp_GetMonthwiseOccupiedRooms
+    @CampId INT = NULL,
+    @Month NVARCHAR(50) = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 10,
+    @TotalRecords INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+    
+    SELECT @TotalRecords = COUNT(DISTINCT cri.Id)
+    FROM ContractRoomInstallments cri
+    INNER JOIN Contracts c ON cri.ContractId = c.ContractId
+    WHERE (c.Status = 'Active' OR c.Status = 'Completed' OR c.Status = 'Complete')
+        AND (@CampId IS NULL OR cri.CampId = @CampId)
+        AND (@Month IS NULL OR cri.Month = @Month);
+    
+    SELECT DISTINCT
+        cri.Id,
+        cri.ContractId,
+        cri.CampId,
+        cri.CampName,
+        cri.RoomId,
+        cri.RoomNo,
+        cri.Month,
+        cri.DueDate,
+        cri.InstallmentNo,
+        cri.InstallAmount,
+        cri.Status as InstallmentStatus,
+        cri.PaidAmount,
+        cri.Balance,
+        c.Status as ContractStatus,
+        c.TenantId,
+        c.StartDate,
+        c.EndDate,
+        c.ContractType
+    FROM ContractRoomInstallments cri
+    INNER JOIN Contracts c ON cri.ContractId = c.ContractId
+    WHERE (c.Status = 'Active' OR c.Status = 'Completed' OR c.Status = 'Complete')
+        AND (@CampId IS NULL OR cri.CampId = @CampId)
+        AND (@Month IS NULL OR cri.Month = @Month)
+    ORDER BY cri.CampName, cri.RoomNo
+    OFFSET @Offset ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+
+-- Update sp_GetMonthwiseVacantRooms
 CREATE OR ALTER PROCEDURE sp_GetMonthwiseVacantRooms
     @CampId INT = NULL,
     @Month NVARCHAR(50) = NULL,
@@ -16,10 +62,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    -- Calculate offset for pagination
     DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
     
-    -- Get total count of vacant rooms
     SELECT @TotalRecords = COUNT(DISTINCT r.Id)
     FROM Rooms r
     LEFT JOIN (
@@ -33,7 +77,6 @@ BEGIN
         AND r.IsDeleted = 0
         AND (@CampId IS NULL OR r.CampId = @CampId);
     
-    -- Get paginated vacant rooms data
     SELECT 
         r.Id as RoomId,
         r.RoomNo,
@@ -61,42 +104,5 @@ BEGIN
     ORDER BY c.Name, r.RoomNo
     OFFSET @Offset ROWS
     FETCH NEXT @PageSize ROWS ONLY;
-    
 END;
 GO
-
--- =============================================
--- Test Script
--- =============================================
-
-/*
--- Test 1: Get vacant rooms for July 2026 (Page 1, 10 records)
-DECLARE @Total INT;
-EXEC sp_GetMonthwiseVacantRooms 
-    @CampId = NULL,
-    @Month = 'Jul26',
-    @PageNumber = 1,
-    @PageSize = 10,
-    @TotalRecords = @Total OUTPUT;
-SELECT @Total AS TotalRecords;
-
--- Test 2: Get vacant rooms for specific camp (CampId = 7)
-DECLARE @Total INT;
-EXEC sp_GetMonthwiseVacantRooms 
-    @CampId = 7,
-    @Month = NULL,
-    @PageNumber = 1,
-    @PageSize = 10,
-    @TotalRecords = @Total OUTPUT;
-SELECT @Total AS TotalRecords;
-
--- Test 3: Get vacant rooms for specific camp and month
-DECLARE @Total INT;
-EXEC sp_GetMonthwiseVacantRooms 
-    @CampId = 7,
-    @Month = 'Aug26',
-    @PageNumber = 1,
-    @PageSize = 10,
-    @TotalRecords = @Total OUTPUT;
-SELECT @Total AS TotalRecords;
-*/

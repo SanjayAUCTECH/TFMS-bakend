@@ -21,13 +21,13 @@ public class ContractRoomInstallmentsController : BaseApiController
     }
 
     /// <summary>
-    /// GET api/contractroominstallments/{contractId}
+    /// GET api/contractroominstallments/{contractId} OR api/contractroominstallments
     /// Payment section — ContractRoomInstallments data
-    /// contractId = compulsory | campId, roomId, month, status = optional
+    /// contractId, campId, roomId, month, status = all optional
     /// </summary>
-    [HttpGet("{contractId}")]
+    [HttpGet("{contractId?}")]
     public async Task<IActionResult> GetByContract(
-        string contractId,
+        string? contractId = null,
         [FromQuery] int?    campId = null,
         [FromQuery] int?    roomId = null,
         [FromQuery] string? month  = null,
@@ -40,7 +40,7 @@ public class ContractRoomInstallmentsController : BaseApiController
         {
             CommandType = CommandType.StoredProcedure
         };
-        cmd.Parameters.AddWithValue("@ContractId", contractId);
+        cmd.Parameters.AddWithValue("@ContractId", (object?)contractId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CampId",     (object?)campId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@RoomId",     (object?)roomId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Month",      (object?)month  ?? DBNull.Value);
@@ -75,7 +75,9 @@ public class ContractRoomInstallmentsController : BaseApiController
         }
 
         return Ok(ApiResponse<object>.Ok(new { rows, totalRecords = rows.Count },
-            $"Room installments for {contractId} retrieved."));
+            string.IsNullOrEmpty(contractId) 
+                ? "Room installments retrieved." 
+                : $"Room installments for {contractId} retrieved."));
     }
 
     /// <summary>
@@ -162,12 +164,13 @@ public class ContractRoomInstallmentsController : BaseApiController
     /// <summary>
     /// GET api/contractroominstallments/monthwise-occupied
     /// Get month-wise occupied rooms from ContractRoomInstallments
-    /// Filters: month (optional), PageNumber, PageSize
+    /// Filters: campId (optional), month (optional), PageNumber, PageSize
     /// Only includes rooms from Active or Completed contracts
     /// Uses stored procedure: sp_GetMonthwiseOccupiedRooms
     /// </summary>
     [HttpGet("monthwise-occupied")]
     public async Task<IActionResult> GetMonthwiseOccupiedRooms(
+        [FromQuery] int? campId = null,
         [FromQuery] string? month = null,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
@@ -181,6 +184,7 @@ public class ContractRoomInstallmentsController : BaseApiController
             CommandType = CommandType.StoredProcedure
         };
         
+        cmd.Parameters.AddWithValue("@CampId", (object?)campId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Month", (object?)month ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
         cmd.Parameters.AddWithValue("@PageSize", pageSize);
@@ -274,11 +278,12 @@ public class ContractRoomInstallmentsController : BaseApiController
     /// GET api/contractroominstallments/monthwise-vacant
     /// Get month-wise vacant/empty rooms
     /// Returns rooms that are NOT in ContractRoomInstallments for the specified month
-    /// Filters: month (optional), PageNumber, PageSize
+    /// Filters: campId (optional), month (optional), PageNumber, PageSize
     /// Uses stored procedure: sp_GetMonthwiseVacantRooms
     /// </summary>
     [HttpGet("monthwise-vacant")]
     public async Task<IActionResult> GetMonthwiseVacantRooms(
+        [FromQuery] int? campId = null,
         [FromQuery] string? month = null,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
@@ -292,6 +297,7 @@ public class ContractRoomInstallmentsController : BaseApiController
             CommandType = CommandType.StoredProcedure
         };
         
+        cmd.Parameters.AddWithValue("@CampId", (object?)campId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Month", (object?)month ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
         cmd.Parameters.AddWithValue("@PageSize", pageSize);

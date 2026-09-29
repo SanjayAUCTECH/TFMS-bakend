@@ -2,10 +2,11 @@
 -- Stored Procedure: sp_GetMonthwiseOccupiedRooms
 -- Description: Get month-wise occupied rooms from ContractRoomInstallments
 --              Only includes rooms from Active or Completed contracts
---              Supports pagination
+--              Supports pagination and camp filter
 -- =============================================
 
 CREATE OR ALTER PROCEDURE sp_GetMonthwiseOccupiedRooms
+    @CampId INT = NULL,
     @Month NVARCHAR(50) = NULL,
     @PageNumber INT = 1,
     @PageSize INT = 10,
@@ -22,6 +23,7 @@ BEGIN
     FROM ContractRoomInstallments cri
     INNER JOIN Contracts c ON cri.ContractId = c.ContractId
     WHERE (c.Status = 'Active' OR c.Status = 'Completed' OR c.Status = 'Complete')
+        AND (@CampId IS NULL OR cri.CampId = @CampId)
         AND (@Month IS NULL OR cri.Month = @Month);
     
     -- Get paginated occupied rooms data
@@ -47,6 +49,7 @@ BEGIN
     FROM ContractRoomInstallments cri
     INNER JOIN Contracts c ON cri.ContractId = c.ContractId
     WHERE (c.Status = 'Active' OR c.Status = 'Completed' OR c.Status = 'Complete')
+        AND (@CampId IS NULL OR cri.CampId = @CampId)
         AND (@Month IS NULL OR cri.Month = @Month)
     ORDER BY cri.CampName, cri.RoomNo
     OFFSET @Offset ROWS
@@ -63,27 +66,30 @@ GO
 -- Test 1: Get occupied rooms for August 2026 (Page 1, 10 records)
 DECLARE @Total INT;
 EXEC sp_GetMonthwiseOccupiedRooms 
+    @CampId = NULL,
     @Month = 'Aug26',
     @PageNumber = 1,
     @PageSize = 10,
     @TotalRecords = @Total OUTPUT;
 SELECT @Total AS TotalRecords;
 
--- Test 2: Get all occupied rooms (No month filter, Page 1, 20 records)
+-- Test 2: Get occupied rooms for specific camp (CampId = 7)
 DECLARE @Total INT;
 EXEC sp_GetMonthwiseOccupiedRooms 
+    @CampId = 7,
     @Month = NULL,
     @PageNumber = 1,
-    @PageSize = 20,
+    @PageSize = 10,
     @TotalRecords = @Total OUTPUT;
 SELECT @Total AS TotalRecords;
 
--- Test 3: Get occupied rooms for July 2026 (Page 2, 50 records)
+-- Test 3: Get occupied rooms for specific camp and month
 DECLARE @Total INT;
 EXEC sp_GetMonthwiseOccupiedRooms 
+    @CampId = 7,
     @Month = 'Jul26',
-    @PageNumber = 2,
-    @PageSize = 50,
+    @PageNumber = 1,
+    @PageSize = 10,
     @TotalRecords = @Total OUTPUT;
 SELECT @Total AS TotalRecords;
 */
