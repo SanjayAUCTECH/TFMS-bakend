@@ -204,6 +204,8 @@ public class ReportRepository : IReportRepository
         await using var cmd = new SqlCommand("sp_GetCampReport", conn) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.AddWithValue("@PageNumber", 1);
         cmd.Parameters.AddWithValue("@PageSize",   int.MaxValue);
+        cmd.Parameters.AddWithValue("@CampId",     (object?)r.CampId     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Month",      (object?)r.Month      ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@SearchText", (object?)r.SearchText ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Status",     (object?)r.Status     ?? DBNull.Value);
         cmd.Parameters.Add(new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output });
