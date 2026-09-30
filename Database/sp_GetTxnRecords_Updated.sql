@@ -1,146 +1,111 @@
-USE [TFMS_TestSoftwareDB];
-GO
-
 -- =============================================
--- Update sp_GetTxnRecords with Month Filter
--- Adds @Month parameter to filter by TxnDate
+-- Updated Stored Procedure: sp_GetTxnRecords
+-- Description: Added JOIN with ContractRoomsTrns table
+-- New Columns: PaymentStatus, Month from ContractRoomsTrns
 -- =============================================
 
-CREATE OR ALTER PROCEDURE sp_GetTxnRecords
+ALTER PROCEDURE [dbo].[sp_GetTxnRecords]
     @PageNumber INT = 1,
     @PageSize INT = 500,
-    @ContractId NVARCHAR(50) = NULL,
+    @ContractId NVARCHAR(MAX) = NULL,
     @TenantId INT = NULL,
     @CampId INT = NULL,
-    @TxnType NVARCHAR(10) = NULL,
-    @Month NVARCHAR(50) = NULL,
+    @TxnType NVARCHAR(MAX) = NULL,
+    @Month NVARCHAR(MAX) = NULL,
     @TotalRecords INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
     
+    -- Calculate offset for pagination
     DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
     
-    -- Helper function to convert month format (Jul26 -> 2026-07)
-    -- Month format examples: Jul26, Aug26, Sep26, Jan27, etc.
-    DECLARE @FilterYear INT;
-    DECLARE @FilterMonth INT;
-    
-    IF @Month IS NOT NULL AND LEN(@Month) = 5
-    BEGIN
-        -- Extract year (last 2 digits)
-        SET @FilterYear = 2000 + CAST(RIGHT(@Month, 2) AS INT);
-        
-        -- Extract month (first 3 letters)
-        DECLARE @MonthAbbr NVARCHAR(3) = LEFT(@Month, 3);
-        
-        SET @FilterMonth = CASE @MonthAbbr
-            WHEN 'Jan' THEN 1
-            WHEN 'Feb' THEN 2
-            WHEN 'Mar' THEN 3
-            WHEN 'Apr' THEN 4
-            WHEN 'May' THEN 5
-            WHEN 'Jun' THEN 6
-            WHEN 'Jul' THEN 7
-            WHEN 'Aug' THEN 8
-            WHEN 'Sep' THEN 9
-            WHEN 'Oct' THEN 10
-            WHEN 'Nov' THEN 11
-            WHEN 'Dec' THEN 12
-            ELSE NULL
-        END;
-    END
-    
-    -- Get total count
+    -- Get total count for filtered records
     SELECT @TotalRecords = COUNT(*)
-    FROM TxnRecords t
-    LEFT JOIN Tenants tn ON t.TenantId = tn.Id
-    LEFT JOIN Camps c ON t.CampId = c.Id
-    WHERE t.IsDeleted = 0
-        AND (@ContractId IS NULL OR t.ContractId = @ContractId)
-        AND (@TenantId IS NULL OR t.TenantId = @TenantId)
-        AND (@CampId IS NULL OR t.CampId = @CampId)
-        AND (@TxnType IS NULL OR t.TxnType = @TxnType)
-        AND (
-            @Month IS NULL 
-            OR (
-                YEAR(t.TxnDate) = @FilterYear 
-                AND MONTH(t.TxnDate) = @FilterMonth
-            )
-        );
+    FROM TxnRecords tr
+    LEFT JOIN Tenants t ON tr.TenantId = t.TenantId
+    LEFT JOIN Camps c ON tr.CampId = c.CampId
+    LEFT JOIN ContractRoomsTrns crt ON tr.ContractId = crt.ContractId 
+        AND CAST(tr.TxnDate AS DATE) = CAST(crt.TxnDate AS DATE)
+    WHERE tr.IsDeleted = 0
+        AND (@ContractId IS NULL OR tr.ContractId = @ContractId)
+        AND (@TenantId IS NULL OR tr.TenantId = @TenantId)
+        AND (@CampId IS NULL OR tr.CampId = @CampId)
+        AND (@TxnType IS NULL OR tr.TxnType = @TxnType)
+        AND (@Month IS NULL OR tr.Month = @Month);
     
-    -- Get paginated data
+    -- Get paginated results with JOIN
     SELECT 
-        t.Id,
-        t.TxnId,
-        t.TxnType,
-        t.ContractId,
-        t.ContractCode,
-        t.TenantId,
-        ISNULL(tn.Name, '') AS TenantName,
-        t.CampId,
-        ISNULL(c.Name, '') AS CampName,
-        t.TotalAmount,
-        t.Amount,
-        t.TxnDate,
-        t.FromDate,
-        t.ToDate,
-        t.PaymentMode,
-        t.PaymentModeId,
-        t.ChequeNumber,
-        t.FundPoolId,
-        t.FundPoolName,
-        t.Description,
-        t.ReceivedBy,
-        t.ReceivedContact,
-        t.IssuedBy,
-        t.InstallmentNo,
-        t.AppliedInstallments,
-        t.Unallocated,
-        t.CreatedAt,
-        t.UpdatedAt
-    FROM TxnRecords t
-    LEFT JOIN Tenants tn ON t.TenantId = tn.Id
-    LEFT JOIN Camps c ON t.CampId = c.Id
-    WHERE t.IsDeleted = 0
-        AND (@ContractId IS NULL OR t.ContractId = @ContractId)
-        AND (@TenantId IS NULL OR t.TenantId = @TenantId)
-        AND (@CampId IS NULL OR t.CampId = @CampId)
-        AND (@TxnType IS NULL OR t.TxnType = @TxnType)
-        AND (
-            @Month IS NULL 
-            OR (
-                YEAR(t.TxnDate) = @FilterYear 
-                AND MONTH(t.TxnDate) = @FilterMonth
-            )
-        )
-    ORDER BY t.TxnDate DESC, t.Id DESC
+        tr.Id,
+        tr.TxnId,
+        tr.TxnType,
+        tr.ContractId,
+        tr.ContractCode,
+        tr.TenantId,
+        ISNULL(t.TenantName, '') AS TenantName,
+        tr.CampId,
+        ISNULL(c.CampName, '') AS CampName,
+        tr.TotalAmount,
+        tr.Amount,
+        tr.TxnDate,
+        tr.FromDate,
+        tr.ToDate,
+        tr.PaymentMode,
+        tr.PaymentModeId,
+        tr.ChequeNumber,
+        tr.FundPoolId,
+        tr.FundPoolName,
+        tr.Description,
+        tr.ReceivedBy,
+        tr.ReceivedContact,
+        tr.IssuedBy,
+        tr.InstallmentNo,
+        tr.AppliedInstallments,
+        tr.Unallocated,
+        tr.CreatedAt,
+        tr.UpdatedAt,
+        -- NEW: From ContractRoomsTrns JOIN
+        crt.PaymentStatus,
+        crt.Month
+    FROM TxnRecords tr
+    LEFT JOIN Tenants t ON tr.TenantId = t.TenantId
+    LEFT JOIN Camps c ON tr.CampId = c.CampId
+    LEFT JOIN ContractRoomsTrns crt ON tr.ContractId = crt.ContractId 
+        AND CAST(tr.TxnDate AS DATE) = CAST(crt.TxnDate AS DATE)
+    WHERE tr.IsDeleted = 0
+        AND (@ContractId IS NULL OR tr.ContractId = @ContractId)
+        AND (@TenantId IS NULL OR tr.TenantId = @TenantId)
+        AND (@CampId IS NULL OR tr.CampId = @CampId)
+        AND (@TxnType IS NULL OR tr.TxnType = @TxnType)
+        AND (@Month IS NULL OR tr.Month = @Month)
+    ORDER BY tr.TxnDate DESC, tr.Id DESC
     OFFSET @Offset ROWS
     FETCH NEXT @PageSize ROWS ONLY;
-END;
+END
 GO
 
-PRINT 'sp_GetTxnRecords updated successfully with Month filter!';
-PRINT '';
+-- =============================================
+-- Key Changes Made:
+-- =============================================
+-- 1. Added LEFT JOIN with ContractRoomsTrns table
+-- 2. JOIN condition: ContractId match AND TxnDate match (date only)
+-- 3. Added PaymentStatus column from ContractRoomsTrns
+-- 4. Added Month column from ContractRoomsTrns
+-- 5. Used LEFT JOIN so records without match still appear
+-- =============================================
 
--- Test the procedure
-PRINT 'Testing sp_GetTxnRecords with Month filter...';
-DECLARE @Total INT;
+-- =============================================
+-- Test Cases
+-- =============================================
 
--- Test 1: Get all TxnRecords
-EXEC sp_GetTxnRecords 
-    @PageNumber = 1, 
-    @PageSize = 5, 
-    @TotalRecords = @Total OUTPUT;
-PRINT 'Test 1 - All records: ' + CAST(@Total AS NVARCHAR);
+-- Test 1: Get all transactions with pagination
+-- EXEC sp_GetTxnRecords @PageNumber = 1, @PageSize = 10, @TotalRecords = 0
 
--- Test 2: Filter by July 2026
-EXEC sp_GetTxnRecords 
-    @Month = 'Jul26',
-    @PageNumber = 1, 
-    @PageSize = 5, 
-    @TotalRecords = @Total OUTPUT;
-PRINT 'Test 2 - July 2026 records: ' + CAST(@Total AS NVARCHAR);
+-- Test 2: Filter by ContractId
+-- EXEC sp_GetTxnRecords @ContractId = 'CNT-000002', @PageNumber = 1, @PageSize = 10, @TotalRecords = 0
 
-PRINT '';
-PRINT 'Update completed successfully!';
+-- Test 3: Filter by TxnType
+-- EXEC sp_GetTxnRecords @TxnType = 'CR', @PageNumber = 1, @PageSize = 10, @TotalRecords = 0
+
+-- Test 4: Filter by CampId
+-- EXEC sp_GetTxnRecords @CampId = 1, @PageNumber = 1, @PageSize = 10, @TotalRecords = 0

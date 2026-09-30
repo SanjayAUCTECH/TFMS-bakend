@@ -35,4 +35,7 @@ public class TxnRecord
     // Joined fields
     public string   TenantName     { get; set; } = string.Empty;
     public string   CampName       { get; set; } = string.Empty;
+    // From ContractRoomsTrns JOIN
+    public string?  PaymentStatus  { get; set; }  // From ContractRoomsTrns
+    public string?  Month          { get; set; }  // From ContractRoomsTrns
 }

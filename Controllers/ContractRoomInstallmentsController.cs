@@ -21,13 +21,13 @@ public class ContractRoomInstallmentsController : BaseApiController
     }
 
     /// <summary>
-    /// GET api/contractroominstallments/{contractId} OR api/contractroominstallments
+    /// GET api/contractroominstallments
     /// Payment section — ContractRoomInstallments data
-    /// contractId, campId, roomId, month, status = all optional
+    /// All parameters optional: contractId, campId, roomId, month, status
     /// </summary>
-    [HttpGet("{contractId?}")]
+    [HttpGet]
     public async Task<IActionResult> GetByContract(
-        string? contractId = null,
+        [FromQuery] string? contractId = null,
         [FromQuery] int?    campId = null,
         [FromQuery] int?    roomId = null,
         [FromQuery] string? month  = null,

@@ -269,5 +269,18 @@ public class TxnRecordRepository : ITxnRecordRepository
         Unallocated         = r.IsDBNull(r.GetOrdinal("Unallocated"))         ? 0  : r.GetDecimal(r.GetOrdinal("Unallocated")),
         CreatedAt           = r.GetDateTime(r.GetOrdinal("CreatedAt")),
         UpdatedAt           = r.GetDateTime(r.GetOrdinal("UpdatedAt")),
+        // From ContractRoomsTrns JOIN (safe check for column existence)
+        PaymentStatus       = HasColumn(r, "PaymentStatus") && !r.IsDBNull(r.GetOrdinal("PaymentStatus")) ? r.GetString(r.GetOrdinal("PaymentStatus")) : null,
+        Month               = HasColumn(r, "Month") && !r.IsDBNull(r.GetOrdinal("Month")) ? r.GetString(r.GetOrdinal("Month")) : null,
     };
+
+    private static bool HasColumn(SqlDataReader reader, string columnName)
+    {
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
 }

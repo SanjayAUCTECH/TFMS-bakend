@@ -69,6 +69,9 @@ public class TxnRecordResponse
     public decimal  Unallocated         { get; set; }
     public DateTime CreatedAt           { get; set; }
     public DateTime UpdatedAt           { get; set; }
+    // From ContractRoomsTrns JOIN
+    public string?  PaymentStatus       { get; set; }
+    public string?  Month               { get; set; }
 }
 
 public class TxnRecordListRequest

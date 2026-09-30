@@ -39,6 +39,9 @@ public class TxnRecordsController : BaseApiController
             AppliedInstallments=t.AppliedInstallments,
             Unallocated=t.Unallocated,
             CreatedAt=t.CreatedAt, UpdatedAt=t.UpdatedAt,
+            // From ContractRoomsTrns JOIN
+            PaymentStatus=t.PaymentStatus,
+            Month=t.Month,
         });
         return Ok(ApiResponse<IEnumerable<TxnRecordResponse>>.Ok(response, "Txn records retrieved.",
             PaginationHelper.Build(total, request.ResolvedPage, request.ResolvedPageSize)));
