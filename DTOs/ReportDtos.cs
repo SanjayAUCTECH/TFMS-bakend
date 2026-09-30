@@ -30,6 +30,7 @@ public class ReportRequest
     public string? Role          { get; set; }
     public int?    OwnerId       { get; set; }   // Camp Collection filter
     public string? ContractStatus { get; set; }  // Room wise collection filter
+    public int?    CampbossId    { get; set; }   // Campboss filter for due report
 
     [BindNever, JsonIgnore]
     public int ResolvedPage     => PageNumber is > 0 ? PageNumber.Value : 1;
@@ -360,7 +361,10 @@ public class DueReportRow
     public string  ContractId     { get; set; } = string.Empty;
     public string  TenantName     { get; set; } = string.Empty;
     public int     TenantId       { get; set; }
+    public string  TenantContact  { get; set; } = string.Empty;
     public string  CampName       { get; set; } = string.Empty;
+    public int     CampId         { get; set; }
+    public string  CampbossName   { get; set; } = string.Empty;
     public string  RoomNo         { get; set; } = string.Empty;
     public int     InstallmentNo  { get; set; }
     public decimal Amount         { get; set; }

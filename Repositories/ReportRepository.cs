@@ -457,104 +457,34 @@ public class ReportRepository : IReportRepository
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
 
-        // Build WHERE conditions
-        var where  = new List<string> { "ci.Status IN ('Pending','Partial','Overdue')" };
-        var params_ = new List<SqlParameter>();
-
-        if (r.TenantId.HasValue)
-        {
-            where.Add("ct.TenantId = @TenantId");
-            params_.Add(new SqlParameter("@TenantId", r.TenantId.Value));
-        }
-        if (r.CampId.HasValue)
-        {
-            where.Add("ct.ContractId IN (SELECT ContractId FROM ContractCamps WHERE CampId = @CampId)");
-            params_.Add(new SqlParameter("@CampId", r.CampId.Value));
-        }
-        if (!string.IsNullOrEmpty(r.ContractId))
-        {
-            where.Add("ci.ContractId = @ContractId");
-            params_.Add(new SqlParameter("@ContractId", r.ContractId));
-        }
-        if (!string.IsNullOrEmpty(r.Month))
-        {
-            where.Add("FORMAT(ci.DueDate,'yyyy-MM') = @Month");
-            params_.Add(new SqlParameter("@Month", r.Month));
-        }
-        if (!string.IsNullOrEmpty(r.DateFrom))
-        {
-            where.Add("ci.DueDate >= @DateFrom");
-            params_.Add(new SqlParameter("@DateFrom", r.DateFrom));
-        }
-        if (!string.IsNullOrEmpty(r.DateTo))
-        {
-            where.Add("ci.DueDate <= @DateTo");
-            params_.Add(new SqlParameter("@DateTo", r.DateTo));
-        }
-        if (!string.IsNullOrEmpty(r.Status))
-        {
-            // Status filter: Overdue or Pending
-            if (r.Status == "Overdue")
-                where.Add("ci.DueDate < GETDATE()");
-            else if (r.Status == "Pending")
-                where.Add("ci.DueDate >= GETDATE()");
-        }
-        if (!string.IsNullOrEmpty(r.SearchText))
-        {
-            where.Add("(t.Name LIKE @SearchText OR ci.ContractId LIKE @SearchText OR ca2sub.Name LIKE @SearchText)");
-            params_.Add(new SqlParameter("@SearchText", $"%{r.SearchText}%"));
-        }
-        if (!string.IsNullOrEmpty(r.Mode))
-        {
-            where.Add("ISNULL(ci.PaymentMode,'') = @Mode");
-            params_.Add(new SqlParameter("@Mode", r.Mode));
-        }
-
-        var whereClause = "WHERE " + string.Join(" AND ", where);
-
-        var sql = $@"
-            SELECT
-                ci.Id, ci.ContractId, ci.InstallmentNo,
-                ci.Amount, ci.PaidAmount,
-                ci.Amount - ci.PaidAmount              BalanceAmount,
-                ci.DueDate, ci.Status,
-                ISNULL(ci.PaymentMode,'')              PaymentMode,
-                ISNULL(t.Name,'')                      TenantName,
-                ct.TenantId,
-                ISNULL((SELECT TOP 1 ca2.Name FROM ContractCamps cc2
-                         JOIN Camps ca2 ON ca2.Id=cc2.CampId
-                         WHERE cc2.ContractId=ct.ContractId
-                         ORDER BY cc2.Id),'')          CampName,
-                ISNULL(rm.RoomNo,'')                   RoomNo,
-                CASE WHEN ci.DueDate < GETDATE() THEN 'Overdue' ELSE 'Pending' END DueStatus
-            FROM ContractInstallments ci
-            JOIN Contracts ct          ON ct.ContractId = ci.ContractId
-            LEFT JOIN Tenants t        ON t.Id = ct.TenantId
-            LEFT JOIN (SELECT DISTINCT ContractId,
-                              (SELECT TOP 1 ca2.Name FROM ContractCamps cc2
-                               JOIN Camps ca2 ON ca2.Id=cc2.CampId
-                               WHERE cc2.ContractId=ci2.ContractId
-                               ORDER BY cc2.Id) Name
-                       FROM ContractInstallments ci2) ca2sub
-                   ON ca2sub.ContractId = ci.ContractId
-            LEFT JOIN ContractRooms cr ON cr.ContractId = ci.ContractId
-            LEFT JOIN Rooms rm         ON rm.Id = cr.RoomId
-            {whereClause}
-            ORDER BY ci.DueDate";
+        // Use stored procedure - matches sp_GetDueReport parameters exactly
+        await using var cmd = new SqlCommand("sp_GetDueReport", conn) { CommandType = CommandType.StoredProcedure };
+        
+        // Add parameters (matching stored procedure signature - no pagination params)
+        cmd.Parameters.AddWithValue("@TenantId",    (object?)r.TenantId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId",      (object?)r.CampId      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampbossId",  (object?)r.CampbossId  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractId",  (object?)r.ContractId  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Month",       (object?)r.Month       ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateFrom",    (object?)r.DateFrom    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateTo",      (object?)r.DateTo      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status",      (object?)r.Status      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SearchText",  (object?)r.SearchText  ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Mode",        (object?)r.Mode        ?? DBNull.Value);
 
         var allRows = new List<DueReportRow>();
-        await using (var cmd = new SqlCommand(sql, conn))
+        await using (var rd = await cmd.ExecuteReaderAsync())
         {
-            foreach (var p in params_) cmd.Parameters.Add(p);
-            cmd.CommandTimeout = 60;
-            await using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
                 allRows.Add(new DueReportRow {
                     Id            = rd.GetInt32(rd.GetOrdinal("Id")),
                     ContractId    = rd.IsDBNull(rd.GetOrdinal("ContractId"))   ? "" : rd.GetString(rd.GetOrdinal("ContractId")),
                     TenantName    = rd.IsDBNull(rd.GetOrdinal("TenantName"))   ? "" : rd.GetString(rd.GetOrdinal("TenantName")),
                     TenantId      = rd.IsDBNull(rd.GetOrdinal("TenantId"))     ? 0  : rd.GetInt32(rd.GetOrdinal("TenantId")),
+                    TenantContact = rd.IsDBNull(rd.GetOrdinal("TenantContact")) ? "" : rd.GetString(rd.GetOrdinal("TenantContact")),
+                    CampId        = rd.IsDBNull(rd.GetOrdinal("CampId"))       ? 0  : rd.GetInt32(rd.GetOrdinal("CampId")),
                     CampName      = rd.IsDBNull(rd.GetOrdinal("CampName"))     ? "" : rd.GetString(rd.GetOrdinal("CampName")),
+                    CampbossName  = rd.IsDBNull(rd.GetOrdinal("CampbossName")) ? "" : rd.GetString(rd.GetOrdinal("CampbossName")),
                     RoomNo        = rd.IsDBNull(rd.GetOrdinal("RoomNo"))       ? "" : rd.GetString(rd.GetOrdinal("RoomNo")),
                     InstallmentNo = rd.GetInt32(rd.GetOrdinal("InstallmentNo")),
                     Amount        = rd.GetDecimal(rd.GetOrdinal("Amount")),

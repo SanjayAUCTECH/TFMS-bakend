@@ -65,7 +65,7 @@ public class ReportsController : BaseApiController
     public async Task<IActionResult> TransactionReport([FromQuery] ReportRequest request)
         => Ok(await _service.GetTransactionReportAsync(request));
 
-    /// <summary>GET api/reports/due?TenantId=1&CampId=2&Month=2026-07</summary>
+    /// <summary>GET api/reports/due?TenantId=1&CampId=2&Month=2026-07&CampbossId=5</summary>
     [HttpGet("due")]
     public async Task<IActionResult> Due([FromQuery] ReportRequest request)
         => Ok(await _service.GetDueReportAsync(request));
