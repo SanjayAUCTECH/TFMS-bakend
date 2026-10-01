@@ -450,4 +450,271 @@ public class PaymentRepository : IPaymentRepository
         }
         return list;
     }
+
+    // ============================================
+    // Bulk Payment Support Methods
+    // ============================================
+
+    /// <summary>
+    /// Get filtered payment data from ContractRoomInstallments with complete contract details
+    /// Only returns data for Active contracts
+    /// </summary>
+    public async Task<(IEnumerable<FilteredPaymentDataResponse> Data, int TotalRecords)> GetFilteredPaymentDataAsync(FilteredPaymentDataRequest request)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        // Build dynamic WHERE clause
+        var whereConditions = new List<string> { "c.Status = 'Active'", "ISNULL(cri.IsDeleted, 0) = 0" };
+        
+        if (!string.IsNullOrEmpty(request.Month))
+            whereConditions.Add("cri.Month = @Month");
+        
+        if (request.CampId.HasValue)
+            whereConditions.Add("cri.CampId = @CampId");
+        
+        if (request.RoomId.HasValue)
+            whereConditions.Add("cri.RoomId = @RoomId");
+        
+        if (!string.IsNullOrEmpty(request.Status))
+            whereConditions.Add("cri.Status = @Status");
+        
+        if (!string.IsNullOrEmpty(request.ContractId))
+            whereConditions.Add("cri.ContractId = @ContractId");
+        
+        if (request.TenantId.HasValue)
+            whereConditions.Add("c.TenantId = @TenantId");
+        
+        var whereClause = string.Join(" AND ", whereConditions);
+
+        // Build search filter
+        var searchFilter = "";
+        if (!string.IsNullOrEmpty(request.SearchText))
+        {
+            searchFilter = @" AND (
+                c.ContractId LIKE @Search OR
+                t.Name LIKE @Search OR
+                t.EmiratesId LIKE @Search OR
+                r.RoomNo LIKE @Search OR
+                ca.Name LIKE @Search
+            )";
+        }
+
+        // Main query with pagination
+        var sql = $@"
+            WITH FilteredData AS (
+                SELECT 
+                    -- ContractRoomInstallments columns
+                    cri.Id,
+                    cri.ContractId,
+                    cri.RoomId,
+                    cri.CampId,
+                    cri.InstallmentNo,
+                    cri.InstallAmount,
+                    cri.DueDate,
+                    cri.Month,
+                    ISNULL(cri.PaymentMode, '') AS PaymentMode,
+                    ISNULL(cri.ReferenceNo, '') AS ReferenceNo,
+                    cri.ClearanceDate,
+                    cri.Status,
+                    ISNULL(cri.PaidAmount, 0) AS PaidAmount,
+                    ISNULL(cri.Balance, cri.InstallAmount - ISNULL(cri.PaidAmount, 0)) AS Balance,
+                    cri.PaidDate,
+                    
+                    -- Room details
+                    r.RoomNo,
+                    ISNULL(f.Name, '') AS FloorName,
+                    
+                    -- Camp details
+                    ca.Name AS CampName,
+                    ISNULL(ca.CampLocation, '') AS CampLocation,
+                    
+                    -- Contract details
+                    c.StartDate AS ContractStartDate,
+                    c.EndDate AS ContractEndDate,
+                    c.Status AS ContractStatus,
+                    c.Months AS ContractMonths,
+                    c.ContractTotal AS ContractTotal,
+                    ISNULL(c.MonthlyTotal, 0) AS MonthlyTotal,
+                    
+                    -- Tenant details
+                    t.Id AS TenantId,
+                    t.Name AS TenantName,
+                    ISNULL(t.EmiratesId, '') AS TenantCode,
+                    ISNULL(t.Contact, '') AS TenantContact,
+                    ISNULL(t.Email, '') AS TenantEmail,
+                    
+                    -- Calculated fields
+                    CASE 
+                        WHEN cri.DueDate < GETDATE() AND cri.Status <> 'Paid' 
+                        THEN DATEDIFF(DAY, cri.DueDate, GETDATE())
+                        ELSE 0 
+                    END AS DaysOverdue,
+                    
+                    CASE 
+                        WHEN cri.DueDate < GETDATE() AND cri.Status <> 'Paid' 
+                        THEN 1 
+                        ELSE 0 
+                    END AS IsOverdue
+
+                FROM ContractRoomInstallments cri
+                INNER JOIN Contracts c ON c.ContractId = cri.ContractId
+                INNER JOIN Rooms r ON r.Id = cri.RoomId
+                LEFT JOIN Floors f ON f.Id = r.FloorId
+                INNER JOIN Camps ca ON ca.Id = cri.CampId
+                INNER JOIN Tenants t ON t.Id = c.TenantId
+                WHERE {whereClause} {searchFilter}
+            ),
+            TotalCount AS (
+                SELECT COUNT(*) AS Total FROM FilteredData
+            )
+            SELECT 
+                fd.*,
+                tc.Total AS TotalRecords
+            FROM FilteredData fd
+            CROSS JOIN TotalCount tc
+            ORDER BY 
+                CASE WHEN @SortBy = 'dueDate' AND @SortDir = 'ASC' THEN fd.DueDate END ASC,
+                CASE WHEN @SortBy = 'dueDate' AND @SortDir = 'DESC' THEN fd.DueDate END DESC,
+                CASE WHEN @SortBy = 'amount' AND @SortDir = 'ASC' THEN fd.InstallAmount END ASC,
+                CASE WHEN @SortBy = 'amount' AND @SortDir = 'DESC' THEN fd.InstallAmount END DESC,
+                CASE WHEN @SortBy = 'status' AND @SortDir = 'ASC' THEN fd.Status END ASC,
+                CASE WHEN @SortBy = 'status' AND @SortDir = 'DESC' THEN fd.Status END DESC,
+                fd.DueDate ASC
+            OFFSET @Offset ROWS
+            FETCH NEXT @PageSize ROWS ONLY";
+
+        await using var cmd = new SqlCommand(sql, conn);
+        
+        // Add parameters
+        cmd.Parameters.AddWithValue("@Month", (object?)request.Month ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CampId", (object?)request.CampId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@RoomId", (object?)request.RoomId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Status", (object?)request.Status ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ContractId", (object?)request.ContractId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TenantId", (object?)request.TenantId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Search", string.IsNullOrEmpty(request.SearchText) ? DBNull.Value : $"%{request.SearchText}%");
+        cmd.Parameters.AddWithValue("@SortBy", (object?)request.SortBy ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SortDir", request.ResolvedSortDir);
+        cmd.Parameters.AddWithValue("@Offset", (request.ResolvedPageNumber - 1) * request.ResolvedPageSize);
+        cmd.Parameters.AddWithValue("@PageSize", request.ResolvedPageSize);
+
+        var list = new List<FilteredPaymentDataResponse>();
+        int totalRecords = 0;
+
+        await using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                if (totalRecords == 0)
+                {
+                    totalRecords = reader.IsDBNull(reader.GetOrdinal("TotalRecords")) 
+                        ? 0 
+                        : reader.GetInt32(reader.GetOrdinal("TotalRecords"));
+                }
+
+                var item = new FilteredPaymentDataResponse
+                {
+                    // ContractRoomInstallments
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    ContractId = reader.GetString(reader.GetOrdinal("ContractId")),
+                    RoomId = reader.GetInt32(reader.GetOrdinal("RoomId")),
+                    CampId = reader.GetInt32(reader.GetOrdinal("CampId")),
+                    InstallmentNo = reader.GetInt32(reader.GetOrdinal("InstallmentNo")),
+                    InstallAmount = reader.GetDecimal(reader.GetOrdinal("InstallAmount")),
+                    DueDate = reader.GetDateTime(reader.GetOrdinal("DueDate")),
+                    Month = reader.GetString(reader.GetOrdinal("Month")),
+                    PaymentMode = reader.GetString(reader.GetOrdinal("PaymentMode")),
+                    ReferenceNo = reader.GetString(reader.GetOrdinal("ReferenceNo")),
+                    ClearanceDate = reader.IsDBNull(reader.GetOrdinal("ClearanceDate")) 
+                        ? null 
+                        : reader.GetDateTime(reader.GetOrdinal("ClearanceDate")),
+                    Status = reader.GetString(reader.GetOrdinal("Status")),
+                    PaidAmount = reader.GetDecimal(reader.GetOrdinal("PaidAmount")),
+                    Balance = reader.GetDecimal(reader.GetOrdinal("Balance")),
+                    PaidDate = reader.IsDBNull(reader.GetOrdinal("PaidDate")) 
+                        ? null 
+                        : reader.GetDateTime(reader.GetOrdinal("PaidDate")),
+                    
+                    // Room
+                    RoomNo = reader.GetString(reader.GetOrdinal("RoomNo")),
+                    FloorName = reader.GetString(reader.GetOrdinal("FloorName")),
+                    
+                    // Camp
+                    CampName = reader.GetString(reader.GetOrdinal("CampName")),
+                    CampLocation = reader.GetString(reader.GetOrdinal("CampLocation")),
+                    
+                    // Contract
+                    ContractStartDate = reader.GetDateTime(reader.GetOrdinal("ContractStartDate")),
+                    ContractEndDate = reader.GetDateTime(reader.GetOrdinal("ContractEndDate")),
+                    ContractStatus = reader.GetString(reader.GetOrdinal("ContractStatus")),
+                    ContractMonths = reader.GetInt32(reader.GetOrdinal("ContractMonths")),
+                    ContractTotal = reader.GetDecimal(reader.GetOrdinal("ContractTotal")),
+                    MonthlyTotal = reader.GetDecimal(reader.GetOrdinal("MonthlyTotal")),
+                    
+                    // Tenant
+                    TenantId = reader.GetInt32(reader.GetOrdinal("TenantId")),
+                    TenantName = reader.GetString(reader.GetOrdinal("TenantName")),
+                    TenantCode = reader.GetString(reader.GetOrdinal("TenantCode")),
+                    TenantContact = reader.GetString(reader.GetOrdinal("TenantContact")),
+                    TenantEmail = reader.GetString(reader.GetOrdinal("TenantEmail")),
+                    
+                    // Calculated
+                    DaysOverdue = reader.GetInt32(reader.GetOrdinal("DaysOverdue")),
+                    IsOverdue = reader.GetInt32(reader.GetOrdinal("IsOverdue")) == 1
+                };
+
+                list.Add(item);
+            }
+        } // Reader is now closed
+
+        // Get Contract Installments Summary for each contract
+        if (list.Count > 0)
+        {
+            var contractIds = list.Select(x => x.ContractId).Distinct().ToList();
+            var summaryQuery = @"
+                SELECT 
+                    ContractId,
+                    SUM(Amount) AS TotalDueAmount,
+                    SUM(PaidAmount) AS TotalPaidAmount,
+                    SUM(Amount - PaidAmount) AS TotalBalance
+                FROM ContractInstallments
+                WHERE ContractId IN (" + string.Join(",", contractIds.Select((_, i) => $"@ContractId{i}")) + @")
+                  AND ISNULL(IsDeleted, 0) = 0
+                GROUP BY ContractId";
+
+            await using var summaryCmd = new SqlCommand(summaryQuery, conn);
+            for (int i = 0; i < contractIds.Count; i++)
+            {
+                summaryCmd.Parameters.AddWithValue($"@ContractId{i}", contractIds[i]);
+            }
+
+            var summaryDict = new Dictionary<string, (decimal TotalDue, decimal TotalPaid, decimal TotalBalance)>();
+            await using (var summaryReader = await summaryCmd.ExecuteReaderAsync())
+            {
+                while (await summaryReader.ReadAsync())
+                {
+                    var contractId = summaryReader.GetString(0);
+                    summaryDict[contractId] = (
+                        summaryReader.GetDecimal(1),
+                        summaryReader.GetDecimal(2),
+                        summaryReader.GetDecimal(3)
+                    );
+                }
+            } // Summary reader is now closed
+
+            // Assign summary to items
+            foreach (var item in list)
+            {
+                if (summaryDict.TryGetValue(item.ContractId, out var summary))
+                {
+                    item.TotalDueAmount = summary.TotalDue;
+                    item.TotalPaidAmount = summary.TotalPaid;
+                    item.TotalBalance = summary.TotalBalance;
+                }
+            }
+        }
+
+        return (list, totalRecords);
+    }
 }

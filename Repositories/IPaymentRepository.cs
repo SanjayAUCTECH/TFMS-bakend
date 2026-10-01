@@ -14,4 +14,7 @@ public interface IPaymentRepository
     Task<IEnumerable<PaymentHistoryResponse>>  GetHistoryAsync(string contractId);
     Task<IEnumerable<ContractRoomPaymentInfo>> GetContractRoomsForPaymentAsync(string contractId);
     Task<IEnumerable<RoomTransactionResponse>> GetRoomTransactionsAsync(string contractId, string? txnDate, int? txnRecordId);
+    
+    // Filtered Payment Data
+    Task<(IEnumerable<FilteredPaymentDataResponse> Data, int TotalRecords)> GetFilteredPaymentDataAsync(FilteredPaymentDataRequest request);
 }

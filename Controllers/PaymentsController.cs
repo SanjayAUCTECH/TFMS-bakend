@@ -77,4 +77,24 @@ public class PaymentsController : BaseApiController
         var data = await _repo.GetRoomTransactionsAsync(contractId, txnDate, txnRecordId);
         return Ok(ApiResponse<IEnumerable<RoomTransactionResponse>>.Ok(data, "Room transactions retrieved."));
     }
+
+    /// <summary>
+    /// GET /api/Payments/filtered-data
+    /// Get filtered payment data from ContractRoomInstallments with complete contract details
+    /// Only returns Active contracts
+    /// Filters: month, campId, roomId, status, contractId, tenantId
+    /// </summary>
+    [HttpGet("filtered-data")]
+    public async Task<IActionResult> GetFilteredPaymentData([FromQuery] FilteredPaymentDataRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        var (data, total) = await _repo.GetFilteredPaymentDataAsync(request);
+        
+        return Ok(ApiResponse<IEnumerable<FilteredPaymentDataResponse>>.Ok(
+            data,
+            "Filtered payment data retrieved successfully.",
+            PaginationHelper.Build(total, request.ResolvedPageNumber, request.ResolvedPageSize)
+        ));
+    }
 }
