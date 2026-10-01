@@ -166,6 +166,7 @@ builder.Services.AddScoped<ISalonStaffReportService,      SalonStaffReportServic
 builder.Services.AddScoped<ICurrentFundTransferService,   CurrentFundTransferService>();
 builder.Services.AddScoped<IBufferFundTransferService,    BufferFundTransferService>();
 builder.Services.AddScoped<IOutsourceMoneyService,        OutsourceMoneyService>();
+builder.Services.AddScoped<IBulkPaymentService,           BulkPaymentService>();
 
 var app = builder.Build();
 
