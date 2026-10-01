@@ -55,10 +55,14 @@ public class BulkPaymentController : BaseApiController
         }
         else if (result.SuccessCount == 0)
         {
-            return BadRequest(ApiResponse<BulkPaymentImportResponse>.Fail(
-                $"All {result.FailureCount} payments failed. Check error details.",
-                result
-            ));
+            // All failed - return as failed response with data
+            var failResponse = new ApiResponse<BulkPaymentImportResponse>
+            {
+                Success = false,
+                Message = $"All {result.FailureCount} payments failed. Check error details.",
+                Data = result
+            };
+            return BadRequest(failResponse);
         }
         else
         {

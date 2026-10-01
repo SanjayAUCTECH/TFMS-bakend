@@ -243,17 +243,34 @@ public class BulkPaymentService : IBulkPaymentService
                 return validation;
             }
 
+            // Enhance month with year from payment date if only month name provided
+            string enhancedMonth = payment.Month;
+            if (!payment.Month.Contains("202") && payment.PaymentDate != default(DateTime))
+            {
+                // If month is just "September", add year from payment date
+                var monthNames = new[] { "January", "February", "March", "April", "May", "June", 
+                                        "July", "August", "September", "October", "November", "December",
+                                        "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+                
+                if (monthNames.Any(m => payment.Month.Equals(m, StringComparison.OrdinalIgnoreCase)))
+                {
+                    enhancedMonth = $"{payment.Month} {payment.PaymentDate.Year}";
+                    Console.WriteLine($"[BulkPayment] Enhanced month from '{payment.Month}' to '{enhancedMonth}'");
+                }
+            }
+
             // Get InstallmentNo and ContractRoomInstallmentId from Month
             var (installmentNo, criId) = await GetInstallmentFromMonth(
                 conn, 
                 payment.ContractId, 
                 validation.RoomId.Value, 
-                payment.Month);
+                enhancedMonth);
 
             if (!installmentNo.HasValue)
             {
                 validation.IsValid = false;
-                validation.ErrorMessage = $"Installment not found for month '{payment.Month}' in contract '{payment.ContractId}'";
+                validation.ErrorMessage = $"Installment not found for month '{payment.Month}' (parsed as {enhancedMonth}) in contract '{payment.ContractId}'";
                 return validation;
             }
 
@@ -273,71 +290,102 @@ public class BulkPaymentService : IBulkPaymentService
         BulkPaymentValidation validation, 
         int? userId)
     {
-        // Build room payment item
-        var roomPayment = new RoomPaymentItem
+        try
         {
-            RoomId = validation.RoomId!.Value,
-            CampId = validation.CampId!.Value,
-            Amount = payment.Amount,
-            Month = payment.Month,
-            InstallmentNo = validation.InstallmentNo,
-            ContractRoomInstallmentId = validation.ContractRoomInstallmentId,
-            Status = NormalizeRentStatus(payment.Status)
-        };
+            // Validate required data
+            if (!validation.RoomId.HasValue)
+                throw new Exception("RoomId is required");
+            if (!validation.CampId.HasValue)
+                throw new Exception("CampId is required");
+            if (string.IsNullOrEmpty(payment.ContractId))
+                throw new Exception("ContractId is required");
 
-        // Build payment request
-        var paymentRequest = new RecordPaymentRequest
+            // Build room payment item
+            var roomPayment = new RoomPaymentItem
+            {
+                RoomId = validation.RoomId.Value,
+                CampId = validation.CampId.Value,
+                Amount = payment.Amount,
+                Month = payment.Month ?? "",
+                InstallmentNo = validation.InstallmentNo,
+                ContractRoomInstallmentId = validation.ContractRoomInstallmentId,
+                Status = NormalizeRentStatus(payment.Status)
+            };
+
+            // Build payment request with proper date handling
+            DateTime paidDate = payment.PaymentDate != default(DateTime) 
+                ? payment.PaymentDate 
+                : DateTime.Now;
+
+            // Use InstallmentNo from payload, default to 1 if not provided
+            // ContractInstallments table typically has InstallmentNo=1 for all bulk imports
+            int installmentNo = payment.InstallmentNo ?? 1;
+            
+            var paymentRequest = new RecordPaymentRequest
+            {
+                ContractId = payment.ContractId,
+                InstallmentNo = installmentNo,
+                PaidAmount = payment.Amount,
+                PaidDate = paidDate,
+                PaymentMode = payment.PaymentMode ?? "Cash",
+                PaymentModeId = validation.PaymentModeId,
+                ChequeNumber = payment.ChequeNumber ?? "",
+                ClearanceDate = ParseClearanceDate(payment.ClearanceDate),
+                Description = payment.Description ?? "Bulk import - Rent payment",
+                ReceivedBy = payment.ReceivedBy ?? "System",
+                ReceivedContact = payment.ContactNumber ?? "",
+                FundPoolId = validation.FundPoolId,
+                FundPoolName = payment.FundPool ?? "",
+                IssuedBy = payment.IssuedBy ?? "",
+                AddedBy = userId,
+                RoomPayments = new List<RoomPaymentItem> { roomPayment }
+            };
+
+            // Call existing payment service
+            var paymentModel = new Models.Payment
+            {
+                ContractId = paymentRequest.ContractId,
+                InstallmentNo = installmentNo,
+                PaidAmount = paymentRequest.PaidAmount,
+                PaidDate = paymentRequest.PaidDate,
+                PaymentMode = paymentRequest.PaymentMode ?? "",
+                PaymentModeId = paymentRequest.PaymentModeId,
+                ChequeNumber = paymentRequest.ChequeNumber ?? "",
+                ClearanceDate = paymentRequest.ClearanceDate ?? "",
+                Description = paymentRequest.Description ?? "",
+                ReceivedBy = paymentRequest.ReceivedBy ?? "",
+                ReceivedContact = paymentRequest.ReceivedContact ?? "",
+                FundPoolId = paymentRequest.FundPoolId,
+                FundPoolName = paymentRequest.FundPoolName ?? "",
+                IssuedBy = paymentRequest.IssuedBy ?? "",
+                AddedBy = paymentRequest.AddedBy
+            };
+
+            var roomPaymentsJson = System.Text.Json.JsonSerializer.Serialize(
+                paymentRequest.RoomPayments,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+
+            Console.WriteLine($"[BulkPayment] Processing Rent: Contract={payment.ContractId}, Room={validation.RoomId}, Amount={payment.Amount}");
+            
+            var success = await _paymentRepo.RecordPaymentWithRoomsAsync(paymentModel, roomPaymentsJson);
+
+            if (!success)
+            {
+                Console.WriteLine($"[BulkPayment] RecordPaymentWithRoomsAsync returned false for Contract={payment.ContractId}");
+                throw new Exception($"Failed to record rent payment for contract {payment.ContractId}");
+            }
+
+            Console.WriteLine($"[BulkPayment] Rent payment recorded successfully for Contract={payment.ContractId}");
+
+            // Get the created TxnRecordId
+            var txnId = await GetLatestTxnRecordId(payment.ContractId, paidDate);
+            return txnId;
+        }
+        catch (Exception ex)
         {
-            ContractId = payment.ContractId,
-            InstallmentNo = validation.InstallmentNo ?? 1,
-            PaidAmount = payment.Amount,
-            PaidDate = payment.PaymentDate,
-            PaymentMode = payment.PaymentMode,
-            PaymentModeId = validation.PaymentModeId,
-            ChequeNumber = payment.ChequeNumber ?? "",
-            ClearanceDate = ParseClearanceDate(payment.ClearanceDate),
-            Description = payment.Description ?? "Bulk import - Rent payment",
-            ReceivedBy = payment.ReceivedBy ?? "System",
-            ReceivedContact = payment.ContactNumber ?? "",
-            FundPoolId = validation.FundPoolId,
-            FundPoolName = payment.FundPool ?? "",
-            IssuedBy = payment.IssuedBy ?? "",
-            AddedBy = userId,
-            RoomPayments = new List<RoomPaymentItem> { roomPayment }
-        };
-
-        // Call existing payment service
-        var paymentModel = new Models.Payment
-        {
-            ContractId = paymentRequest.ContractId,
-            InstallmentNo = paymentRequest.InstallmentNo,
-            PaidAmount = paymentRequest.PaidAmount,
-            PaidDate = paymentRequest.PaidDate,
-            PaymentMode = paymentRequest.PaymentMode,
-            PaymentModeId = paymentRequest.PaymentModeId,
-            ChequeNumber = paymentRequest.ChequeNumber,
-            ClearanceDate = paymentRequest.ClearanceDate,
-            Description = paymentRequest.Description,
-            ReceivedBy = paymentRequest.ReceivedBy,
-            ReceivedContact = paymentRequest.ReceivedContact,
-            FundPoolId = paymentRequest.FundPoolId,
-            FundPoolName = paymentRequest.FundPoolName,
-            IssuedBy = paymentRequest.IssuedBy,
-            AddedBy = paymentRequest.AddedBy
-        };
-
-        var roomPaymentsJson = System.Text.Json.JsonSerializer.Serialize(
-            paymentRequest.RoomPayments,
-            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
-
-        var success = await _paymentRepo.RecordPaymentWithRoomsAsync(paymentModel, roomPaymentsJson);
-
-        if (!success)
-            throw new Exception("Failed to record rent payment");
-
-        // Get the created TxnRecordId
-        var txnId = await GetLatestTxnRecordId(payment.ContractId, payment.PaymentDate);
-        return txnId;
+            Console.WriteLine($"[BulkPayment] ProcessRentPayment ERROR: {ex.Message}");
+            throw new Exception($"Rent payment processing failed: {ex.Message}", ex);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -349,49 +397,73 @@ public class BulkPaymentService : IBulkPaymentService
         BulkPaymentValidation validation, 
         int? userId)
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
-
-        // Call sp_ReceiveSecurityDeposit
-        await using var cmd = new SqlCommand("sp_ReceiveSecurityDeposit", conn)
+        try
         {
-            CommandType = CommandType.StoredProcedure
-        };
+            // Validate required data
+            if (string.IsNullOrEmpty(payment.ContractId))
+                throw new Exception("ContractId is required");
+            if (payment.Amount <= 0)
+                throw new Exception("Amount must be greater than 0");
 
-        cmd.Parameters.AddWithValue("@ContractId", payment.ContractId);
-        cmd.Parameters.AddWithValue("@Amount", payment.Amount);
-        cmd.Parameters.AddWithValue("@PaidDate", payment.PaymentDate);
-        cmd.Parameters.AddWithValue("@PaymentMode", payment.PaymentMode);
-        cmd.Parameters.AddWithValue("@PaymentModeId", (object?)validation.PaymentModeId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@ChequeNumber", payment.ChequeNumber ?? "");
-        cmd.Parameters.AddWithValue("@FundPoolId", (object?)validation.FundPoolId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@FundPoolName", payment.FundPool ?? "");
-        cmd.Parameters.AddWithValue("@ReceivedBy", payment.ReceivedBy ?? "System");
-        cmd.Parameters.AddWithValue("@Notes", payment.Description ?? "Bulk import - Security deposit");
-        cmd.Parameters.AddWithValue("@PaymentStatus", NormalizeSDStatus(payment.Status));
+            DateTime paidDate = payment.PaymentDate != default(DateTime) 
+                ? payment.PaymentDate 
+                : DateTime.Now;
 
-        var pNewPaid = new SqlParameter("@NewPaid", SqlDbType.Decimal) 
-            { Direction = ParameterDirection.Output, Precision = 18, Scale = 2 };
-        var pNewStatus = new SqlParameter("@NewStatus", SqlDbType.NVarChar, 50) 
-            { Direction = ParameterDirection.Output };
-        cmd.Parameters.Add(pNewPaid);
-        cmd.Parameters.Add(pNewStatus);
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
 
-        await cmd.ExecuteNonQueryAsync();
+            Console.WriteLine($"[BulkPayment] Processing SD: Contract={payment.ContractId}, Amount={payment.Amount}");
 
-        // Sync to AccountMasters
-        await using var syncCmd = new SqlCommand("sp_SyncSDReceiveToAccountMaster", conn) 
-            { CommandType = CommandType.StoredProcedure };
-        syncCmd.Parameters.AddWithValue("@ContractId", payment.ContractId);
-        syncCmd.Parameters.AddWithValue("@Amount", payment.Amount);
-        syncCmd.Parameters.AddWithValue("@PaidDate", payment.PaymentDate);
-        syncCmd.Parameters.AddWithValue("@PaymentMode", payment.PaymentMode);
-        syncCmd.Parameters.AddWithValue("@FundPoolId", (object?)validation.FundPoolId ?? DBNull.Value);
-        await syncCmd.ExecuteNonQueryAsync();
+            // Call sp_ReceiveSecurityDeposit
+            await using var cmd = new SqlCommand("sp_ReceiveSecurityDeposit", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
 
-        // Get the created TxnRecordId
-        var txnId = await GetLatestTxnRecordId(payment.ContractId, payment.PaymentDate);
-        return txnId;
+            cmd.Parameters.AddWithValue("@ContractId", payment.ContractId);
+            cmd.Parameters.AddWithValue("@Amount", payment.Amount);
+            cmd.Parameters.AddWithValue("@PaidDate", paidDate);
+            cmd.Parameters.AddWithValue("@PaymentMode", payment.PaymentMode ?? "Cash");
+            cmd.Parameters.AddWithValue("@PaymentModeId", (object?)validation.PaymentModeId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ChequeNumber", payment.ChequeNumber ?? "");
+            cmd.Parameters.AddWithValue("@FundPoolId", (object?)validation.FundPoolId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@FundPoolName", payment.FundPool ?? "");
+            cmd.Parameters.AddWithValue("@ReceivedBy", payment.ReceivedBy ?? "System");
+            cmd.Parameters.AddWithValue("@Notes", payment.Description ?? "Bulk import - Security deposit");
+            cmd.Parameters.AddWithValue("@PaymentStatus", NormalizeSDStatus(payment.Status));
+
+            var pNewPaid = new SqlParameter("@NewPaid", SqlDbType.Decimal) 
+                { Direction = ParameterDirection.Output, Precision = 18, Scale = 2 };
+            var pNewStatus = new SqlParameter("@NewStatus", SqlDbType.NVarChar, 50) 
+                { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(pNewPaid);
+            cmd.Parameters.Add(pNewStatus);
+
+            await cmd.ExecuteNonQueryAsync();
+
+            Console.WriteLine($"[BulkPayment] sp_ReceiveSecurityDeposit executed for Contract={payment.ContractId}");
+
+            // Sync to AccountMasters
+            await using var syncCmd = new SqlCommand("sp_SyncSDReceiveToAccountMaster", conn) 
+                { CommandType = CommandType.StoredProcedure };
+            syncCmd.Parameters.AddWithValue("@ContractId", payment.ContractId);
+            syncCmd.Parameters.AddWithValue("@Amount", payment.Amount);
+            syncCmd.Parameters.AddWithValue("@PaidDate", paidDate);
+            syncCmd.Parameters.AddWithValue("@PaymentMode", payment.PaymentMode ?? "Cash");
+            syncCmd.Parameters.AddWithValue("@FundPoolId", (object?)validation.FundPoolId ?? DBNull.Value);
+            await syncCmd.ExecuteNonQueryAsync();
+
+            Console.WriteLine($"[BulkPayment] SD synced to AccountMasters for Contract={payment.ContractId}");
+
+            // Get the created TxnRecordId
+            var txnId = await GetLatestTxnRecordId(payment.ContractId, paidDate);
+            return txnId;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[BulkPayment] ProcessSecurityDeposit ERROR: {ex.Message}");
+            throw new Exception($"Security deposit processing failed: {ex.Message}", ex);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -522,18 +594,41 @@ public class BulkPaymentService : IBulkPaymentService
         if (string.IsNullOrWhiteSpace(month))
             return null;
 
-        // Try parse formats: "Sep 2026", "September 2026", "09-2026", "2026-09"
-        string[] formats = {
-            "MMM yyyy", "MMMM yyyy", "MM-yyyy", "yyyy-MM", "MM/yyyy", "yyyy/MM"
+        month = month.Trim();
+
+        // Try parse formats with year first: "Sep 2026", "September 2026", "09-2026", "2026-09"
+        string[] formatsWithYear = {
+            "MMM yyyy", "MMMM yyyy", "MM-yyyy", "yyyy-MM", "MM/yyyy", "yyyy/MM",
+            "MMM-yyyy", "MMMM-yyyy"
         };
 
-        foreach (var format in formats)
+        foreach (var format in formatsWithYear)
         {
-            if (DateTime.TryParseExact(month.Trim(), format, 
+            if (DateTime.TryParseExact(month, format, 
                 CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
             {
                 return date;
             }
+        }
+
+        // If only month name provided (e.g., "September", "Sep"), use current year
+        string[] monthOnlyFormats = { "MMMM", "MMM" };
+        foreach (var format in monthOnlyFormats)
+        {
+            if (DateTime.TryParseExact(month, format, 
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            {
+                // Use current year
+                var currentYear = DateTime.Now.Year;
+                return new DateTime(currentYear, date.Month, 1);
+            }
+        }
+
+        // Try parse month number only (e.g., "9", "09")
+        if (int.TryParse(month, out var monthNum) && monthNum >= 1 && monthNum <= 12)
+        {
+            var currentYear = DateTime.Now.Year;
+            return new DateTime(currentYear, monthNum, 1);
         }
 
         return null;
