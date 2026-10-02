@@ -15,6 +15,7 @@ public interface IReportService
     Task<ApiResponse<CampCollectionReportResponse>> GetCampCollectionReportAsync(ReportRequest request);
     Task<ApiResponse<RoomWiseCollectionResponse>>   GetRoomWiseCollectionReportAsync(ReportRequest request);
     Task<ApiResponse<TenantLedgerSummary>>        GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo);
+    Task<ApiResponse<TenantRentLedgerResponse>>   GetTenantRentLedgerAsync(int tenantId, string? dateFrom, string? dateTo);
     Task<ApiResponse<DueReportResponse>>          GetDueReportAsync(ReportRequest request);
     Task<ApiResponse<IEnumerable<RoomHistoryRow>>>      GetRoomHistoryAsync(int roomId);
     Task<ApiResponse<MakePaymentResponse>>              MakePaymentAsync(MakePaymentRequest request);

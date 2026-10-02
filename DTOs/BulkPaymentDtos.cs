@@ -16,11 +16,12 @@ public class BulkPaymentItem
 {
     public string   ContractId      { get; set; } = string.Empty;
     public string   PaymentType     { get; set; } = "Rent";  // "Rent" or "Security Deposit"
-    public string   CampName        { get; set; } = string.Empty;
-    public string   RoomNo          { get; set; } = string.Empty;
-    public string   Month           { get; set; } = string.Empty;  // "Sep 2026" for Rent, optional for SD
-    public int?     InstallmentNo   { get; set; }                  // Optional: defaults to 1 if not provided
-    public string   Status          { get; set; } = "Paid";        // Paid/Partial/Advanced/Received
+    public string   CampName                { get; set; } = string.Empty;
+    public string   RoomNo                  { get; set; } = string.Empty;
+    public string   Month                   { get; set; } = string.Empty;  // "Sep 2026" for Rent, optional for SD
+    public int?     RoomInstallmentNo       { get; set; }                  // Room-wise installment (ContractRoomInstallments)
+    public int?     ContractInstallmentNo   { get; set; }                  // Contract-level installment (0 or 1 for auto-manage)
+    public string   Status                  { get; set; } = "Paid";        // Paid/Partial/Advanced/Received
     public decimal  Amount          { get; set; }
     public DateTime PaymentDate     { get; set; }
     public string   PaymentMode     { get; set; } = "Cash";

@@ -261,11 +261,61 @@ public class BulkPaymentService : IBulkPaymentService
             }
 
             // Get InstallmentNo and ContractRoomInstallmentId from Month
-            var (installmentNo, criId) = await GetInstallmentFromMonth(
-                conn, 
-                payment.ContractId, 
-                validation.RoomId.Value, 
-                enhancedMonth);
+            // If RoomInstallmentNo is provided in payload, use it; otherwise fetch from month
+            int? installmentNo = null;
+            int? criId = null;
+            
+            if (payment.RoomInstallmentNo.HasValue && payment.RoomInstallmentNo.Value > 0)
+            {
+                // Use room installment from payload BUT still match with MONTH
+                installmentNo = payment.RoomInstallmentNo;
+                Console.WriteLine($"[BulkPayment] Using RoomInstallmentNo from payload: {installmentNo} for month: {enhancedMonth}");
+                
+                // Get CriId based on installment number AND month (IMPORTANT!)
+                // This ensures we update the correct month's entry
+                DateTime? monthDate = ParseMonthString(enhancedMonth);
+                if (monthDate.HasValue)
+                {
+                    await using var criCmd = new SqlCommand(@"
+                        SELECT TOP 1 Id 
+                        FROM ContractRoomInstallments 
+                        WHERE ContractId = @ContractId 
+                          AND RoomId = @RoomId 
+                          AND InstallmentNo = @InstallmentNo
+                          AND MONTH(DueDate) = @Month
+                          AND YEAR(DueDate) = @Year
+                          AND ISNULL(IsDeleted,0) = 0", conn);
+                    criCmd.Parameters.AddWithValue("@ContractId", payment.ContractId);
+                    criCmd.Parameters.AddWithValue("@RoomId", validation.RoomId.Value);
+                    criCmd.Parameters.AddWithValue("@InstallmentNo", installmentNo.Value);
+                    criCmd.Parameters.AddWithValue("@Month", monthDate.Value.Month);
+                    criCmd.Parameters.AddWithValue("@Year", monthDate.Value.Year);
+                    
+                    var criResult = await criCmd.ExecuteScalarAsync();
+                    if (criResult != null && criResult != DBNull.Value)
+                    {
+                        criId = Convert.ToInt32(criResult);
+                        Console.WriteLine($"[BulkPayment] Found CriId={criId} for InstallmentNo={installmentNo}, Month={monthDate.Value.Month}/{monthDate.Value.Year}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[BulkPayment] WARNING: No matching entry found for InstallmentNo={installmentNo}, Month={enhancedMonth}");
+                    }
+                }
+            }
+            else
+            {
+                // Fallback: Get from month validation
+                var result = await GetInstallmentFromMonth(
+                    conn, 
+                    payment.ContractId, 
+                    validation.RoomId.Value, 
+                    enhancedMonth);
+                
+                installmentNo = result.InstallmentNo;
+                criId = result.CriId;
+                Console.WriteLine($"[BulkPayment] Fetched RoomInstallmentNo from month '{enhancedMonth}': {installmentNo}");
+            }
 
             if (!installmentNo.HasValue)
             {
@@ -317,10 +367,30 @@ public class BulkPaymentService : IBulkPaymentService
                 ? payment.PaymentDate 
                 : DateTime.Now;
 
-            // Contract-level InstallmentNo: 
-            // - Use 0 as default (for sp_RecordPayment validation bypass)
-            // - Room-wise installment tracking is in roomPayment.InstallmentNo
-            int contractInstallmentNo = payment.InstallmentNo ?? 0;
+            // ═══════════════════════════════════════════════════════════════
+            // AUTO CONTRACT INSTALLMENT NUMBER MANAGEMENT (Bulk Import Only)
+            // ═══════════════════════════════════════════════════════════════
+            // Logic: 
+            // - If ContractInstallmentNo is 0 or 1 (or null) → Auto-determine next installment
+            // - Find last "Paid" installment and increment by 1
+            // - RoomInstallmentNo is separate (used for ContractRoomInstallments)
+            // ═══════════════════════════════════════════════════════════════
+            int contractInstallmentNo;
+            
+            if (payment.ContractInstallmentNo == 0 || 
+                payment.ContractInstallmentNo == 1 || 
+                !payment.ContractInstallmentNo.HasValue)
+            {
+                // Auto-manage: Get next installment number
+                contractInstallmentNo = await GetNextContractInstallmentNo(payment.ContractId);
+                Console.WriteLine($"[BulkPayment] Auto-managed ContractInstallmentNo for {payment.ContractId} = {contractInstallmentNo}");
+            }
+            else
+            {
+                // Use provided contract installment number
+                contractInstallmentNo = payment.ContractInstallmentNo.Value;
+                Console.WriteLine($"[BulkPayment] Using provided ContractInstallmentNo for {payment.ContractId} = {contractInstallmentNo}");
+            }
             
             var paymentRequest = new RecordPaymentRequest
             {
@@ -677,4 +747,62 @@ public class BulkPaymentService : IBulkPaymentService
 
         return "Paid";  // Default for SD
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // AUTO CONTRACT INSTALLMENT NUMBER CALCULATION
+    // ═══════════════════════════════════════════════════════════════════════════
+    /// <summary>
+    /// Determines the next contract installment number based on completed installments.
+    /// Logic:
+    /// - Find the last COMPLETED (Status='Paid') installment
+    /// - If no completed installments exist, return 1 (first installment)
+    /// - Otherwise, return last_completed_installment + 1
+    /// 
+    /// Example:
+    /// - No paid installments → Returns 1
+    /// - Last paid installment is 2 → Returns 3
+    /// - Last paid installment is 5 → Returns 6
+    /// </summary>
+    private async Task<int> GetNextContractInstallmentNo(string contractId)
+    {
+        try
+        {
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Query to find the last completed installment
+            var query = @"
+                SELECT MAX(InstallmentNo) 
+                FROM ContractInstallments 
+                WHERE ContractId = @ContractId 
+                  AND ISNULL(IsDeleted, 0) = 0 
+                  AND Status = 'Paid'";
+
+            await using var cmd = new SqlCommand(query, conn);
+            cmd.Parameters.AddWithValue("@ContractId", contractId);
+
+            var result = await cmd.ExecuteScalarAsync();
+
+            // If no completed installment found, start from 1
+            if (result == null || result == DBNull.Value)
+            {
+                Console.WriteLine($"[BulkPayment] No completed installments found for {contractId}. Starting from InstallmentNo = 1");
+                return 1;
+            }
+
+            // Otherwise, increment the last completed installment
+            int lastCompletedInstallment = Convert.ToInt32(result);
+            int nextInstallment = lastCompletedInstallment + 1;
+
+            Console.WriteLine($"[BulkPayment] Last completed installment for {contractId} = {lastCompletedInstallment}, Next = {nextInstallment}");
+            return nextInstallment;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[BulkPayment] GetNextContractInstallmentNo ERROR: {ex.Message}");
+            // Default to 1 in case of error
+            return 1;
+        }
+    }
 }
+

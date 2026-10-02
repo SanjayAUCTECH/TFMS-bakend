@@ -453,6 +453,172 @@ public class ReportRepository : IReportRepository
         return summary;
     }
 
+    // ── Tenant Rent Ledger (Date-wise DR/CR/Balance) ──────────────────────────
+    public async Task<TenantRentLedgerResponse> GetTenantRentLedgerAsync(int tenantId, string? dateFrom, string? dateTo)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        // Get tenant info
+        var tenantQuery = "SELECT Name, Contact FROM Tenants WHERE Id = @TenantId AND IsDeleted = 0";
+        await using var tenantCmd = new SqlCommand(tenantQuery, conn);
+        tenantCmd.Parameters.AddWithValue("@TenantId", tenantId);
+        
+        string tenantName = "";
+        string contact = "";
+        await using (var rd = await tenantCmd.ExecuteReaderAsync())
+        {
+            if (await rd.ReadAsync())
+            {
+                tenantName = rd.IsDBNull(0) ? "" : rd.GetString(0);
+                contact = rd.IsDBNull(1) ? "" : rd.GetString(1);
+            }
+            else
+            {
+                // Tenant not found
+                return new TenantRentLedgerResponse
+                {
+                    Summary = new TenantRentLedgerSummary { TenantName = "Tenant Not Found", Contact = "" },
+                    Rows = new List<TenantRentLedgerRow>(),
+                    TotalRecords = 0
+                };
+            }
+        }
+
+        // Build the main query - Union of all transactions
+        var sql = @"
+WITH AllTransactions AS (
+    -- Rent Generation (DR) from TxnRecords
+    SELECT 
+        TxnDate AS Date,
+        Description,
+        CASE WHEN TxnType = 'DR' THEN Amount ELSE 0 END AS DrAmount,
+        CASE WHEN TxnType = 'CR' THEN Amount ELSE 0 END AS CrAmount,
+        0 AS SdAmount,
+        0 AS SdPaid,
+        ContractId,
+        PaymentMode,
+        ISNULL(ChequeNumber, '') + CASE WHEN ChequeNumber IS NOT NULL AND ChequeNumber <> '' THEN ' | ' ELSE '' END + ISNULL(Description, '') AS Reference,
+        TxnType
+    FROM TxnRecords
+    WHERE TenantId = @TenantId 
+        AND IsDeleted = 0
+        AND (@DateFrom IS NULL OR TxnDate >= CAST(@DateFrom AS DATE))
+        AND (@DateTo IS NULL OR TxnDate <= CAST(@DateTo AS DATE))
+    
+    UNION ALL
+    
+    -- Security Deposit Generation from Contracts
+    SELECT 
+        StartDate AS Date,
+        'Security Deposit - ' + ContractId AS Description,
+        0 AS DrAmount,
+        0 AS CrAmount,
+        SecurityDeposit AS SdAmount,
+        0 AS SdPaid,
+        ContractId,
+        '' AS PaymentMode,
+        'SD Generated' AS Reference,
+        'SD-DR' AS TxnType
+    FROM Contracts
+    WHERE TenantId = @TenantId 
+        AND IsDeleted = 0
+        AND SecurityDeposit > 0
+        AND (@DateFrom IS NULL OR StartDate >= CAST(@DateFrom AS DATE))
+        AND (@DateTo IS NULL OR StartDate <= CAST(@DateTo AS DATE))
+    
+    UNION ALL
+    
+    -- Security Deposit Payment from Contracts (if SecurityDepositPaid > 0)
+    SELECT 
+        StartDate AS Date,
+        'Security Deposit Paid - ' + ContractId AS Description,
+        0 AS DrAmount,
+        0 AS CrAmount,
+        0 AS SdAmount,
+        SecurityDepositPaid AS SdPaid,
+        ContractId,
+        '' AS PaymentMode,
+        'SD Payment' AS Reference,
+        'SD-CR' AS TxnType
+    FROM Contracts
+    WHERE TenantId = @TenantId 
+        AND IsDeleted = 0
+        AND SecurityDepositPaid > 0
+        AND (@DateFrom IS NULL OR StartDate >= CAST(@DateFrom AS DATE))
+        AND (@DateTo IS NULL OR StartDate <= CAST(@DateTo AS DATE))
+)
+SELECT 
+    Date,
+    Description,
+    DrAmount,
+    CrAmount,
+    SdAmount,
+    SdPaid,
+    ContractId,
+    PaymentMode,
+    Reference
+FROM AllTransactions
+ORDER BY Date ASC, TxnType DESC
+";
+
+        var rows = new List<TenantRentLedgerRow>();
+        decimal runningBalance = 0;
+        decimal totalDr = 0, totalCr = 0, totalSd = 0, totalSdPaid = 0;
+
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@TenantId", tenantId);
+        cmd.Parameters.AddWithValue("@DateFrom", (object?)dateFrom ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateTo", (object?)dateTo ?? DBNull.Value);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var drAmount = reader.IsDBNull(2) ? 0 : reader.GetDecimal(2);
+            var crAmount = reader.IsDBNull(3) ? 0 : reader.GetDecimal(3);
+            var sdAmount = reader.IsDBNull(4) ? 0 : reader.GetDecimal(4);
+            var sdPaid = reader.IsDBNull(5) ? 0 : reader.GetDecimal(5);
+
+            // Calculate running balance: Previous Balance + DR - CR
+            runningBalance = runningBalance + drAmount - crAmount;
+
+            totalDr += drAmount;
+            totalCr += crAmount;
+            totalSd += sdAmount;
+            totalSdPaid += sdPaid;
+
+            rows.Add(new TenantRentLedgerRow
+            {
+                Date = reader.GetDateTime(0),
+                Description = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                DrAmount = drAmount,
+                CrAmount = crAmount,
+                Balance = runningBalance,
+                SdAmount = sdAmount,
+                SdPaid = sdPaid,
+                ContractId = reader.IsDBNull(6) ? "" : reader.GetString(6),
+                PaymentMode = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                Reference = reader.IsDBNull(8) ? "" : reader.GetString(8)
+            });
+        }
+
+        return new TenantRentLedgerResponse
+        {
+            Summary = new TenantRentLedgerSummary
+            {
+                TenantName = tenantName,
+                Contact = contact,
+                TotalDrAmount = totalDr,
+                TotalCrAmount = totalCr,
+                TotalSdAmount = totalSd,
+                TotalSdPaid = totalSdPaid,
+                NetBalance = runningBalance
+            },
+            Rows = rows,
+            TotalRecords = rows.Count
+        };
+    }
+
     // ── Monthly Due Report ────────────────────────────────────────────────────
     public async Task<DueReportResponse> GetDueReportAsync(ReportRequest r)
     {

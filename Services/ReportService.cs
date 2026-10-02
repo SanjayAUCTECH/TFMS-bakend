@@ -90,6 +90,14 @@ public class ReportService : IReportService
             : ApiResponse<TenantLedgerSummary>.Ok(result, "Tenant ledger retrieved.");
     }
 
+    public async Task<ApiResponse<TenantRentLedgerResponse>> GetTenantRentLedgerAsync(int tenantId, string? dateFrom, string? dateTo)
+    {
+        var result = await _repo.GetTenantRentLedgerAsync(tenantId, dateFrom, dateTo);
+        return result.TotalRecords == 0
+            ? ApiResponse<TenantRentLedgerResponse>.Fail("No rent ledger data found for this tenant.")
+            : ApiResponse<TenantRentLedgerResponse>.Ok(result, "Tenant rent ledger retrieved.");
+    }
+
     public async Task<ApiResponse<IEnumerable<RoomHistoryRow>>> GetRoomHistoryAsync(int roomId)
     {
         var data = await _repo.GetRoomHistoryAsync(roomId);

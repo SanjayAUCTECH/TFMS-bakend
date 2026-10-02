@@ -562,3 +562,36 @@ public class RoomWiseCollectionResponse
     public RoomWiseCollectionSummary   Summary      { get; set; } = new();
     public int                         TotalRecords { get; set; }
 }
+
+// ── Tenant Rent Ledger (Date-wise DR/CR/Balance) ──────────────────────────
+public class TenantRentLedgerRow
+{
+    public DateTime Date           { get; set; }
+    public string   Description    { get; set; } = string.Empty;
+    public decimal  DrAmount       { get; set; }   // Debit - Rent Generated
+    public decimal  CrAmount       { get; set; }   // Credit - Payment Received
+    public decimal  Balance        { get; set; }   // Running Balance
+    public decimal  SdAmount       { get; set; }   // Security Deposit Generated
+    public decimal  SdPaid         { get; set; }   // Security Deposit Paid
+    public string   ContractId     { get; set; } = string.Empty;
+    public string   PaymentMode    { get; set; } = string.Empty;
+    public string   Reference      { get; set; } = string.Empty;
+}
+
+public class TenantRentLedgerSummary
+{
+    public string  TenantName         { get; set; } = string.Empty;
+    public string  Contact            { get; set; } = string.Empty;
+    public decimal TotalDrAmount      { get; set; }   // Total Rent Generated
+    public decimal TotalCrAmount      { get; set; }   // Total Payment Received
+    public decimal TotalSdAmount      { get; set; }   // Total SD Generated
+    public decimal TotalSdPaid        { get; set; }   // Total SD Paid
+    public decimal NetBalance         { get; set; }   // Final Balance
+}
+
+public class TenantRentLedgerResponse
+{
+    public TenantRentLedgerSummary     Summary { get; set; } = new();
+    public List<TenantRentLedgerRow>   Rows    { get; set; } = new();
+    public int                         TotalRecords { get; set; }
+}
