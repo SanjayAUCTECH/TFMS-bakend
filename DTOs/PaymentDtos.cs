@@ -142,6 +142,12 @@ public class FilteredPaymentDataResponse
     public decimal  TotalPaidAmount         { get; set; }
     public decimal  TotalBalance            { get; set; }
     
+    // Security Deposit Details
+    public decimal  SecurityDepositAmount   { get; set; }  // Total SD for this contract
+    public decimal  SecurityDepositPaid     { get; set; }  // SD paid amount
+    public decimal  SecurityDepositBalance  { get; set; }  // SD balance (Amount - Paid)
+    public string   SecurityDepositStatus   { get; set; } = string.Empty; // Received/Partial/Pending
+    
     // Calculated Fields
     public int      DaysOverdue             { get; set; }
     public bool     IsOverdue               { get; set; }

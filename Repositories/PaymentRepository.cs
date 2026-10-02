@@ -537,6 +537,12 @@ public class PaymentRepository : IPaymentRepository
                     c.ContractTotal AS ContractTotal,
                     ISNULL(c.MonthlyTotal, 0) AS MonthlyTotal,
                     
+                    -- Security Deposit details from Contracts table
+                    ISNULL(c.SecurityDeposit, 0) AS SecurityDepositAmount,
+                    ISNULL(c.SecurityDepositPaid, 0) AS SecurityDepositPaid,
+                    ISNULL(c.SecurityDeposit - ISNULL(c.SecurityDepositPaid, 0), 0) AS SecurityDepositBalance,
+                    ISNULL(c.SecurityDepositStatus, 'Pending') AS SecurityDepositStatus,
+                    
                     -- Tenant details
                     t.Id AS TenantId,
                     t.Name AS TenantName,
@@ -651,6 +657,12 @@ public class PaymentRepository : IPaymentRepository
                     ContractMonths = reader.GetInt32(reader.GetOrdinal("ContractMonths")),
                     ContractTotal = reader.GetDecimal(reader.GetOrdinal("ContractTotal")),
                     MonthlyTotal = reader.GetDecimal(reader.GetOrdinal("MonthlyTotal")),
+                    
+                    // Security Deposit
+                    SecurityDepositAmount = reader.GetDecimal(reader.GetOrdinal("SecurityDepositAmount")),
+                    SecurityDepositPaid = reader.GetDecimal(reader.GetOrdinal("SecurityDepositPaid")),
+                    SecurityDepositBalance = reader.GetDecimal(reader.GetOrdinal("SecurityDepositBalance")),
+                    SecurityDepositStatus = reader.GetString(reader.GetOrdinal("SecurityDepositStatus")),
                     
                     // Tenant
                     TenantId = reader.GetInt32(reader.GetOrdinal("TenantId")),

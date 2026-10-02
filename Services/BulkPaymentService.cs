@@ -317,14 +317,15 @@ public class BulkPaymentService : IBulkPaymentService
                 ? payment.PaymentDate 
                 : DateTime.Now;
 
-            // Use InstallmentNo from payload, default to 1 if not provided
-            // ContractInstallments table typically has InstallmentNo=1 for all bulk imports
-            int installmentNo = payment.InstallmentNo ?? 1;
+            // Contract-level InstallmentNo: 
+            // - Use 0 as default (for sp_RecordPayment validation bypass)
+            // - Room-wise installment tracking is in roomPayment.InstallmentNo
+            int contractInstallmentNo = payment.InstallmentNo ?? 0;
             
             var paymentRequest = new RecordPaymentRequest
             {
                 ContractId = payment.ContractId,
-                InstallmentNo = installmentNo,
+                InstallmentNo = contractInstallmentNo,
                 PaidAmount = payment.Amount,
                 PaidDate = paidDate,
                 PaymentMode = payment.PaymentMode ?? "Cash",
@@ -345,7 +346,7 @@ public class BulkPaymentService : IBulkPaymentService
             var paymentModel = new Models.Payment
             {
                 ContractId = paymentRequest.ContractId,
-                InstallmentNo = installmentNo,
+                InstallmentNo = contractInstallmentNo,
                 PaidAmount = paymentRequest.PaidAmount,
                 PaidDate = paymentRequest.PaidDate,
                 PaymentMode = paymentRequest.PaymentMode ?? "",
