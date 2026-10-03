@@ -76,3 +76,10 @@ g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Relea
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Release\net8.0\TFMS_software_api.genruntimeconfig.cache
 g:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\obj\Release\net8.0\ref\TFMS_software_api.dll
 G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\Swashbuckle.AspNetCore.Annotations.dll
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\web.config
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\appsettings.Development.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\appsettings.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\appsettings.Production.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\TFMS_software_api.deps.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\TFMS_software_api.runtimeconfig.json
+G:\Sanjay Kumar\AI project\TFMS Software\Tfms-full project\TFMS-bakend\bin\Release\net8.0\publish\TFMS_software_api.staticwebassets.endpoints.json

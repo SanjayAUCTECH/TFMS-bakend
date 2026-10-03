@@ -488,58 +488,70 @@ public class ReportRepository : IReportRepository
         // First get ALL transactions in chronological order to calculate running balance
         var allTxnsSql = @"
 SELECT 
-    TxnDate AS Date,
+    Date,
     Description,
-    CASE WHEN TxnType = 'DR' THEN Amount ELSE 0 END AS DrAmount,
-    CASE WHEN TxnType = 'CR' THEN Amount ELSE 0 END AS CrAmount,
+    DrAmount,
+    CrAmount,
     ContractId,
     PaymentMode,
-    ISNULL(ChequeNumber, '') + CASE WHEN ChequeNumber IS NOT NULL AND ChequeNumber <> '' THEN ' | ' ELSE '' END + ISNULL(Description, '') AS Reference,
+    Reference,
     TxnType,
-    TxnDate AS SortDate
-FROM TxnRecords
-WHERE TenantId = @TenantId 
-    AND IsDeleted = 0
-    AND (@DateFrom IS NULL OR TxnDate >= CAST(@DateFrom AS DATE))
-    AND (@DateTo IS NULL OR TxnDate <= CAST(@DateTo AS DATE))
+    SortDate
+FROM (
+    SELECT 
+        TxnDate AS Date,
+        Description,
+        CASE WHEN TxnType = 'DR' THEN Amount ELSE 0 END AS DrAmount,
+        CASE WHEN TxnType = 'CR' THEN Amount ELSE 0 END AS CrAmount,
+        ContractId,
+        PaymentMode,
+        ISNULL(ChequeNumber, '') + CASE WHEN ChequeNumber IS NOT NULL AND ChequeNumber <> '' THEN ' | ' ELSE '' END + ISNULL(Description, '') AS Reference,
+        TxnType,
+        TxnDate AS SortDate
+    FROM TxnRecords
+    WHERE TenantId = @TenantId 
+        AND IsDeleted = 0
+        AND (@DateFrom IS NULL OR TxnDate >= CAST(@DateFrom AS DATE))
+        AND (@DateTo IS NULL OR TxnDate <= CAST(@DateTo AS DATE))
 
-UNION ALL
+    UNION ALL
 
-SELECT 
-    StartDate AS Date,
-    'Security Deposit Generated - ' + ContractId AS Description,
-    SecurityDeposit AS DrAmount,
-    0 AS CrAmount,
-    ContractId,
-    '' AS PaymentMode,
-    'SD Generated' AS Reference,
-    'SD-DR' AS TxnType,
-    StartDate AS SortDate
-FROM Contracts
-WHERE TenantId = @TenantId 
-    AND IsDeleted = 0
-    AND SecurityDeposit > 0
-    AND (@DateFrom IS NULL OR StartDate >= CAST(@DateFrom AS DATE))
-    AND (@DateTo IS NULL OR StartDate <= CAST(@DateTo AS DATE))
+    SELECT 
+        StartDate AS Date,
+        'Security Deposit Generated - ' + ContractId AS Description,
+        SecurityDeposit AS DrAmount,
+        0 AS CrAmount,
+        ContractId,
+        '' AS PaymentMode,
+        'SD Generated' AS Reference,
+        'SD-DR' AS TxnType,
+        StartDate AS SortDate
+    FROM Contracts
+    WHERE TenantId = @TenantId 
+        AND IsDeleted = 0
+        AND SecurityDeposit > 0
+        AND (@DateFrom IS NULL OR StartDate >= CAST(@DateFrom AS DATE))
+        AND (@DateTo IS NULL OR StartDate <= CAST(@DateTo AS DATE))
 
-UNION ALL
+    UNION ALL
 
-SELECT 
-    StartDate AS Date,
-    'Security Deposit Paid - ' + ContractId AS Description,
-    0 AS DrAmount,
-    SecurityDepositPaid AS CrAmount,
-    ContractId,
-    '' AS PaymentMode,
-    'SD Payment' AS Reference,
-    'SD-CR' AS TxnType,
-    StartDate AS SortDate
-FROM Contracts
-WHERE TenantId = @TenantId 
-    AND IsDeleted = 0
-    AND SecurityDepositPaid > 0
-    AND (@DateFrom IS NULL OR StartDate >= CAST(@DateFrom AS DATE))
-    AND (@DateTo IS NULL OR StartDate <= CAST(@DateTo AS DATE))
+    SELECT 
+        StartDate AS Date,
+        'Security Deposit Paid - ' + ContractId AS Description,
+        0 AS DrAmount,
+        SecurityDepositPaid AS CrAmount,
+        ContractId,
+        '' AS PaymentMode,
+        'SD Payment' AS Reference,
+        'SD-CR' AS TxnType,
+        StartDate AS SortDate
+    FROM Contracts
+    WHERE TenantId = @TenantId 
+        AND IsDeleted = 0
+        AND SecurityDepositPaid > 0
+        AND (@DateFrom IS NULL OR StartDate >= CAST(@DateFrom AS DATE))
+        AND (@DateTo IS NULL OR StartDate <= CAST(@DateTo AS DATE))
+) AS AllTransactions
 ORDER BY SortDate ASC, 
     CASE 
         WHEN TxnType = 'SD-DR' THEN 1 
