@@ -51,12 +51,13 @@ public class ReportsController : BaseApiController
         return r.Success ? Ok(r) : NotFound(r);
     }
 
-    /// <summary>GET api/reports/tenant-rent-ledger/{tenantId}?dateFrom=2026-01-01&dateTo=2026-12-31</summary>
+    /// <summary>GET api/reports/tenant-rent-ledger/{tenantId}?dateFrom=2026-01-01&dateTo=2026-12-31&pageNumber=1&pageSize=50</summary>
     [HttpGet("tenant-rent-ledger/{tenantId:int}")]
     public async Task<IActionResult> TenantRentLedger(int tenantId,
-        [FromQuery] string? dateFrom, [FromQuery] string? dateTo)
+        [FromQuery] string? dateFrom, [FromQuery] string? dateTo,
+        [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 50)
     {
-        var r = await _service.GetTenantRentLedgerAsync(tenantId, dateFrom, dateTo);
+        var r = await _service.GetTenantRentLedgerAsync(tenantId, dateFrom, dateTo, pageNumber, pageSize);
         return r.Success ? Ok(r) : NotFound(r);
     }
 

@@ -15,7 +15,7 @@ public interface IReportRepository
     Task<CampCollectionReportResponse> GetCampCollectionReportAsync(ReportRequest r);
     Task<RoomWiseCollectionResponse>   GetRoomWiseCollectionReportAsync(ReportRequest r);
     Task<TenantLedgerSummary?>     GetTenantLedgerAsync(int tenantId, string? contractId, string? dateFrom, string? dateTo);
-    Task<TenantRentLedgerResponse> GetTenantRentLedgerAsync(int tenantId, string? dateFrom, string? dateTo);
+    Task<TenantRentLedgerResponse> GetTenantRentLedgerAsync(int tenantId, string? dateFrom, string? dateTo, int pageNumber, int pageSize);
     Task<DueReportResponse>        GetDueReportAsync(ReportRequest r);
 
     // Room History
