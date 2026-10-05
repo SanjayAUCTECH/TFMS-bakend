@@ -18,7 +18,11 @@ public class AccountMastersController : BaseApiController
         _activityLog = log;
     }
 
-    /// <summary>GET api/accountmasters?PageNumber=1&PageSize=10&PaymentType=Income&DateFrom=2026-01-01</summary>
+    /// <summary>
+    /// GET api/accountmasters?PageNumber=1&PageSize=10&PaymentType=Income&DateFrom=2026-01-01
+    /// Filter by exact PaymentDate: ?PaymentDate=2026-01-15
+    /// Filter by PaymentDate range: ?PaymentDateFrom=2026-01-01&PaymentDateTo=2026-01-31
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] AccountMasterListRequest request)
     {

@@ -63,6 +63,7 @@ public class AccountMasterService : IAccountMasterService
         var master = new AccountMaster
         {
             TransDate     = request.TransDate,
+            PaymentDate   = request.PaymentDate,
             Mode          = request.Mode,
             FundPool      = fundPoolCode,
             FundPoolName  = fundPoolName,
@@ -111,6 +112,7 @@ public class AccountMasterService : IAccountMasterService
         var master = new AccountMaster
         {
             TransDate     = request.TransDate,
+            PaymentDate   = request.PaymentDate,
             Mode          = request.Mode,
             FundPool      = fundPoolCode,
             FundPoolName  = fundPoolName,
@@ -145,6 +147,7 @@ public class AccountMasterService : IAccountMasterService
         AccountId     = m.AccountId,
         VoucherNo     = m.VoucherNo,
         TransDate     = m.TransDate,
+        PaymentDate   = m.PaymentDate,
         PaymentType   = m.PaymentType,
         Mode          = m.Mode,
         FundPool      = m.FundPool,
@@ -172,6 +175,7 @@ public class AccountMasterService : IAccountMasterService
             AccountId     = m.AccountId,
             VoucherNo     = m.VoucherNo,
             TransDate     = m.TransDate,
+            PaymentDate   = m.PaymentDate,
             PaymentType   = m.PaymentType,
             Mode          = m.Mode,
             FundPool      = m.FundPool,

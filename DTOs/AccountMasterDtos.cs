@@ -6,6 +6,7 @@ namespace TFMS_software_api.DTOs;
 public class CreateAccountMasterRequest
 {
     public DateTime TransDate      { get; set; }
+    public DateTime? PaymentDate   { get; set; }
     public string   Mode           { get; set; } = string.Empty;
     public string   VoucherNo      { get; set; } = string.Empty;  // Optional — if empty, auto-generate
     public int?     FundPoolId     { get; set; }
@@ -35,6 +36,7 @@ public class AccountMasterHeadItem
 public class UpdateAccountMasterRequest
 {
     public DateTime TransDate      { get; set; }
+    public DateTime? PaymentDate   { get; set; }
     public string   Mode           { get; set; } = string.Empty;
     public int?     FundPoolId     { get; set; }
     public string   FundPoolName   { get; set; } = string.Empty;
@@ -54,6 +56,9 @@ public class AccountMasterListRequest : PagedRequest
 {
     public string? DateFrom      { get; set; }
     public string? DateTo        { get; set; }
+    public string? PaymentDate     { get; set; }   // Exact PaymentDate filter (single date)
+    public string? PaymentDateFrom { get; set; }   // PaymentDate filter start (range)
+    public string? PaymentDateTo   { get; set; }   // PaymentDate filter end (range)
     public string? PaymentType   { get; set; }   // Income | Expense | null=All
     public string? Nature        { get; set; }   // Camp | HO | SD | null=All
     public int?    RecipientId   { get; set; }   // Filter by assigned person/recipient
@@ -70,6 +75,7 @@ public class AccountMasterResponse
     public string   AccountId     { get; set; } = string.Empty;
     public string   VoucherNo     { get; set; } = string.Empty;
     public DateTime TransDate     { get; set; }
+    public DateTime? PaymentDate  { get; set; }
     public string   PaymentType   { get; set; } = string.Empty;
     public string   Mode          { get; set; } = string.Empty;
     public string   FundPool      { get; set; } = string.Empty;
@@ -90,6 +96,7 @@ public class AccountMasterDetailResponse
     public string   AccountId     { get; set; } = string.Empty;
     public string   VoucherNo     { get; set; } = string.Empty;
     public DateTime TransDate     { get; set; }
+    public DateTime? PaymentDate  { get; set; }
     public string   PaymentType   { get; set; } = string.Empty;
     public string   Mode          { get; set; } = string.Empty;
     public string   FundPool      { get; set; } = string.Empty;

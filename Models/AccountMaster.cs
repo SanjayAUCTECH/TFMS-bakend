@@ -6,6 +6,7 @@ public class AccountMaster
     public string   AccountId     { get; set; } = string.Empty;
     public string   VoucherNo     { get; set; } = string.Empty;
     public DateTime TransDate     { get; set; }
+    public DateTime? PaymentDate  { get; set; }
     public string   PaymentType   { get; set; } = string.Empty;   // Income | Expense
     public string   Mode          { get; set; } = string.Empty;
     public string   FundPool      { get; set; } = string.Empty;

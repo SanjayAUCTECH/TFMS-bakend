@@ -32,6 +32,14 @@ public class AccountMasterRepository : IAccountMasterRepository
                          OR AccountId IN (SELECT AccountId FROM Expenses WHERE Head=@AccountHead AND ISNULL(IsDeleted,0)=0))";
         if (!string.IsNullOrEmpty(request.DateFrom))     where += " AND CAST(TransDate AS DATE)>=@DateFrom";
         if (!string.IsNullOrEmpty(request.DateTo))       where += " AND CAST(TransDate AS DATE)<=@DateTo";
+        // PaymentDate filters - exact date takes priority over range
+        if (!string.IsNullOrEmpty(request.PaymentDate))
+            where += " AND CAST(PaymentDate AS DATE)=@PaymentDate";
+        else
+        {
+            if (!string.IsNullOrEmpty(request.PaymentDateFrom)) where += " AND CAST(PaymentDate AS DATE)>=@PaymentDateFrom";
+            if (!string.IsNullOrEmpty(request.PaymentDateTo))   where += " AND CAST(PaymentDate AS DATE)<=@PaymentDateTo";
+        }
         if (!string.IsNullOrEmpty(request.SearchText))
             where += " AND (AccountId LIKE @Search OR VoucherNo LIKE @Search OR Purpose LIKE @Search OR RecipientName LIKE @Search OR Mode LIKE @Search OR RecipientRole LIKE @Search)";
 
@@ -85,6 +93,7 @@ public class AccountMasterRepository : IAccountMasterRepository
 
         // ── Scalar params ──
         cmd.Parameters.AddWithValue("@TransDate",     master.TransDate);
+        cmd.Parameters.AddWithValue("@PaymentDate",   (object?)master.PaymentDate ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Mode",          master.Mode          ?? "");
         cmd.Parameters.AddWithValue("@VoucherNo",     string.IsNullOrWhiteSpace(requestedVoucherNo)
                                                         ? (object)DBNull.Value
@@ -138,6 +147,7 @@ public class AccountMasterRepository : IAccountMasterRepository
 
         cmd.Parameters.AddWithValue("@Id",            id);
         cmd.Parameters.AddWithValue("@TransDate",     master.TransDate);
+        cmd.Parameters.AddWithValue("@PaymentDate",   (object?)master.PaymentDate ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Mode",          master.Mode          ?? "");
         cmd.Parameters.AddWithValue("@FundPool",      master.FundPool      ?? "");
         cmd.Parameters.AddWithValue("@FundPoolName",  master.FundPoolName  ?? "");
@@ -274,6 +284,17 @@ public class AccountMasterRepository : IAccountMasterRepository
             cmd.Parameters.AddWithValue("@DateFrom", df.Date);
         if (!string.IsNullOrEmpty(req.DateTo) && DateTime.TryParse(req.DateTo, out var dt))
             cmd.Parameters.AddWithValue("@DateTo", dt.Date);
+        // PaymentDate exact match
+        if (!string.IsNullOrEmpty(req.PaymentDate) && DateTime.TryParse(req.PaymentDate, out var pd))
+            cmd.Parameters.AddWithValue("@PaymentDate", pd.Date);
+        // PaymentDate range (only if exact PaymentDate not provided)
+        if (string.IsNullOrEmpty(req.PaymentDate))
+        {
+            if (!string.IsNullOrEmpty(req.PaymentDateFrom) && DateTime.TryParse(req.PaymentDateFrom, out var pdf))
+                cmd.Parameters.AddWithValue("@PaymentDateFrom", pdf.Date);
+            if (!string.IsNullOrEmpty(req.PaymentDateTo) && DateTime.TryParse(req.PaymentDateTo, out var pdt))
+                cmd.Parameters.AddWithValue("@PaymentDateTo", pdt.Date);
+        }
         if (!string.IsNullOrEmpty(req.SearchText))
             cmd.Parameters.AddWithValue("@Search", "%" + req.SearchText + "%");
     }
@@ -284,6 +305,7 @@ public class AccountMasterRepository : IAccountMasterRepository
         AccountId     = r.IsDBNull(r.GetOrdinal("AccountId"))     ? "" : r.GetString(r.GetOrdinal("AccountId")),
         VoucherNo     = r.IsDBNull(r.GetOrdinal("VoucherNo"))     ? "" : r.GetString(r.GetOrdinal("VoucherNo")),
         TransDate     = r.GetDateTime(r.GetOrdinal("TransDate")),
+        PaymentDate   = r.IsDBNull(r.GetOrdinal("PaymentDate"))   ? null : r.GetDateTime(r.GetOrdinal("PaymentDate")),
         PaymentType   = r.IsDBNull(r.GetOrdinal("PaymentType"))   ? "" : r.GetString(r.GetOrdinal("PaymentType")),
         Mode          = r.IsDBNull(r.GetOrdinal("Mode"))          ? "" : r.GetString(r.GetOrdinal("Mode")),
         FundPool      = r.IsDBNull(r.GetOrdinal("FundPool"))      ? "" : r.GetString(r.GetOrdinal("FundPool")),
