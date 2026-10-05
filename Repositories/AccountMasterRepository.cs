@@ -11,55 +11,67 @@ public class AccountMasterRepository : IAccountMasterRepository
     public AccountMasterRepository(IDbConnectionFactory factory) => _factory = factory;
 
     // ──────────────────────────────────────────────────────────────
-    // GET ALL  (plain SQL — no SP needed for selects)
+    // GET ALL  →  sp_GetAccountMasters
     // ──────────────────────────────────────────────────────────────
     public async Task<(IEnumerable<AccountMaster> Data, int TotalRecords)> GetAllAsync(AccountMasterListRequest request)
     {
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
 
-        var where = "WHERE IsDeleted=0";
-        if (!string.IsNullOrEmpty(request.PaymentType))  where += " AND PaymentType=@PaymentType";
-        if (!string.IsNullOrEmpty(request.Nature))       where += " AND Nature=@Nature";
-        if (request.RecipientId.HasValue)                where += " AND RecipientId=@RecipientId";
-        if (!string.IsNullOrEmpty(request.FundPool))     where += " AND FundPool=@FundPool";
-        if (!string.IsNullOrEmpty(request.Mode))         where += " AND Mode=@Mode";
-        if (request.CampId.HasValue)
-            where += @" AND (AccountId IN (SELECT AccountId FROM Incomes  WHERE CampId=@CampId AND ISNULL(IsDeleted,0)=0)
-                          OR AccountId IN (SELECT AccountId FROM Expenses WHERE CampId=@CampId AND ISNULL(IsDeleted,0)=0))";
-        if (!string.IsNullOrEmpty(request.AccountHead))
-            where += @" AND (AccountId IN (SELECT AccountId FROM Incomes WHERE Head=@AccountHead AND ISNULL(IsDeleted,0)=0)
-                         OR AccountId IN (SELECT AccountId FROM Expenses WHERE Head=@AccountHead AND ISNULL(IsDeleted,0)=0))";
-        if (!string.IsNullOrEmpty(request.DateFrom))     where += " AND CAST(TransDate AS DATE)>=@DateFrom";
-        if (!string.IsNullOrEmpty(request.DateTo))       where += " AND CAST(TransDate AS DATE)<=@DateTo";
-        // PaymentDate filters - exact date takes priority over range
-        if (!string.IsNullOrEmpty(request.PaymentDate))
-            where += " AND CAST(PaymentDate AS DATE)=@PaymentDate";
-        else
+        await using var cmd = new SqlCommand("sp_GetAccountMasters", conn)
         {
-            if (!string.IsNullOrEmpty(request.PaymentDateFrom)) where += " AND CAST(PaymentDate AS DATE)>=@PaymentDateFrom";
-            if (!string.IsNullOrEmpty(request.PaymentDateTo))   where += " AND CAST(PaymentDate AS DATE)<=@PaymentDateTo";
-        }
-        if (!string.IsNullOrEmpty(request.SearchText))
-            where += " AND (AccountId LIKE @Search OR VoucherNo LIKE @Search OR Purpose LIKE @Search OR RecipientName LIKE @Search OR Mode LIKE @Search OR RecipientRole LIKE @Search)";
+            CommandType = CommandType.StoredProcedure
+        };
 
-        // Count
-        await using var countCmd = new SqlCommand($"SELECT COUNT(*) FROM AccountMasters {where}", conn);
-        AddFilterParams(countCmd, request);
-        var total = (int)(await countCmd.ExecuteScalarAsync())!;
+        // Pagination
+        cmd.Parameters.AddWithValue("@PageNumber", request.ResolvedPageNumber);
+        cmd.Parameters.AddWithValue("@PageSize", request.ResolvedPageSize);
 
-        // Data
-        var sql = $@"SELECT * FROM AccountMasters {where}
-            ORDER BY Id DESC
-            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
-        await using var cmd = new SqlCommand(sql, conn);
-        AddFilterParams(cmd, request);
-        cmd.Parameters.AddWithValue("@Offset",   (request.ResolvedPageNumber - 1) * request.ResolvedPageSize);
-        cmd.Parameters.AddWithValue("@PageSize",  request.ResolvedPageSize);
+        // Filters
+        cmd.Parameters.AddWithValue("@PaymentType", string.IsNullOrEmpty(request.PaymentType) ? (object)DBNull.Value : request.PaymentType);
+        cmd.Parameters.AddWithValue("@Nature", string.IsNullOrEmpty(request.Nature) ? (object)DBNull.Value : request.Nature);
+        cmd.Parameters.AddWithValue("@RecipientId", request.RecipientId.HasValue ? (object)request.RecipientId.Value : DBNull.Value);
+        cmd.Parameters.AddWithValue("@FundPool", string.IsNullOrEmpty(request.FundPool) ? (object)DBNull.Value : request.FundPool);
+        cmd.Parameters.AddWithValue("@Mode", string.IsNullOrEmpty(request.Mode) ? (object)DBNull.Value : request.Mode);
+        cmd.Parameters.AddWithValue("@CampId", request.CampId.HasValue ? (object)request.CampId.Value : DBNull.Value);
+        cmd.Parameters.AddWithValue("@AccountHead", string.IsNullOrEmpty(request.AccountHead) ? (object)DBNull.Value : request.AccountHead);
 
+        // Date filters
+        cmd.Parameters.AddWithValue("@DateFrom",
+            !string.IsNullOrEmpty(request.DateFrom) && DateTime.TryParse(request.DateFrom, out var df)
+                ? (object)df.Date : DBNull.Value);
+        cmd.Parameters.AddWithValue("@DateTo",
+            !string.IsNullOrEmpty(request.DateTo) && DateTime.TryParse(request.DateTo, out var dt)
+                ? (object)dt.Date : DBNull.Value);
+
+        // PaymentDate filters
+        cmd.Parameters.AddWithValue("@PaymentDate",
+            !string.IsNullOrEmpty(request.PaymentDate) && DateTime.TryParse(request.PaymentDate, out var pd)
+                ? (object)pd.Date : DBNull.Value);
+        cmd.Parameters.AddWithValue("@PaymentDateFrom",
+            !string.IsNullOrEmpty(request.PaymentDateFrom) && DateTime.TryParse(request.PaymentDateFrom, out var pdf)
+                ? (object)pdf.Date : DBNull.Value);
+        cmd.Parameters.AddWithValue("@PaymentDateTo",
+            !string.IsNullOrEmpty(request.PaymentDateTo) && DateTime.TryParse(request.PaymentDateTo, out var pdt)
+                ? (object)pdt.Date : DBNull.Value);
+
+        // Search text
+        cmd.Parameters.AddWithValue("@SearchText",
+            string.IsNullOrEmpty(request.SearchText) ? (object)DBNull.Value : "%" + request.SearchText + "%");
+
+        // Output parameter for total count
+        var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(totalParam);
+
+        // Execute and read data
         var list = new List<AccountMaster>();
-        await using var r = await cmd.ExecuteReaderAsync();
-        while (await r.ReadAsync()) list.Add(Map(r));
+        await using (var r = await cmd.ExecuteReaderAsync())
+        {
+            while (await r.ReadAsync()) list.Add(Map(r));
+        }
+
+        // Now read output parameter (after reader is closed)
+        var total = (int)(totalParam.Value ?? 0);
         return (list, total);
     }
 
@@ -269,34 +281,6 @@ public class AccountMasterRepository : IAccountMasterRepository
             dt.Rows.Add(h.PaymentType, h.Head, h.Amount, h.Purpose ?? "");
 
         return dt;
-    }
-
-    private static void AddFilterParams(SqlCommand cmd, AccountMasterListRequest req)
-    {
-        if (!string.IsNullOrEmpty(req.PaymentType))  cmd.Parameters.AddWithValue("@PaymentType", req.PaymentType);
-        if (!string.IsNullOrEmpty(req.Nature))       cmd.Parameters.AddWithValue("@Nature",      req.Nature);
-        if (req.RecipientId.HasValue)                cmd.Parameters.AddWithValue("@RecipientId", req.RecipientId.Value);
-        if (!string.IsNullOrEmpty(req.FundPool))     cmd.Parameters.AddWithValue("@FundPool",    req.FundPool);
-        if (!string.IsNullOrEmpty(req.Mode))         cmd.Parameters.AddWithValue("@Mode",        req.Mode);
-        if (req.CampId.HasValue)                     cmd.Parameters.AddWithValue("@CampId",      req.CampId.Value);
-        if (!string.IsNullOrEmpty(req.AccountHead))  cmd.Parameters.AddWithValue("@AccountHead", req.AccountHead);
-        if (!string.IsNullOrEmpty(req.DateFrom) && DateTime.TryParse(req.DateFrom, out var df))
-            cmd.Parameters.AddWithValue("@DateFrom", df.Date);
-        if (!string.IsNullOrEmpty(req.DateTo) && DateTime.TryParse(req.DateTo, out var dt))
-            cmd.Parameters.AddWithValue("@DateTo", dt.Date);
-        // PaymentDate exact match
-        if (!string.IsNullOrEmpty(req.PaymentDate) && DateTime.TryParse(req.PaymentDate, out var pd))
-            cmd.Parameters.AddWithValue("@PaymentDate", pd.Date);
-        // PaymentDate range (only if exact PaymentDate not provided)
-        if (string.IsNullOrEmpty(req.PaymentDate))
-        {
-            if (!string.IsNullOrEmpty(req.PaymentDateFrom) && DateTime.TryParse(req.PaymentDateFrom, out var pdf))
-                cmd.Parameters.AddWithValue("@PaymentDateFrom", pdf.Date);
-            if (!string.IsNullOrEmpty(req.PaymentDateTo) && DateTime.TryParse(req.PaymentDateTo, out var pdt))
-                cmd.Parameters.AddWithValue("@PaymentDateTo", pdt.Date);
-        }
-        if (!string.IsNullOrEmpty(req.SearchText))
-            cmd.Parameters.AddWithValue("@Search", "%" + req.SearchText + "%");
     }
 
     private static AccountMaster Map(SqlDataReader r) => new()
