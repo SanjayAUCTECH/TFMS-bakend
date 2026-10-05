@@ -127,7 +127,7 @@ BEGIN
         -- Income heads
         INSERT INTO Incomes (
             IncomeId, AccountId, Head, Amount, Purpose, 
-            TransDate, Mode, FundPool, FundPoolName, 
+            Date, TransDate, Mode, FundPool, FundPoolName, 
             Nature, CampId, CampName, 
             RecipientRole, RecipientId, RecipientName, 
             CreatedAt, UpdatedAt, AddedBy, IsDeleted
@@ -136,7 +136,7 @@ BEGIN
             CONCAT('INC', @accountId, '-', ROW_NUMBER() OVER(ORDER BY (SELECT NULL))),
             @accountId,
             Head, Amount, Purpose,
-            @TransDate, @Mode, @FundPool, @FundPoolName,
+            @TransDate, @TransDate, @Mode, @FundPool, @FundPoolName,
             @Nature, @CampId, @CampName,
             @RecipientRole, @RecipientId, @RecipientName,
             GETDATE(), GETDATE(), @AddedBy, 0
@@ -146,7 +146,7 @@ BEGIN
         -- Expense heads
         INSERT INTO Expenses (
             ExpenseId, AccountId, Head, Amount, Purpose, 
-            TransDate, Mode, FundPool, FundPoolName, 
+            Date, TransDate, Mode, FundPool, FundPoolName, 
             Nature, CampId, CampName, 
             RecipientRole, RecipientId, RecipientName, 
             CreatedAt, UpdatedAt, AddedBy, IsDeleted
@@ -155,7 +155,7 @@ BEGIN
             CONCAT('EXP', @accountId, '-', ROW_NUMBER() OVER(ORDER BY (SELECT NULL))),
             @accountId,
             Head, Amount, Purpose,
-            @TransDate, @Mode, @FundPool, @FundPoolName,
+            @TransDate, @TransDate, @Mode, @FundPool, @FundPoolName,
             @Nature, @CampId, @CampName,
             @RecipientRole, @RecipientId, @RecipientName,
             GETDATE(), GETDATE(), @AddedBy, 0
@@ -254,7 +254,7 @@ BEGIN
         -- Income heads
         INSERT INTO Incomes (
             IncomeId, AccountId, Head, Amount, Purpose, 
-            TransDate, Mode, FundPool, FundPoolName, 
+            Date, TransDate, Mode, FundPool, FundPoolName, 
             Nature, CampId, CampName, 
             RecipientRole, RecipientId, RecipientName, 
             CreatedAt, UpdatedAt, AddedBy, IsDeleted
@@ -263,7 +263,7 @@ BEGIN
             CONCAT('INC', @accountId, '-', ROW_NUMBER() OVER(ORDER BY (SELECT NULL))),
             @accountId,
             Head, Amount, Purpose,
-            @TransDate, @Mode, @FundPool, @FundPoolName,
+            @TransDate, @TransDate, @Mode, @FundPool, @FundPoolName,
             @Nature, @CampId, @CampName,
             @RecipientRole, @RecipientId, @RecipientName,
             GETDATE(), GETDATE(), @UpdatedBy, 0
@@ -273,7 +273,7 @@ BEGIN
         -- Expense heads
         INSERT INTO Expenses (
             ExpenseId, AccountId, Head, Amount, Purpose, 
-            TransDate, Mode, FundPool, FundPoolName, 
+            Date, TransDate, Mode, FundPool, FundPoolName, 
             Nature, CampId, CampName, 
             RecipientRole, RecipientId, RecipientName, 
             CreatedAt, UpdatedAt, AddedBy, IsDeleted
@@ -282,7 +282,7 @@ BEGIN
             CONCAT('EXP', @accountId, '-', ROW_NUMBER() OVER(ORDER BY (SELECT NULL))),
             @accountId,
             Head, Amount, Purpose,
-            @TransDate, @Mode, @FundPool, @FundPoolName,
+            @TransDate, @TransDate, @Mode, @FundPool, @FundPoolName,
             @Nature, @CampId, @CampName,
             @RecipientRole, @RecipientId, @RecipientName,
             GETDATE(), GETDATE(), @UpdatedBy, 0
