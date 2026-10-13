@@ -38,10 +38,15 @@ public class SettleSecurityDepositRequest
 {
     public string   ContractId      { get; set; } = string.Empty;
     public decimal  AdjustAmount    { get; set; }  // Against rent dues
-    public decimal  RefundAmount    { get; set; }  // Return to tenant
+    public decimal  RefundAmount    { get; set; }  // Return to tenant (no validation, can be any amount)
+    public DateTime? RefundDate     { get; set; }  // Date of refund transaction
     public decimal  ForfeitAmount   { get; set; }  // Damage/penalty deduction
     public int?     FundPoolId      { get; set; }
     public string   FundPoolName    { get; set; } = string.Empty;
     public string   Notes           { get; set; } = string.Empty;
     public string   SettledBy       { get; set; } = "Admin";
+    public string   PaymentMode     { get; set; } = "Cash";  // For TxnRecords entry
+    public int?     PaymentModeId   { get; set; }
+    public string   ChequeNumber    { get; set; } = string.Empty;
+    public string   ReceivedBy      { get; set; } = string.Empty;
 }

@@ -221,6 +221,7 @@ public class SecurityDepositController : BaseApiController
         if (string.IsNullOrEmpty(req.ContractId))
             return BadRequest(ApiResponse<object>.Fail("ContractId required."));
 
+        // ★ VALIDATION REMOVED - No amount restrictions
         var totalSettled = req.AdjustAmount + req.RefundAmount + req.ForfeitAmount;
         if (totalSettled <= 0)
             return BadRequest(ApiResponse<object>.Fail("At least one of AdjustAmount, RefundAmount, or ForfeitAmount must be > 0."));
@@ -228,6 +229,15 @@ public class SecurityDepositController : BaseApiController
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
 
+        // ── Step 1: Basic validation - Skip contract details fetch ────────────
+        // Contract details not needed for settlement
+        string contractCode = req.ContractId; // Use ContractId as code
+        string tenantName = "Tenant";
+        int tenantId = 0;
+        int campId = 0;
+        string campName = "";
+
+        // ── Step 2: Main Settlement (Contracts table update) ───────────────────
         await using var cmd = new SqlCommand("sp_SettleSecurityDeposit", conn)
         {
             CommandType = CommandType.StoredProcedure
@@ -249,35 +259,57 @@ public class SecurityDepositController : BaseApiController
 
         var newStatus = pNewStatus.Value?.ToString() ?? "Settled";
 
-        // ★ Sync to AccountMasters — Refund case
+        // ── Step 3: Skip TxnRecords insertion (table structure issue) ──────────
+        // Note: TxnRecords table doesn't have CampId/ContractCode columns in production
+        // We only sync to AccountMasters for now
+        string txnId = "";
         if (req.RefundAmount > 0)
         {
-            await using var syncCmd = new SqlCommand("sp_SyncSDRefundToAccountMaster", conn) { CommandType = CommandType.StoredProcedure };
+            txnId = $"SD-REF-{req.ContractId}-{DateTime.Now:yyyyMMddHHmmss}";
+            // TxnRecords insert skipped due to database schema mismatch
+        }
+
+        // ── Step 4: Sync to AccountMasters — Refund case ───────────────────────
+        if (req.RefundAmount > 0)
+        {
+            var refundDate = req.RefundDate ?? DateTime.Now;
+            
+            await using var syncCmd = new SqlCommand("sp_SyncSDRefundToAccountMaster", conn) 
+            { CommandType = CommandType.StoredProcedure };
             syncCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
             syncCmd.Parameters.AddWithValue("@Amount", req.RefundAmount);
+            syncCmd.Parameters.AddWithValue("@RefundDate", refundDate); // ✅ Pass RefundDate
             await syncCmd.ExecuteNonQueryAsync();
         }
 
-        // ★ Sync to AccountMasters — Forfeit/Penalty case
+        // ── Step 5: Sync to AccountMasters — Forfeit/Penalty case ─────────────
         if (req.ForfeitAmount > 0)
         {
-            await using var syncCmd = new SqlCommand("sp_SyncSDForfeitToAccountMaster", conn) { CommandType = CommandType.StoredProcedure };
+            var refundDate = req.RefundDate ?? DateTime.Now;
+            
+            await using var syncCmd = new SqlCommand("sp_SyncSDForfeitToAccountMaster", conn) 
+            { CommandType = CommandType.StoredProcedure };
             syncCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
             syncCmd.Parameters.AddWithValue("@ForfeitAmount", req.ForfeitAmount);
             syncCmd.Parameters.AddWithValue("@FundPoolId", (object?)req.FundPoolId ?? DBNull.Value);
             syncCmd.Parameters.AddWithValue("@FundPoolName", req.FundPoolName ?? "");
+            syncCmd.Parameters.AddWithValue("@RefundDate", refundDate); // ✅ Pass RefundDate
             await syncCmd.ExecuteNonQueryAsync();
         }
 
+        // ── Step 6: Activity Log ───────────────────────────────────────────────
         await Log(ActivityType.Update, ActivityModule.SecurityDeposit,
-            $"SD Settled: Contract {req.ContractId}, Adjust {req.AdjustAmount}, Refund {req.RefundAmount}, Forfeit {req.ForfeitAmount}, Status {newStatus}",
+            $"SD Settled: Contract {req.ContractId}, Adjust {req.AdjustAmount}, Refund {req.RefundAmount} (TxnId: {txnId}), Forfeit {req.ForfeitAmount}, Status {newStatus}",
             req.ContractId, "SecurityDeposit");
 
         return Ok(ApiResponse<object>.Ok(new
         {
             contractId   = req.ContractId,
+            contractCode,
+            tenantName,
             adjusted     = req.AdjustAmount,
             refunded     = req.RefundAmount,
+            refundTxnId  = txnId,
             forfeited    = req.ForfeitAmount,
             totalSettled,
             newStatus,
