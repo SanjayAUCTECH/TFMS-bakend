@@ -306,13 +306,14 @@ public class SecurityDepositController : BaseApiController
             await updateRoomTrnsCmd.ExecuteNonQueryAsync();
         }
 
-        // ── Step 2: Get Contract Details for manual inserts ───────────────────
+        // ── Step 2: Get Contract Details & FundPool Code for manual inserts ───
         string contractCode = req.ContractId;
         string tenantName = "Tenant";
         int campId = 0;
         string campName = "";
         int fundPoolId = req.FundPoolId ?? 0;
         string fundPoolName = req.FundPoolName ?? "";
+        string fundPoolCode = ""; // ★ FundMasters.Code
 
         // Try to get contract details (optional, won't fail if columns don't exist)
         try
@@ -341,6 +342,25 @@ public class SecurityDepositController : BaseApiController
         }
         catch { /* Ignore if columns don't exist */ }
 
+        // ★ Get FundPool Code from FundPools table
+        if (fundPoolId > 0)
+        {
+            try
+            {
+                await using var fundCmd = new SqlCommand(@"
+                    SELECT TOP 1 Code 
+                    FROM FundPools 
+                    WHERE Id = @FundPoolId 
+                      AND ISNULL(IsDeleted, 0) = 0;
+                ", conn);
+                fundCmd.Parameters.AddWithValue("@FundPoolId", fundPoolId);
+                
+                var result = await fundCmd.ExecuteScalarAsync();
+                fundPoolCode = result?.ToString() ?? "";
+            }
+            catch { /* Ignore if table/column doesn't exist */ }
+        }
+
         // ── Step 3: Manual INSERT to AccountMasters with RefundDate ───────────
         if (req.RefundAmount > 0)
         {
@@ -350,23 +370,24 @@ public class SecurityDepositController : BaseApiController
                 INSERT INTO AccountMasters 
                 (VoucherNo, TransDate, PaymentDate, PaymentType, Mode, FundPool, FundPoolName, 
                  Amount, Nature, RecipientRole, RecipientName, Purpose, CreatedAt, RecipientId, 
-                 CampId, CampName, IsDeleted)
+                 CampId, CampName, AccountId, IsDeleted)
                 VALUES 
-                (@VoucherNo, @RefundDate, @RefundDate, 'SecurityDeposit', @Mode, @FundPool, @FundPoolName,
+                (@VoucherNo, @RefundDate, @RefundDate, 'Camp', @Mode, @FundPool, @FundPoolName,
                  @Amount, 'Expense', 'Tenant', @TenantName, @Purpose, GETDATE(), 0,
-                 @CampId, @CampName, 0);
+                 @CampId, @CampName, @ContractId, 0);
             ", conn);
             
             insertAccCmd.Parameters.AddWithValue("@VoucherNo", voucherNo);
             insertAccCmd.Parameters.AddWithValue("@RefundDate", refundDate);
             insertAccCmd.Parameters.AddWithValue("@Mode", req.PaymentMode ?? "Cash");
-            insertAccCmd.Parameters.AddWithValue("@FundPool", fundPoolId.ToString());
+            insertAccCmd.Parameters.AddWithValue("@FundPool", fundPoolCode); // ★ FundMasters.Code
             insertAccCmd.Parameters.AddWithValue("@FundPoolName", fundPoolName);
             insertAccCmd.Parameters.AddWithValue("@Amount", req.RefundAmount);
             insertAccCmd.Parameters.AddWithValue("@TenantName", tenantName);
             insertAccCmd.Parameters.AddWithValue("@Purpose", $"SD Refund - Contract {contractCode}");
             insertAccCmd.Parameters.AddWithValue("@CampId", campId == 0 ? DBNull.Value : (object)campId);
             insertAccCmd.Parameters.AddWithValue("@CampName", campName ?? "");
+            insertAccCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
             
             await insertAccCmd.ExecuteNonQueryAsync();
         }
@@ -380,6 +401,7 @@ public class SecurityDepositController : BaseApiController
                 SET TransDate = @RefundDate,
                     Date = CAST(@RefundDate AS DATE),
                     Head = 'SD',
+                    Nature = 'Camp',
                     UpdatedAt = GETDATE()
                 WHERE ExpenseId IN (
                     SELECT TOP 1 ExpenseId 
@@ -423,22 +445,23 @@ public class SecurityDepositController : BaseApiController
                 INSERT INTO AccountMasters 
                 (VoucherNo, TransDate, PaymentDate, PaymentType, Mode, FundPool, FundPoolName, 
                  Amount, Nature, RecipientRole, RecipientName, Purpose, CreatedAt, RecipientId, 
-                 CampId, CampName, IsDeleted)
+                 CampId, CampName, AccountId, IsDeleted)
                 VALUES 
-                (@VoucherNo, @RefundDate, @RefundDate, 'SecurityDeposit', 'Cash', @FundPool, @FundPoolName,
+                (@VoucherNo, @RefundDate, @RefundDate, 'Camp', 'Cash', @FundPool, @FundPoolName,
                  @Amount, 'Income', 'Tenant', @TenantName, @Purpose, GETDATE(), 0,
-                 @CampId, @CampName, 0);
+                 @CampId, @CampName, @ContractId, 0);
             ", conn);
             
             insertForfeitCmd.Parameters.AddWithValue("@VoucherNo", voucherNo);
             insertForfeitCmd.Parameters.AddWithValue("@RefundDate", refundDate);
-            insertForfeitCmd.Parameters.AddWithValue("@FundPool", fundPoolId.ToString());
+            insertForfeitCmd.Parameters.AddWithValue("@FundPool", fundPoolCode); // ★ FundMasters.Code
             insertForfeitCmd.Parameters.AddWithValue("@FundPoolName", fundPoolName);
             insertForfeitCmd.Parameters.AddWithValue("@Amount", req.ForfeitAmount);
             insertForfeitCmd.Parameters.AddWithValue("@TenantName", tenantName);
             insertForfeitCmd.Parameters.AddWithValue("@Purpose", $"SD Forfeit/Penalty - Contract {contractCode}");
             insertForfeitCmd.Parameters.AddWithValue("@CampId", campId == 0 ? DBNull.Value : (object)campId);
             insertForfeitCmd.Parameters.AddWithValue("@CampName", campName ?? "");
+            insertForfeitCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
             
             await insertForfeitCmd.ExecuteNonQueryAsync();
 
