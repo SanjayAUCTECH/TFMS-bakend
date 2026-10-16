@@ -73,6 +73,13 @@ public class AuthService : IAuthService
 
         // Get user code based on role
         string userCode = await GetUserCodeByRoleAsync(user.Role, user.SourceId);
+        
+        // Get designation for Staff role
+        string? designation = null;
+        if (user.Role?.Equals("staff", StringComparison.OrdinalIgnoreCase) == true && user.SourceId.HasValue)
+        {
+            designation = await GetStaffDesignationAsync(user.SourceId.Value);
+        }
 
         return ApiResponse<ProfileResponse>.Ok(new ProfileResponse
         {
@@ -92,6 +99,7 @@ public class AuthService : IAuthService
             LastLogin   = user.LastLogin,
             CreatedAt   = user.CreatedAt,
             UserCode    = userCode,
+            Designation = designation,
         });
     }
 
@@ -123,6 +131,16 @@ public class AuthService : IAuthService
         cmd.Parameters.AddWithValue("@Id", staffId);
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString() ?? string.Empty;
+    }
+    
+    private async Task<string?> GetStaffDesignationAsync(int staffId)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand("SELECT Designation FROM Staff WHERE Id = @Id AND IsDeleted=0", (SqlConnection)conn);
+        cmd.Parameters.AddWithValue("@Id", staffId);
+        var result = await cmd.ExecuteScalarAsync();
+        return result == DBNull.Value ? null : result?.ToString();
     }
 
     private async Task<string> GetOwnerCodeAsync(IDbConnection conn, int ownerId)

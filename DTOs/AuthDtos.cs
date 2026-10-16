@@ -44,6 +44,7 @@ public class ProfileResponse
     public DateTime? LastLogin  { get; set; }
     public DateTime CreatedAt   { get; set; }
     public string   UserCode    { get; set; } = string.Empty;
+    public string?  Designation { get; set; }
 }
 
 public class UpdateProfileRequest

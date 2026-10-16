@@ -10,6 +10,7 @@ public static class ActivityType
 {
     public const string Login   = "LOGIN";
     public const string Logout  = "LOGOUT";
+    public const string Create  = "CREATE";
     public const string Insert  = "INSERT";
     public const string Update  = "UPDATE";
     public const string Delete  = "DELETE";
@@ -52,6 +53,7 @@ public static class ActivityModule
     public const string Companies              = "Companies";
     public const string AccountMasters         = "AccountMasters";
     public const string TaskAlerts             = "TaskAlerts";
+    public const string Settings               = "Settings";
     public const string Campbosses             = "Campbosses";
     public const string CampCampbosses         = "CampCampbosses";
     public const string ContractTerms          = "ContractTerms";
