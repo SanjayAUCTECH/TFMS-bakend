@@ -63,6 +63,27 @@ public class SecurityDepositController : BaseApiController
         await using var conn = _factory.CreateConnection();
         await conn.OpenAsync();
 
+        // ── Get Tenant Name for Purpose ───────────────────────────────────────
+        string tenantName = "Tenant";
+        try
+        {
+            await using var detailCmd = new SqlCommand(@"
+                SELECT TOP 1 t.TenantName
+                FROM Contracts c
+                LEFT JOIN Tenants t ON c.TenantId = t.TenantId
+                WHERE c.ContractId = @ContractId
+                  AND ISNULL(c.IsDeleted, 0) = 0;
+            ", conn);
+            detailCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
+            
+            await using var reader = await detailCmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                tenantName = reader.IsDBNull(0) ? "Tenant" : reader.GetString(0);
+            }
+        }
+        catch { tenantName = "Tenant"; }
+
         await using var cmd = new SqlCommand("sp_ReceiveSecurityDeposit", conn)
         {
             CommandType = CommandType.StoredProcedure
@@ -90,7 +111,57 @@ public class SecurityDepositController : BaseApiController
         var newPaid   = (decimal)pNewPaid.Value;
         var newStatus = pNewStatus.Value?.ToString() ?? "Received";
 
-        // ★ Sync to AccountMasters (Nature='Camp')
+        // ── Get newly created TxnRecord Id ─────────────────────────────────────
+        int newTxnRecordId = 0;
+        string txnIdCode = "";
+        try
+        {
+            await using var getTxnCmd = new SqlCommand(@"
+                SELECT TOP 1 Id, TxnId
+                FROM TxnRecords
+                WHERE ContractId = @ContractId
+                  AND TxnType = 'SD-CR'
+                  AND CAST(CreatedAt AS DATE) = CAST(GETDATE() AS DATE)
+                  AND ISNULL(IsDeleted, 0) = 0
+                ORDER BY Id DESC;
+            ", conn);
+            getTxnCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
+            
+            await using var reader = await getTxnCmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                newTxnRecordId = reader.GetInt32(0);
+                txnIdCode = reader.IsDBNull(1) ? "" : reader.GetString(1);
+            }
+        }
+        catch { }
+
+        // ── Update Incomes Purpose with proper format ──────────────────────────
+        if (newTxnRecordId > 0)
+        {
+            string purpose = $"Security Deposit Received | Contract: {req.ContractId} | Tenant: {tenantName} | TxnId: {txnIdCode}";
+            
+            try
+            {
+                await using var updateIncomeCmd = new SqlCommand(@"
+                    UPDATE Incomes
+                    SET Purpose = @Purpose,
+                        UpdatedAt = GETDATE()
+                    WHERE (Head = 'SD' OR Head = 'Security Deposit')
+                      AND Amount = @Amount
+                      AND CAST(TransDate AS DATE) = CAST(@PaidDate AS DATE)
+                      AND CAST(CreatedAt AS DATE) = CAST(GETDATE() AS DATE)
+                      AND ISNULL(IsDeleted, 0) = 0;
+                ", conn);
+                updateIncomeCmd.Parameters.AddWithValue("@Purpose", purpose);
+                updateIncomeCmd.Parameters.AddWithValue("@Amount", req.Amount);
+                updateIncomeCmd.Parameters.AddWithValue("@PaidDate", req.PaidDate);
+                await updateIncomeCmd.ExecuteNonQueryAsync();
+            }
+            catch { }
+        }
+
+        // ★ Sync to AccountMasters with proper Purpose ─────────────────────────
         await using (var syncCmd = new SqlCommand("sp_SyncSDReceiveToAccountMaster", conn) { CommandType = CommandType.StoredProcedure })
         {
             syncCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
@@ -99,6 +170,33 @@ public class SecurityDepositController : BaseApiController
             syncCmd.Parameters.AddWithValue("@PaymentMode", req.PaymentMode);
             syncCmd.Parameters.AddWithValue("@FundPoolId", (object?)req.FundPoolId ?? DBNull.Value);
             await syncCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Update AccountMasters Purpose with proper format ───────────────────
+        if (newTxnRecordId > 0)
+        {
+            string purpose = $"Security Deposit Received | Contract: {req.ContractId} | Tenant: {tenantName} | TxnId: {txnIdCode}";
+            
+            try
+            {
+                await using var updateAccCmd = new SqlCommand(@"
+                    UPDATE AccountMasters
+                    SET Purpose = @Purpose,
+                        UpdatedAt = GETDATE()
+                    WHERE AccountId = @ContractId
+                      AND Nature = 'Income'
+                      AND Amount = @Amount
+                      AND CAST(PaymentDate AS DATE) = CAST(@PaidDate AS DATE)
+                      AND CAST(CreatedAt AS DATE) = CAST(GETDATE() AS DATE)
+                      AND ISNULL(IsDeleted, 0) = 0;
+                ", conn);
+                updateAccCmd.Parameters.AddWithValue("@Purpose", purpose);
+                updateAccCmd.Parameters.AddWithValue("@ContractId", req.ContractId);
+                updateAccCmd.Parameters.AddWithValue("@Amount", req.Amount);
+                updateAccCmd.Parameters.AddWithValue("@PaidDate", req.PaidDate);
+                await updateAccCmd.ExecuteNonQueryAsync();
+            }
+            catch { }
         }
 
         await Log(ActivityType.Insert, ActivityModule.SecurityDeposit,
@@ -168,6 +266,225 @@ public class SecurityDepositController : BaseApiController
 
     // ─────────────────────────────────────────────────────────────────────────
     /// <summary>
+    /// DELETE api/securitydeposit/receive/contract/{contractId}
+    /// Deletes the LAST received SD entry for a contract
+    /// Reverts: TxnRecords, ContractRoomsTrns, Incomes, AccountMasters, FundPools, Contracts
+    /// </summary>
+    [HttpDelete("receive/contract/{contractId}")]
+    public async Task<IActionResult> DeleteReceivedByContract(string contractId)
+    {
+        if (string.IsNullOrEmpty(contractId))
+            return BadRequest(ApiResponse<object>.Fail("ContractId required."));
+
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        // ── Step 1: Get the latest SD-CR transaction details (if exists) ──────
+        int txnRecordId = 0;
+        decimal amount = 0m;
+        int fundPoolId = 0;
+        DateTime createdDate = DateTime.Now;
+        DateTime paidDate = DateTime.Now;
+        bool txnRecordFound = false;
+
+        await using (var getCmd = new SqlCommand(@"
+            SELECT TOP 1 
+                Id,
+                Amount,
+                ISNULL(FundPoolId, 0) AS FundPoolId,
+                CreatedAt,
+                PaidDate
+            FROM TxnRecords
+            WHERE ContractId = @ContractId
+              AND TxnType = 'SD-CR'
+              AND ISNULL(IsDeleted, 0) = 0
+            ORDER BY CreatedAt DESC, Id DESC;
+        ", conn))
+        {
+            getCmd.Parameters.AddWithValue("@ContractId", contractId);
+            
+            await using var reader = await getCmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                txnRecordId = reader.GetInt32(0);
+                amount = reader.GetDecimal(1);
+                fundPoolId = reader.GetInt32(2);
+                createdDate = reader.IsDBNull(3) ? DateTime.Now : reader.GetDateTime(3);
+                paidDate = reader.IsDBNull(4) ? DateTime.Now : reader.GetDateTime(4);
+                txnRecordFound = true;
+            }
+        }
+
+        // ── Check if Incomes has SD record for this contract ──────────────────
+        bool incomesRecordExists = false;
+        await using (var checkIncomeCmd = new SqlCommand(@"
+            SELECT COUNT(*)
+            FROM Incomes
+            WHERE SourceRef = @ContractId
+              AND Head = 'SECURITY DEPOSIT'
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            checkIncomeCmd.Parameters.AddWithValue("@ContractId", contractId);
+            var count = (int)await checkIncomeCmd.ExecuteScalarAsync();
+            incomesRecordExists = count > 0;
+        }
+
+        // If neither TxnRecords nor Incomes has record, return 404
+        if (!txnRecordFound && !incomesRecordExists)
+        {
+            return NotFound(ApiResponse<object>.Fail($"No received deposit found for contract {contractId}"));
+        }
+
+        // ── Step 2: Revert FundPool Balance (subtract amount) ─────────────────
+        if (fundPoolId > 0)
+        {
+            await using var revertFundCmd = new SqlCommand(@"
+                UPDATE FundPools
+                SET Balance = Balance - @Amount,
+                    UpdatedAt = GETDATE()
+                WHERE Id = @FundPoolId;
+            ", conn);
+            
+            revertFundCmd.Parameters.AddWithValue("@Amount", amount);
+            revertFundCmd.Parameters.AddWithValue("@FundPoolId", fundPoolId);
+            
+            await revertFundCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 3: Soft delete TxnRecords (SD-CR) - if found ─────────────────
+        if (txnRecordFound)
+        {
+            await using var deleteTxnCmd = new SqlCommand(@"
+                UPDATE TxnRecords
+                SET IsDeleted = 1,
+                    DeletedBy = @DeletedBy,
+                    UpdatedAt = GETDATE()
+                WHERE Id = @TxnRecordId;
+            ", conn);
+            
+            deleteTxnCmd.Parameters.AddWithValue("@TxnRecordId", txnRecordId);
+            deleteTxnCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteTxnCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 4: Soft delete ContractRoomsTrns (SD-CR) ─────────────────────
+        await using (var deleteRoomTrnsCmd = new SqlCommand(@"
+            UPDATE ContractRoomsTrns
+            SET IsDeleted = 1,
+                DeletedBy = @DeletedBy,
+                UpdatedAt = GETDATE()
+            WHERE ContractId = @ContractId
+              AND TxnType = 'SD-CR'
+              AND Amount = @Amount
+              AND CAST(CreatedAt AS DATE) = CAST(@CreatedDate AS DATE)
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            deleteRoomTrnsCmd.Parameters.AddWithValue("@ContractId", contractId);
+            deleteRoomTrnsCmd.Parameters.AddWithValue("@Amount", amount);
+            deleteRoomTrnsCmd.Parameters.AddWithValue("@CreatedDate", createdDate);
+            deleteRoomTrnsCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteRoomTrnsCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 5: Soft delete Incomes (SD receipt entries) ──────────────────
+        // Match by SourceRef = ContractId and Head = 'SECURITY DEPOSIT'
+        await using (var deleteIncomeCmd = new SqlCommand(@"
+            UPDATE Incomes
+            SET IsDeleted = 1,
+                DeletedBy = @DeletedBy,
+                UpdatedAt = GETDATE()
+            WHERE SourceRef = @ContractId
+              AND Head = 'SECURITY DEPOSIT'
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            deleteIncomeCmd.Parameters.AddWithValue("@ContractId", contractId);
+            deleteIncomeCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteIncomeCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 6: Soft delete AccountMasters (by Purpose pattern) ───────────
+        // Match by Purpose containing ContractId pattern
+        await using (var deleteAccCmd = new SqlCommand(@"
+            UPDATE AccountMasters
+            SET IsDeleted = 1,
+                DeletedBy = @DeletedBy,
+                UpdatedAt = GETDATE()
+            WHERE Purpose LIKE '%Contract' + @ContractId + '%'
+              AND Purpose LIKE '%Security Deposit%'
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            deleteAccCmd.Parameters.AddWithValue("@ContractId", contractId);
+            deleteAccCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteAccCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 7: Update Contracts SecurityDepositStatus & SecurityDepositPaid ─
+        string newStatus = "Pending";
+        decimal newPaid = 0m;
+        
+        await using (var updateContractCmd = new SqlCommand(@"
+            DECLARE @TotalPaid DECIMAL(18,2);
+            
+            -- Calculate remaining paid amount from non-deleted SD-CR transactions
+            SELECT @TotalPaid = ISNULL(SUM(Amount), 0)
+            FROM TxnRecords
+            WHERE ContractId = @ContractId
+              AND TxnType = 'SD-CR'
+              AND ISNULL(IsDeleted, 0) = 0;
+            
+            -- Update Contracts
+            UPDATE Contracts
+            SET SecurityDepositPaid = @TotalPaid,
+                SecurityDepositStatus = CASE 
+                    WHEN @TotalPaid > 0 THEN 'Received'
+                    ELSE 'Pending'
+                END,
+                UpdatedAt = GETDATE()
+            WHERE ContractId = @ContractId
+              AND ISNULL(IsDeleted, 0) = 0;
+            
+            -- Return new values
+            SELECT 
+                @TotalPaid AS NewPaid,
+                CASE WHEN @TotalPaid > 0 THEN 'Received' ELSE 'Pending' END AS NewStatus;
+        ", conn))
+        {
+            updateContractCmd.Parameters.AddWithValue("@ContractId", contractId);
+            
+            await using var reader = await updateContractCmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                newPaid = reader.GetDecimal(0);
+                newStatus = reader.GetString(1);
+            }
+        }
+
+        // ── Step 8: Activity Log ───────────────────────────────────────────────
+        await Log(ActivityType.Delete, ActivityModule.SecurityDeposit,
+            $"SD Receipt DELETED: Contract {contractId}, TxnRecordId {txnRecordId}, Amount {amount} reverted, Status changed to {newStatus}",
+            contractId, "SecurityDeposit");
+
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            contractId,
+            txnRecordId,
+            amountReverted = amount,
+            totalPaid = newPaid,
+            status = newStatus,
+            fundPoolRestored = fundPoolId > 0
+        }, $"Security deposit receipt deleted and reverted. Status: {newStatus}"));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    /// <summary>
     /// PATCH api/securitydeposit/trns/{contractId}/payment-status
     /// ContractRoomsTrns ki us contractId ki SAARI rows ka PaymentStatus update karo
     /// TxnType = 'SD-CR' filter bhi lagega — sirf SD rows update hongi
@@ -211,6 +528,187 @@ public class SecurityDepositController : BaseApiController
         return Ok(ApiResponse<object>.Ok(
             new { contractId, paymentStatus = req.PaymentStatus, updatedRows = affected },
             $"PaymentStatus updated to '{req.PaymentStatus}' for {affected} row(s)."));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    /// <summary>
+    /// DELETE api/securitydeposit/settle/{contractId}
+    /// Revert settlement: Delete all SD-REF, SD-ADJ, SD-FORFEIT records
+    /// Reverts: TxnRecords, ContractRoomsTrns, AccountMasters, Expenses, FundPools
+    /// </summary>
+    [HttpDelete("settle/{contractId}")]
+    public async Task<IActionResult> DeleteSettlement(string contractId)
+    {
+        if (string.IsNullOrEmpty(contractId))
+            return BadRequest(ApiResponse<object>.Fail("ContractId required."));
+
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+
+        // ── Step 1: Get settlement details before deletion ─────────────────────
+        decimal refundAmount = 0m;
+        decimal forfeitAmount = 0m;
+        int fundPoolId = 0;
+
+        await using (var getCmd = new SqlCommand(@"
+            SELECT 
+                SUM(CASE WHEN TxnType = 'SD-REF' THEN Amount ELSE 0 END) AS RefundAmount,
+                SUM(CASE WHEN TxnType = 'SD-FORFEIT' THEN Amount ELSE 0 END) AS ForfeitAmount,
+                MAX(FundPoolId) AS FundPoolId
+            FROM TxnRecords
+            WHERE ContractId = @ContractId
+              AND TxnType IN ('SD-REF', 'SD-ADJ', 'SD-FORFEIT')
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            getCmd.Parameters.AddWithValue("@ContractId", contractId);
+            
+            await using var reader = await getCmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                refundAmount = reader.IsDBNull(0) ? 0m : reader.GetDecimal(0);
+                forfeitAmount = reader.IsDBNull(1) ? 0m : reader.GetDecimal(1);
+                fundPoolId = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+            }
+        }
+
+        // ── Step 2: Revert FundPool Balance ────────────────────────────────────
+        if (fundPoolId > 0)
+        {
+            // Add back refund amount (was deducted during settle)
+            // Subtract forfeit amount (was added during settle)
+            await using var revertFundCmd = new SqlCommand(@"
+                UPDATE FundPools
+                SET Balance = Balance + @RefundAmount - @ForfeitAmount,
+                    UpdatedAt = GETDATE()
+                WHERE Id = @FundPoolId;
+            ", conn);
+            
+            revertFundCmd.Parameters.AddWithValue("@RefundAmount", refundAmount);
+            revertFundCmd.Parameters.AddWithValue("@ForfeitAmount", forfeitAmount);
+            revertFundCmd.Parameters.AddWithValue("@FundPoolId", fundPoolId);
+            
+            await revertFundCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 3: Soft delete TxnRecords (SD-REF, SD-ADJ, SD-FORFEIT) ───────
+        await using (var deleteTxnCmd = new SqlCommand(@"
+            UPDATE TxnRecords
+            SET IsDeleted = 1,
+                DeletedBy = @DeletedBy,
+                UpdatedAt = GETDATE()
+            WHERE ContractId = @ContractId
+              AND TxnType IN ('SD-REF', 'SD-ADJ', 'SD-FORFEIT')
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            deleteTxnCmd.Parameters.AddWithValue("@ContractId", contractId);
+            deleteTxnCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteTxnCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 4: Soft delete ContractRoomsTrns (SD-REF, SD-ADJ, SD-FORFEIT) ─
+        await using (var deleteRoomTrnsCmd = new SqlCommand(@"
+            UPDATE ContractRoomsTrns
+            SET IsDeleted = 1,
+                DeletedBy = @DeletedBy,
+                UpdatedAt = GETDATE()
+            WHERE ContractId = @ContractId
+              AND TxnType IN ('SD-REF', 'SD-ADJ', 'SD-FORFEIT')
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            deleteRoomTrnsCmd.Parameters.AddWithValue("@ContractId", contractId);
+            deleteRoomTrnsCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteRoomTrnsCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 5: Soft delete AccountMasters (SD Refund/Forfeit entries) ────
+        await using (var deleteAccCmd = new SqlCommand(@"
+            UPDATE AccountMasters
+            SET IsDeleted = 1,
+                DeletedBy = @DeletedBy,
+                UpdatedAt = GETDATE()
+            WHERE AccountId = @ContractId
+              AND (Purpose LIKE '%SD Refund%' OR Purpose LIKE '%SD Forfeit%' OR Purpose LIKE '%SD Penalty%')
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            deleteAccCmd.Parameters.AddWithValue("@ContractId", contractId);
+            deleteAccCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteAccCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 6: Soft delete Expenses (SD Refund entries) ───────────────────
+        // Match Expenses by Purpose pattern and recent creation date
+        await using (var deleteExpCmd = new SqlCommand(@"
+            UPDATE Expenses
+            SET IsDeleted = 1,
+                DeletedBy = @DeletedBy,
+                UpdatedAt = GETDATE()
+            WHERE (Purpose LIKE '%SD Refund%' OR Purpose LIKE '%SD Forfeit%' OR Purpose LIKE '%SD Penalty%' OR Head = 'SD')
+              AND Purpose LIKE '%' + @ContractId + '%'
+              AND ISNULL(IsDeleted, 0) = 0;
+        ", conn))
+        {
+            deleteExpCmd.Parameters.AddWithValue("@ContractId", contractId);
+            deleteExpCmd.Parameters.AddWithValue("@DeletedBy", CurrentUserId == 0 ? DBNull.Value : (object)CurrentUserId);
+            
+            await deleteExpCmd.ExecuteNonQueryAsync();
+        }
+
+        // ── Step 7: Update Contracts SecurityDepositStatus ─────────────────────
+        // Calculate total SecurityDepositPaid from non-deleted SD-CR transactions
+        string newStatus = "Pending";
+        await using (var updateStatusCmd = new SqlCommand(@"
+            DECLARE @TotalPaid DECIMAL(18,2);
+            
+            -- Calculate total paid from non-deleted SD-CR transactions
+            SELECT @TotalPaid = ISNULL(SUM(Amount), 0)
+            FROM TxnRecords
+            WHERE ContractId = @ContractId
+              AND TxnType = 'SD-CR'
+              AND ISNULL(IsDeleted, 0) = 0;
+            
+            -- Update Contracts SecurityDepositStatus based on paid amount
+            UPDATE Contracts
+            SET SecurityDepositStatus = CASE 
+                WHEN @TotalPaid > 0 THEN 'Received'
+                ELSE 'Pending'
+            END,
+                UpdatedAt = GETDATE()
+            WHERE ContractId = @ContractId
+              AND ISNULL(IsDeleted, 0) = 0;
+            
+            -- Return the new status
+            SELECT CASE 
+                WHEN @TotalPaid > 0 THEN 'Received'
+                ELSE 'Pending'
+            END AS NewStatus;
+        ", conn))
+        {
+            updateStatusCmd.Parameters.AddWithValue("@ContractId", contractId);
+            
+            var result = await updateStatusCmd.ExecuteScalarAsync();
+            newStatus = result?.ToString() ?? "Pending";
+        }
+
+        // ── Step 8: Activity Log ───────────────────────────────────────────────
+        await Log(ActivityType.Delete, ActivityModule.SecurityDeposit,
+            $"SD Settlement REVERTED: Contract {contractId}, Refund {refundAmount} restored, Forfeit {forfeitAmount} removed, Status changed to {newStatus}",
+            contractId, "SecurityDeposit");
+
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            contractId,
+            refundAmountReverted = refundAmount,
+            forfeitAmountReverted = forfeitAmount,
+            fundPoolRestored = fundPoolId > 0,
+            newStatus = newStatus
+        }, $"Settlement reverted successfully. Status changed to {newStatus}."));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
