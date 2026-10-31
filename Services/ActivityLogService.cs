@@ -60,6 +60,8 @@ public static class ActivityModule
     public const string ContractRoomInstallments = "ContractRoomInstallments";
     // ── Salon Management ────────────────────────────────────────────────────
     public const string SalonMaster            = "SalonMaster";
+    // ── Database Management ─────────────────────────────────────────────────
+    public const string DatabaseBackup         = "DatabaseBackup";
 }
 
 // ── IActivityLogService ──────────────────────────────────────────────────────

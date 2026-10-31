@@ -123,6 +123,7 @@ builder.Services.AddScoped<ICurrentFundTransferRepository,   CurrentFundTransfer
 builder.Services.AddScoped<IBufferFundTransferRepository,    BufferFundTransferRepository>();
 builder.Services.AddScoped<IOutsourceMoneyRepository,        OutsourceMoneyRepository>();
 builder.Services.AddScoped<IFundPoolMonthlyBalanceRepository, FundPoolMonthlyBalanceRepository>();
+builder.Services.AddScoped<IDatabaseBackupRepository, DatabaseBackupRepository>();
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPartnerService,      PartnerService>();
