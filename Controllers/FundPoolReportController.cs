@@ -46,6 +46,7 @@ public class FundPoolReportController : ControllerBase
         cmd.Parameters.AddWithValue("@DateTo",      request.DateTo.HasValue   ? (object)request.DateTo.Value.Date   : DBNull.Value);
         cmd.Parameters.AddWithValue("@PageNumber",  request.ResolvedPageNumber);
         cmd.Parameters.AddWithValue("@PageSize",    request.ResolvedPageSize == int.MaxValue ? 1000 : request.ResolvedPageSize);
+        cmd.Parameters.AddWithValue("@IncludeBalance", request.IncludeBalance ?? true);
 
         var totalParam = new SqlParameter("@TotalRecords", SqlDbType.Int)
             { Direction = ParameterDirection.Output };

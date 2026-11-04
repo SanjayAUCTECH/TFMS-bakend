@@ -3,15 +3,16 @@ namespace TFMS_software_api.DTOs;
 // ── Request ───────────────────────────────────────────────────
 public class FundPoolReportRequest
 {
-    public int?      FundPoolId  { get; set; }
-    public string?   SearchText  { get; set; }
-    public string?   Status      { get; set; }
-    public int?      Month       { get; set; }   // 1..12
-    public int?      Year        { get; set; }   // e.g. 2026
-    public DateTime? DateFrom    { get; set; }
-    public DateTime? DateTo      { get; set; }
-    public int?      PageNumber  { get; set; }
-    public int?      PageSize    { get; set; }
+    public int?      FundPoolId      { get; set; }
+    public string?   SearchText      { get; set; }
+    public string?   Status          { get; set; }
+    public int?      Month           { get; set; }   // 1..12
+    public int?      Year            { get; set; }   // e.g. 2026
+    public DateTime? DateFrom        { get; set; }
+    public DateTime? DateTo          { get; set; }
+    public int?      PageNumber      { get; set; }
+    public int?      PageSize        { get; set; }
+    public bool?     IncludeBalance  { get; set; }   // true = include previous balances, false = only current month
 
     public int ResolvedPageNumber => PageNumber is > 0 ? PageNumber.Value : 1;
     public int ResolvedPageSize   => PageSize   is > 0 ? PageSize.Value   : int.MaxValue;
